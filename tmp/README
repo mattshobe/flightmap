@@ -1,0 +1,7 @@
+This folder holds files that are temporary in nature, but are needed and used
+during a particular development phase.  Such files may include:
+-  Notes and other documents (RFCs, research papers, specs) that were found
+   useful at some point and influenced development.
+-  Scripts or shortcuts (memos) used to generate temporary data (graphs,etc.)
+-  Basically, anything one thinks may be worth sharing or saving, but which is
+   NOT intended to be in the production environment.
