@@ -170,6 +170,55 @@ public class AirportDatabase {
 
   }
 
+  /** Find the airports within {@code radius} from {@code position}.
+   * <p>Currently does a naive linear scan over all (~14'000) airports.</p>
+   * @return Airports within radius, sorted by increasing distance.
+   */
+  public AirportDistance[] getAirportsWithinRadius(LatLng position,
+                                                   double radius)
+    throws SQLException {
+
+    TreeSet<AirportDistance> airportsWithinRadius =
+        new TreeSet<AirportDistance>();
+
+    Connection dbConn = this.getDbConnection();
+    PreparedStatement airportFromIdStmt = dbConn.prepareStatement(
+      "SELECT icao, name FROM airports WHERE id = ?");
+
+    Statement dbStmt = dbConn.createStatement();
+
+    ResultSet rs = dbStmt.executeQuery("SELECT id, lat, lng FROM airports");
+    while (rs.next()) {
+      int id = rs.getInt(1);
+      int lat = rs.getInt(2);
+      int lng = rs.getInt(3);
+      double distance = ComputeDistance(position, lat,lng);
+
+      if (distance <= radius) {
+        airportFromIdStmt.setInt(1, id);
+        ResultSet airportRS = airportFromIdStmt.executeQuery();
+        if (!airportRS.next()) {
+          throw new IllegalStateException(
+              "Could not find airport corresponding to ID.");
+        }
+
+        String icao = airportRS.getString(1);
+        String name = airportRS.getString(2);
+
+        Airport airport = new Airport(icao,name,lat,lng);
+        AirportDistance airportDistance =
+            new AirportDistance(airport, distance);
+        airportsWithinRadius.add(airportDistance);
+      }
+    }
+    dbConn.close();
+    AirportDistance[] airportsWithinRadiusArray =
+        new AirportDistance[airportsWithinRadius.size()];
+
+    return airportsWithinRadius.toArray(airportsWithinRadiusArray);
+
+  }
+
   private static double ComputePseudoEuclidianDistance(LatLng origin, int lat, int lng) {
     long latDiff = (origin.lat - lat)%180000000;
     long lngDiff = (origin.lng - lng)%180000000;
@@ -188,10 +237,9 @@ public class AirportDatabase {
     return Math.acos(Math.sin(lat1)*Math.sin(lat2) +
                      Math.cos(lat1)*Math.cos(lat2) *
                      Math.cos(lng2-lng1)) * R;
-
   }
 
-  private static double ComputeHaversineDistance(LatLng origin, int lat, int lng) {
+  private static double ComputeHaversineDistance(LatLng origin,int lat,int lng){
     final double lat1 = origin.latRad();
     final double lng1 = origin.lngRad();
     final double lat2 = Math.toRadians(lat*1e-6);
@@ -206,7 +254,6 @@ public class AirportDatabase {
                      Math.pow(Math.sin(dLng/2),2);
     final double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     return R * c;
-
   }
 
   /** Compute distance between two points on Earth (in nautical miles).
@@ -249,22 +296,30 @@ public class AirportDatabase {
         return  ComputeHaversineDistance(origin, lat, lng);
     }
   }
-  /** Test nearest airport function.
+  /** Test nearest / within radius airport function.
    * <p>
-   * Usage: 
-   * {@code java com.google.blackbox.AirportDatabase 
-   * <db> <lat> <long> [numAirports] [metric] [num trials]}
+   * Usage:
+   * {@code java com.google.blackbox.AirportDatabase
+   * <db> <lat> <long> <numAirports (int) | radius (float)> [metric] [num trials]}
    * </p>
    */
   public static void main(String args[]) {
-    if (args.length < 3) {
-      System.err.println("Usage java AirportDatabase <db> <lat> <long> [numAirports] [metric] [num trials]");
+    if (args.length < 4) {
+      System.err.println("Usage java AirportDatabase <db> <lat> <long> <numAirports (int) | radius (float)> [metric] [num trials]");
       System.exit(1);
     }
     String dbFilename = args[0];
     int lat = Integer.parseInt(args[1]);
     int lng = Integer.parseInt(args[2]);
-    int numAirports = args.length > 3 ? Integer.parseInt(args[3]) : 10;
+    int numAirports = 0;
+    double radius = Double.NaN;
+
+    try {
+      numAirports = Integer.parseInt(args[3]);
+    } catch (NumberFormatException nfex) {
+      radius = Double.parseDouble(args[3]);
+    }
+
     int distanceMetric = args.length > 4 ? Integer.parseInt(args[4]) : 0;
     int numTrials = args.length > 5 ? Integer.parseInt(args[5]) : 1;
 
@@ -274,8 +329,10 @@ public class AirportDatabase {
       AirportDatabase airDB = new AirportDatabase(dbFilename, distanceMetric);
 
       try {
-        AirportDistance[] nearestAirports = 
-            airDB.getNearestAirports(position, numAirports);
+        AirportDistance[] nearestAirports =
+            Double.isNaN(radius) ?
+            airDB.getNearestAirports(position, numAirports) :
+            airDB.getAirportsWithinRadius(position, radius);
 
         for (AirportDistance nearestAirport: nearestAirports) {
           System.out.println(nearestAirport.toString());
