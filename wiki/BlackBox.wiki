@@ -1,1 +1,1 @@
-BlackBox! is an Android application that provides a moving map for VFR situational awareness for pilots. Flight tracks are recorded and can be exported.
+!BlackBox is an Android application that provides a moving map for VFR situational awareness for pilots. Flight tracks are recorded and can be exported.
