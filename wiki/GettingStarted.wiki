@@ -12,14 +12,34 @@ BlackBox developers will need the following things installed:
   * [http://java.sun.com/javase/downloads/ Java SDK] 1.5 or higher
 
 = Build =
-== And
-  * Edit the top-level `build.properties` file to set `android-home` to point to the Android SDK install location on your machine.
+== Android Code ==
+The code that is deployed to the phone is in the`android` directory. 
+
+*Important:* Before building, edit the top-level `build.properties` file to set `android-home` to point to the Android SDK install location on your machine.
+
+Once your `build.properties` are set, execute these commands to build the Android `.apk` file.
 {{{
+cd android
+ant
+}}}
 
+To install the `.apk` on your phone, `cd` to the top-level directory and do this:
+{{{
+adb install bin/BlackBox.apk
+}}}
 
+== Parsing Code ==
+This is code that parses the aviation data from public sources, such as the FAA and puts it into a format that BlackBox can use. This code is not deployed to the phone. The parsing code is in the `parsing` directory.
 
+Build it like this:
+{{{
+cd parsing
+ant
+}}}
 
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
+Parse an FAA airport data file named `FAANFD18` like this:
+{{{
+bin/create-airport-db FAANFD18
+}}}
+
+That will create an [http://sqlite.org SQLite] database that can be deployed to the phone. _Need to figure out whether this is installed as part of the `.apk` or is separate_
