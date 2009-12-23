@@ -1,0 +1,25 @@
+#summary How to start developing with BlackBox.
+#labels Featured
+
+= Introduction =
+BlackBox is an Android application that provides a moving map for VFR situational awareness for pilots. Flight tracks are recorded and can be exported.
+
+= Prerequisites =
+BlackBox developers will need the following things installed:
+  * [http://developer.android.com/sdk/ Android SDK] 2.0 or higher
+    * Recommended install location on Linux/Mac is `/usr/local/android`
+  * [http://ant.apache.org/ Apache Ant] 1.7.1 or higher
+  * [http://java.sun.com/javase/downloads/ Java SDK] 1.5 or higher
+
+= Build =
+== And
+  * Edit the top-level `build.properties` file to set `android-home` to point to the Android SDK install location on your machine.
+{{{
+
+
+
+
+Add your content here.  Format your content with:
+  * Text in *bold* or _italic_
+  * Headings, paragraphs, and lists
+  * Automatic links to other wiki pages
