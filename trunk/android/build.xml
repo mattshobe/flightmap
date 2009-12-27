@@ -67,6 +67,7 @@ limitations under the License.
          <SDK>/platforms/<target_platform>/templates/android_rules.xml
 
          Targets: help, clean, compile, debug, release, install, uninstall
+         See http://developer.android.com/guide/developing/other-ide.html
     -->
     <setup />
 
