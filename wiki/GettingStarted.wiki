@@ -4,6 +4,8 @@
 = Introduction =
 BlackBox is an Android application that provides a moving map for VFR situational awareness for pilots. Flight tracks are recorded and can be exported.
 
+Ant build files are used so you can use any IDE you'd like. See the [http://developer.android.com/guide/developing/other-ide.html Developing in Other IDEs] page for more information.
+
 = Prerequisites =
 BlackBox developers will need the following things installed:
   * [http://developer.android.com/sdk/ Android SDK] 2.0 or higher
@@ -13,7 +15,7 @@ BlackBox developers will need the following things installed:
 
 = Build =
 == Android Code ==
-The code that is deployed to the phone is in the`android` directory. 
+The code that is deployed to the phone is in the `android` directory. 
 
 *Important:* Before building, edit the top-level `build.properties` file to set `android-home` to point to the Android SDK install location on your machine.
 
