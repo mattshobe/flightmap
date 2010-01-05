@@ -11,3 +11,68 @@ Aris created the coding in `parsing` that parses FAA data into an SQLite databas
 Phil is working on the UI code to read that database. What's checked it as r22 is his work-in-progress code. He copied the `airports.db` file to the SD card on the Android emulator, and then tried to read it. Unforunately he got an exception due to missing Android metadata (see details below). This may mean that we need to add some metadata to the SQLite database for Android to read it.
 
 == Getting the SQLite database onto the phone ==
+Normally an application's data is stored in the /data/data/<package.name>/databases directory which is in the limited built-in memory and constrained to the application's data space, not on the SD card. The database containing just the airport code, name and latlng is 948 KB which is probably pretty big already for just application data. Once we start adding airspace and terrain data, our space needs are going to grow dramatically. Phil looked into just copying the `airports.db` file to the SD card, and found a few helpful posts on the topic. See [https://groups.google.com/group/android-developers/browse_thread/thread/f8a030cf8841b111 here] and [https://groups.google.com/group/android-developers/browse_thread/thread/87facd5ed49ac4ce here].
+
+== Fun with emulated SD cards ==
+Phil jumped through a few hoops trying to get an emulated SD card to work. Quick notes: creating a 4MB card gives you an error that it's too small, 8MB crashes the emulator, and 16MB appears to work.
+
+Here's what Phil did to get an emulated SD card created in his emulator named `droid`. This has a 400x854 resolution (WVGA854) which matches the Droid and Nexus One.
+{{{
+$ android list targets
+Available Android targets:
+id: 1 or "android-4"
+     Name: Android 1.6
+     Type: Platform
+     API level: 4
+     Revision: 1
+     Skins: HVGA (default), QVGA, WVGA800, WVGA854
+id: 2 or "android-5"
+     Name: Android 2.0
+     Type: Platform
+     API level: 5
+     Revision: 1
+     Skins: HVGA (default), QVGA, WQVGA400, WQVGA432, WVGA800, WVGA854
+id: 3 or "android-6"
+     Name: Android 2.0.1
+     Type: Platform
+     API level: 6
+     Revision: 1
+     Skins: HVGA (default), QVGA, WQVGA400, WQVGA432, WVGA800, WVGA854
+id: 4 or "Google Inc.:Google APIs:6"
+     Name: Google APIs
+     Type: Add-On
+     Vendor: Google Inc.
+     Revision: 1
+     Description: Android + Google APIs
+     Based on Android 2.0.1 (API level 6)
+     Libraries:
+      * com.google.android.maps (maps.jar)
+          API for Google Maps
+     Skins: WVGA854, WQVGA400, HVGA (default), WQVGA432, WVGA800, QVGA
+
+$ android create avd --name droid --target 3 --skin WVGA854 --sdcard 16M
+Android 2.0.1 is a basic Android platform.
+Do you wish to create a custom hardware profile [no]
+Created AVD 'droid' based on Android 2.0.1, with the following hardware config:
+hw.lcd.density=240
+vm.heapSize=24
+}}}
+
+After doing the above, the `droid` Android Virtual Device will have a 16 MB SD card available when it's started. Now to push the `airports.db` file to the card, do this.
+
+{{{
+$ emulator -avd droid &  # Start the android emulator
+$ cd ~/src/blackbox
+$ adb push tmp/airports.db /sdcard/com.google.blackbox/airports.db
+1798 KB/s (970752 bytes in 0.527s)
+$ adb shell
+# cd sdcard
+# ls -l
+d---rwxr-x system   sdcard_rw          2010-01-02 02:33 LOST.DIR
+----rwxr-x system   sdcard_rw       28 2010-01-01 19:42 sdcard-file.txt
+d---rwxr-x system   sdcard_rw          2010-01-04 17:20 com.google.blackbox
+# cd com.google.blackbox/
+# ls -l
+----rwxr-x system   sdcard_rw   970752 2009-12-20 18:19 airports.db
+#
+}}}
