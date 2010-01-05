@@ -1,0 +1,13 @@
+#summary Development notes for iteration 1: show list of 10 nearest airports.
+
+= Introduction =
+
+This iteration is to just show the list of the 10 nearest airports. Much of the work is in getting our feet with with Android development, Ant build files, etc.
+
+= Current Status (updated 1/4/10) =
+
+Aris created the coding in `parsing` that parses FAA data into an SQLite database. That database is checked into version control (for now) at `tmp/airports.db`.
+
+Phil is working on the UI code to read that database. What's checked it as r22 is his work-in-progress code. He copied the `airports.db` file to the SD card on the Android emulator, and then tried to read it. Unforunately he got an exception due to missing Android metadata (see details below). This may mean that we need to add some metadata to the SQLite database for Android to read it.
+
+== Getting the SQLite database onto the phone ==
