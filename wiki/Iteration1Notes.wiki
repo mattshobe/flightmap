@@ -76,3 +76,55 @@ d---rwxr-x system   sdcard_rw          2010-01-04 17:20 com.google.blackbox
 ----rwxr-x system   sdcard_rw   970752 2009-12-20 18:19 airports.db
 #
 }}}
+
+== Exception due to missing metadata ==
+Here's the exceptions thrown when running r22 now. I think the bit about "no such table: android_metadata" is the problem. We just need to figure out how to get that in there.
+
+{{{
+01-04 20:22:58.604: ERROR/Database(220): Failed to setLocale() when constructing, closing the database
+01-04 20:22:58.604: ERROR/Database(220): android.database.sqlite.SQLiteException: no such table: android_metadata
+01-04 20:22:58.604: ERROR/Database(220):     at android.database.sqlite.SQLiteDatabase.native_setLocale(Native Method)
+01-04 20:22:58.604: ERROR/Database(220):     at android.database.sqlite.SQLiteDatabase.setLocale(SQLiteDatabase.java:1750)
+01-04 20:22:58.604: ERROR/Database(220):     at android.database.sqlite.SQLiteDatabase.<init>(SQLiteDatabase.java:1700)
+01-04 20:22:58.604: ERROR/Database(220):     at android.database.sqlite.SQLiteDatabase.openDatabase(SQLiteDatabase.java:738)
+01-04 20:22:58.604: ERROR/Database(220):     at com.google.blackbox.AirportDbAdapter.open(AirportDbAdapter.java:45)
+01-04 20:22:58.604: ERROR/Database(220):     at com.google.blackbox.BlackBox.onCreate(BlackBox.java:32)
+01-04 20:22:58.604: ERROR/Database(220):     at android.app.Instrumentation.callActivityOnCreate(Instrumentation.java:1047)
+01-04 20:22:58.604: ERROR/Database(220):     at android.app.ActivityThread.performLaunchActivity(ActivityThread.java:2444)
+01-04 20:22:58.604: ERROR/Database(220):     at android.app.ActivityThread.handleLaunchActivity(ActivityThread.java:2497)
+01-04 20:22:58.604: ERROR/Database(220):     at android.app.ActivityThread.access$2200(ActivityThread.java:119)
+01-04 20:22:58.604: ERROR/Database(220):     at android.app.ActivityThread$H.handleMessage(ActivityThread.java:1848)
+01-04 20:22:58.604: ERROR/Database(220):     at android.os.Handler.dispatchMessage(Handler.java:99)
+01-04 20:22:58.604: ERROR/Database(220):     at android.os.Looper.loop(Looper.java:123)
+01-04 20:22:58.604: ERROR/Database(220):     at android.app.ActivityThread.main(ActivityThread.java:4338)
+01-04 20:22:58.604: ERROR/Database(220):     at java.lang.reflect.Method.invokeNative(Native Method)
+01-04 20:22:58.604: ERROR/Database(220):     at java.lang.reflect.Method.invoke(Method.java:521)
+01-04 20:22:58.604: ERROR/Database(220):     at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:860)
+01-04 20:22:58.604: ERROR/Database(220):     at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:618)
+01-04 20:22:58.604: ERROR/Database(220):     at dalvik.system.NativeStart.main(Native Method)
+01-04 20:22:58.654: DEBUG/AndroidRuntime(220): Shutting down VM
+01-04 20:22:58.654: WARN/dalvikvm(220): threadid=3: thread exiting with uncaught exception (group=0x4001b188)
+01-04 20:22:58.654: ERROR/AndroidRuntime(220): Uncaught handler: thread main exiting due to uncaught exception
+01-04 20:22:58.664: ERROR/AndroidRuntime(220): java.lang.RuntimeException: Unable to start activity ComponentInfo{com.google.blackbox/com.google.blackbox.BlackBox}: android.database.sqlite.SQLiteException: no such table: android_metadata
+01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.app.ActivityThread.performLaunchActivity(ActivityThread.java:2481)
+01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.app.ActivityThread.handleLaunchActivity(ActivityThread.java:2497)
+01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.app.ActivityThread.access$2200(ActivityThread.java:119)
+01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.app.ActivityThread$H.handleMessage(ActivityThread.java:1848)
+01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.os.Handler.dispatchMessage(Handler.java:99)
+01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.os.Looper.loop(Looper.java:123)
+01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.app.ActivityThread.main(ActivityThread.java:4338)
+01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at java.lang.reflect.Method.invokeNative(Native Method)
+01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at java.lang.reflect.Method.invoke(Method.java:521)
+01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:860)
+01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:618)
+01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at dalvik.system.NativeStart.main(Native Method)
+01-04 20:22:58.664: ERROR/AndroidRuntime(220): Caused by: android.database.sqlite.SQLiteException: no such table: android_metadata
+01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.database.sqlite.SQLiteDatabase.native_setLocale(Native Method)
+01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.database.sqlite.SQLiteDatabase.setLocale(SQLiteDatabase.java:1750)
+01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.database.sqlite.SQLiteDatabase.<init>(SQLiteDatabase.java:1700)
+01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.database.sqlite.SQLiteDatabase.openDatabase(SQLiteDatabase.java:738)
+01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at com.google.blackbox.AirportDbAdapter.open(AirportDbAdapter.java:45)
+01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at com.google.blackbox.BlackBox.onCreate(BlackBox.java:32)
+01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.app.Instrumentation.callActivityOnCreate(Instrumentation.java:1047)
+01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.app.ActivityThread.performLaunchActivity(ActivityThread.java:2444)
+}}}
