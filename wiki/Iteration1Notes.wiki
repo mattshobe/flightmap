@@ -83,48 +83,32 @@ Here's the exceptions thrown when running r22 now. I think the bit about "no suc
 {{{
 01-04 20:22:58.604: ERROR/Database(220): Failed to setLocale() when constructing, closing the database
 01-04 20:22:58.604: ERROR/Database(220): android.database.sqlite.SQLiteException: no such table: android_metadata
-01-04 20:22:58.604: ERROR/Database(220):     at android.database.sqlite.SQLiteDatabase.native_setLocale(Native Method)
-01-04 20:22:58.604: ERROR/Database(220):     at android.database.sqlite.SQLiteDatabase.setLocale(SQLiteDatabase.java:1750)
-01-04 20:22:58.604: ERROR/Database(220):     at android.database.sqlite.SQLiteDatabase.<init>(SQLiteDatabase.java:1700)
-01-04 20:22:58.604: ERROR/Database(220):     at android.database.sqlite.SQLiteDatabase.openDatabase(SQLiteDatabase.java:738)
-01-04 20:22:58.604: ERROR/Database(220):     at com.google.blackbox.AirportDbAdapter.open(AirportDbAdapter.java:45)
-01-04 20:22:58.604: ERROR/Database(220):     at com.google.blackbox.BlackBox.onCreate(BlackBox.java:32)
-01-04 20:22:58.604: ERROR/Database(220):     at android.app.Instrumentation.callActivityOnCreate(Instrumentation.java:1047)
-01-04 20:22:58.604: ERROR/Database(220):     at android.app.ActivityThread.performLaunchActivity(ActivityThread.java:2444)
-01-04 20:22:58.604: ERROR/Database(220):     at android.app.ActivityThread.handleLaunchActivity(ActivityThread.java:2497)
-01-04 20:22:58.604: ERROR/Database(220):     at android.app.ActivityThread.access$2200(ActivityThread.java:119)
-01-04 20:22:58.604: ERROR/Database(220):     at android.app.ActivityThread$H.handleMessage(ActivityThread.java:1848)
-01-04 20:22:58.604: ERROR/Database(220):     at android.os.Handler.dispatchMessage(Handler.java:99)
-01-04 20:22:58.604: ERROR/Database(220):     at android.os.Looper.loop(Looper.java:123)
-01-04 20:22:58.604: ERROR/Database(220):     at android.app.ActivityThread.main(ActivityThread.java:4338)
-01-04 20:22:58.604: ERROR/Database(220):     at java.lang.reflect.Method.invokeNative(Native Method)
-01-04 20:22:58.604: ERROR/Database(220):     at java.lang.reflect.Method.invoke(Method.java:521)
-01-04 20:22:58.604: ERROR/Database(220):     at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:860)
-01-04 20:22:58.604: ERROR/Database(220):     at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:618)
-01-04 20:22:58.604: ERROR/Database(220):     at dalvik.system.NativeStart.main(Native Method)
-01-04 20:22:58.654: DEBUG/AndroidRuntime(220): Shutting down VM
-01-04 20:22:58.654: WARN/dalvikvm(220): threadid=3: thread exiting with uncaught exception (group=0x4001b188)
-01-04 20:22:58.654: ERROR/AndroidRuntime(220): Uncaught handler: thread main exiting due to uncaught exception
-01-04 20:22:58.664: ERROR/AndroidRuntime(220): java.lang.RuntimeException: Unable to start activity ComponentInfo{com.google.blackbox/com.google.blackbox.BlackBox}: android.database.sqlite.SQLiteException: no such table: android_metadata
-01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.app.ActivityThread.performLaunchActivity(ActivityThread.java:2481)
-01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.app.ActivityThread.handleLaunchActivity(ActivityThread.java:2497)
-01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.app.ActivityThread.access$2200(ActivityThread.java:119)
-01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.app.ActivityThread$H.handleMessage(ActivityThread.java:1848)
-01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.os.Handler.dispatchMessage(Handler.java:99)
-01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.os.Looper.loop(Looper.java:123)
-01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.app.ActivityThread.main(ActivityThread.java:4338)
-01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at java.lang.reflect.Method.invokeNative(Native Method)
-01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at java.lang.reflect.Method.invoke(Method.java:521)
-01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:860)
-01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:618)
-01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at dalvik.system.NativeStart.main(Native Method)
-01-04 20:22:58.664: ERROR/AndroidRuntime(220): Caused by: android.database.sqlite.SQLiteException: no such table: android_metadata
-01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.database.sqlite.SQLiteDatabase.native_setLocale(Native Method)
-01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.database.sqlite.SQLiteDatabase.setLocale(SQLiteDatabase.java:1750)
-01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.database.sqlite.SQLiteDatabase.<init>(SQLiteDatabase.java:1700)
-01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.database.sqlite.SQLiteDatabase.openDatabase(SQLiteDatabase.java:738)
-01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at com.google.blackbox.AirportDbAdapter.open(AirportDbAdapter.java:45)
-01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at com.google.blackbox.BlackBox.onCreate(BlackBox.java:32)
-01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.app.Instrumentation.callActivityOnCreate(Instrumentation.java:1047)
-01-04 20:22:58.664: ERROR/AndroidRuntime(220):     at android.app.ActivityThread.performLaunchActivity(ActivityThread.java:2444)
+}}}
+
+Phil tried creating a new SQLite database on the phone itself through the API with a few hardcoded airports. That shows what the needed metadata is.
+{{{
+$ adb shell  # log into android emulator
+# ls /data/data/com.google.blackbox/databases/
+hardcodedairports
+# sqlite3 /data/data/com.google.blackbox/databases/hardcodedairports
+SQLite version 3.5.9
+Enter ".help" for instructions
+sqlite> .dump
+BEGIN TRANSACTION;
+CREATE TABLE android_metadata (locale TEXT);
+INSERT INTO "android_metadata" VALUES('en_US');
+CREATE TABLE airports (_id INTEGER PRIMARY KEY AUTOINCREMENT, icao TEXT UNIQUE NOT NULL, name TEXT NOT NULL, lat INTEGER NOT NULL, lng INTEGER NOT NULL);
+INSERT INTO "airports" VALUES(1,'FJDG','DIEGO GARCIA NSF',-7300000,72400000);
+INSERT INTO "airports" VALUES(2,'00AK','LOWELL FIELD',59856111,-151696264);
+INSERT INTO "airports" VALUES(3,'01A','PURKEYPILE',62943611,-152270017);
+INSERT INTO "airports" VALUES(4,'02AK','RUSTIC WILDERNESS',61876911,-150097639);
+INSERT INTO "airports" VALUES(5,'03AK','JOE CLOUDS',60727222,-151132778);
+INSERT INTO "airports" VALUES(6,'05AK','WASILLA CREEK AIRPARK',61668661,-149187389);
+INSERT INTO "airports" VALUES(7,'06AK','JUNE LAKE AIRPARK',61627619,-149575331);
+INSERT INTO "airports" VALUES(8,'08AK','FISHER',61569639,-149724439);
+INSERT INTO "airports" VALUES(9,'09AK','WEST BEAVER',61589361,-149847333);
+INSERT INTO "airports" VALUES(10,'0AK','PILOT STATION',61934556,-162899556);
+DELETE FROM sqlite_sequence;
+INSERT INTO "sqlite_sequence" VALUES('airports',10);
+COMMIT;
 }}}
