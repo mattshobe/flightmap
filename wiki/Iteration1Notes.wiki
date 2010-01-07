@@ -85,7 +85,7 @@ Here's the exceptions thrown when running r22 now. I think the bit about "no suc
 01-04 20:22:58.604: ERROR/Database(220): android.database.sqlite.SQLiteException: no such table: android_metadata
 }}}
 
-Phil tried creating a new SQLite database on the phone itself through the API with a few hardcoded airports. That shows what the needed metadata is. Also note that the 'id' column is named '_id'.
+Phil tried creating a new SQLite database on the phone itself through the API with a few hardcoded airports. That shows what the needed metadata is. Also note that the `id` column is named `_id` which makes a bunch of magic things happen in the Android SDK.
 
 {{{
 $ adb shell  # log into android emulator
