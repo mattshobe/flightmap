@@ -17,9 +17,7 @@ BlackBox developers will need the following things installed:
 == Android Code ==
 The code that is deployed to the phone is in the `android` directory. 
 
-*Important:* Before building, edit the top-level `build.properties` file to set `android-home` to point to the Android SDK install location on your machine.
-
-Once your `build.properties` are set, execute these commands to build the Android `.apk` file.
+Execute these commands to build the Android `.apk` file.
 {{{
 cd android
 ant
