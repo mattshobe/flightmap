@@ -4,7 +4,7 @@
 
 This iteration is to just show the list of the 10 nearest airports. Much of the work is in getting our feet with with Android development, Ant build files, etc.
 
-= Current Status (updated 1/4/10) =
+= Current Status (updated 1/7/10) =
 
 Aris created the coding in `parsing` that parses FAA data into an SQLite database. That database is checked into version control (for now) at `tmp/airports.db`.
 
@@ -85,7 +85,8 @@ Here's the exceptions thrown when running r22 now. I think the bit about "no suc
 01-04 20:22:58.604: ERROR/Database(220): android.database.sqlite.SQLiteException: no such table: android_metadata
 }}}
 
-Phil tried creating a new SQLite database on the phone itself through the API with a few hardcoded airports. That shows what the needed metadata is.
+Phil tried creating a new SQLite database on the phone itself through the API with a few hardcoded airports. That shows what the needed metadata is. Also note that the 'id' column is named '_id'.
+
 {{{
 $ adb shell  # log into android emulator
 # ls /data/data/com.google.blackbox/databases/
