@@ -18,9 +18,11 @@ package com.google.blackbox;
 import android.app.ListActivity;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.SimpleCursorAdapter;
 
 public class BlackBox extends ListActivity {
+    private static final String TAG = BlackBox.class.getSimpleName();
     private AirportDbAdapter airportReader;
 
     /** Called when the activity is first created. */
@@ -28,7 +30,7 @@ public class BlackBox extends ListActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.airport_list);
-        airportReader = new AirportDbAdapter();
+        airportReader = new AirportDbAdapter(this);
         airportReader.open();
         readAirportData();
     }
@@ -41,6 +43,30 @@ public class BlackBox extends ListActivity {
 
     private void readAirportData() {
         Cursor c = airportReader.fetchAllAirports();
+//        int icaoColumn = c.getColumnIndex(AirportDbAdapter.ICAO_COLUMN);
+//        int nameColumn = c.getColumnIndex(AirportDbAdapter.NAME_COLUMN);
+//        Log.d(TAG, "icao column = " + icaoColumn);
+//        Log.d(TAG, "name column = " + nameColumn);
+//        if (null == c) {
+//            Log.e(TAG, "Null cursor");
+//            return;
+//        }
+//
+//        boolean ok = c.moveToFirst();
+//        Log.d(TAG, "  moveToFirst status " + ok);
+//        if (!ok) {
+//            Log.e(TAG, "Returning early -- moveToFirst failed");
+//            return;
+//        }
+//
+//        Log.d(TAG, "Before looping");
+//        do {
+//            String icao = c.getString(icaoColumn);
+//            String name = c.getString(nameColumn);
+//            Log.d(TAG, String.format("%s: %s", icao, name));
+//        } while (c.moveToNext());
+//        Log.d(TAG, "After looping");
+
         startManagingCursor(c);
 
         // Create an adapter to display the cursor using the airport_row layout.
