@@ -13,6 +13,7 @@ BlackBox developers will need the following things installed:
   * [http://ant.apache.org/ Apache Ant] 1.7.1 or higher
   * [http://java.sun.com/javase/downloads/ Java SDK] 1.5 or higher
 
+You must add the `tools` directory of the Android SDK to your PATH.
 = Build =
 == Android Code ==
 The code that is deployed to the phone is in the `android` directory. 
