@@ -18,13 +18,13 @@ limitations under the License.
 <project name="blackbox" default="compile">
   <property environment="env"/>
   <property file="build.properties"/>
-  <property name="dist.name" value="blackbox-parsing" />
+  <property name="common.dist.name" value="blackbox-common" />
 
   <!-- can be overridden at the command line with -Dversion=
        or in IDEA, in the ant properties dialog -->
   <property name="version" value="snapshot"/>
 
-  <target name="compile" depends="common-jar" description="Compile Java source.">
+  <target name="compile" description="Compile Java source.">
     <mkdir dir="${build.dir}/classes"/>
     <javac
       srcdir="${src.dir}"
@@ -35,18 +35,8 @@ limitations under the License.
       extdirs=""
     >
       <compilerarg value="-Xlint:all"/>
-      <classpath>
-        <pathelement location="${lib.dir}/sqlitejdbc-v056.jar"/>
-        <pathelement location="../common/${build.dir}/dist/blackbox-common-${version}/blackbox-common-${version}.jar"/>
-      </classpath>
     </javac>
   </target>
-
-  <target name="common-jar" description="Build the common jar.">
-    <ant dir="../common" target="jar"/>
-  </target>
-
-
 
   <!-- Uncomment when tests are added
   <target name="testfw" description="Compile test framework.">
@@ -116,27 +106,27 @@ limitations under the License.
   </target>
 
   <target name="jar" depends="compile" description="Build jars.">
-    <mkdir dir="${build.dir}/dist/${dist.name}-${version}"/>
-    <jar jarfile="${build.dir}/dist/${dist.name}-${version}/${dist.name}-${version}.jar">
+    <mkdir dir="${build.dir}/dist/${common.dist.name}-${version}"/>
+    <jar jarfile="${build.dir}/dist/${common.dist.name}-${version}/${common.dist.name}-${version}.jar">
       <fileset dir="${build.dir}/classes"/>
     </jar>
   </target>
 
   <target name="jarsrc" description="Build jar of source.">
-    <mkdir dir="${build.dir}/dist/${dist.name}-${version}"/>
-    <jar jarfile="${build.dir}/dist/${dist.name}-${version}/src-${version}.zip">
+    <mkdir dir="${build.dir}/dist/${common.dist.name}-${version}"/>
+    <jar jarfile="${build.dir}/dist/${common.dist.name}-${version}/src-${version}.zip">
       <fileset dir="${src.dir}"/>
     </jar>
   </target>
 
   <target name="dist" depends="jar, jarsrc, javadoc"
        description="Build entire distribution.">
-    <copy toDir="${build.dir}/dist/${dist.name}-${version}" file="COPYING"/>
-    <copy toDir="${build.dir}/dist/${dist.name}-${version}">
+    <copy toDir="${build.dir}/dist/${common.dist.name}-${version}" file="COPYING"/>
+    <copy toDir="${build.dir}/dist/${common.dist.name}-${version}">
       <fileset dir="${build.dir}" includes="javadoc/**/*"/>
     </copy>
 
-    <zip destfile="${build.dir}/${dist.name}-${version}.zip"
+    <zip destfile="${build.dir}/${common.dist.name}-${version}.zip"
       basedir="${build.dir}/dist"/>
   </target>
 
