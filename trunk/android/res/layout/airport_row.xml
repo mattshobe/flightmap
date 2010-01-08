@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
-  android:layout_width="fill_parent" android:layout_height="fill_parent"
-  android:stretchColumns="1">
-  <TableRow>
-    <TextView android:id="@+id/ident" android:padding="3dip" />
-    <TextView android:id="@+id/name" android:padding="3dip" />
-  </TableRow>
-</TableLayout>
+<TableRow xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="fill_parent" android:layout_height="fill_parent">
+  <TextView android:id="@+id/ident" android:padding="3dip" />
+  <TextView android:id="@+id/name" android:padding="3dip" />
+</TableRow>
