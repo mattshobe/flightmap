@@ -31,6 +31,9 @@ cd android
 ant install
 }}}
 
+=== Troublshooting build problems ===
+If the build fails with this error: `taskdef class com.android.ant.SetupTask cannot be found` that means you didn't read the instructions above under *Configure your local build*
+
 == Parsing Code ==
 This is code that parses the aviation data from public sources, such as the FAA and puts it into a format that BlackBox can use. This code is not deployed to the phone. The parsing code is in the `parsing` directory.
 
