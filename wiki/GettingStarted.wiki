@@ -25,15 +25,10 @@ android update project -p android
 This will create a file called `android/local.properties` which points to your sdk install location.
 
 === Normal build ===
-Execute these commands to build the Android `.apk` file.
+Execute these commands to build a debug version of the Android `.apk` file and install it to a running android emulator.
 {{{
 cd android
-ant
-}}}
-
-To install the `.apk` on your phone, `cd` to the top-level directory and do this:
-{{{
-adb install bin/BlackBox.apk
+ant install
 }}}
 
 == Parsing Code ==
