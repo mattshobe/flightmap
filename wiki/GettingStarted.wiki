@@ -17,6 +17,14 @@ BlackBox developers will need the following things installed:
 == Android Code ==
 The code that is deployed to the phone is in the `android` directory. 
 
+=== Configure your local build ===
+Before you can build for the first time, you need to run this command *once* from the `blackbox` top-level directory.
+{{{
+android update project -p android
+}}}
+This will create a file called `android/local.properties` which points to your sdk install location.
+
+=== Normal build ===
 Execute these commands to build the Android `.apk` file.
 {{{
 cd android
