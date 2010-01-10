@@ -22,7 +22,7 @@ limitations under the License.
 
   <!-- can be overridden at the command line with -Dversion=
        or in IDEA, in the ant properties dialog -->
-  <property name="version" value="snapshot"/>
+  <property name="version" value="0.01"/>
 
   <target name="compile" description="Compile Java source.">
     <mkdir dir="${build.dir}/classes"/>
@@ -110,6 +110,13 @@ limitations under the License.
     <jar jarfile="${build.dir}/dist/${common.dist.name}-${version}/${common.dist.name}-${version}.jar">
       <fileset dir="${build.dir}/classes"/>
     </jar>
+  </target>
+  
+  <target name="release" depends="jar" description="Create a released version">
+      <mkdir dir="${release.dir}" />
+      <copy
+          file="${build.dir}/dist/${common.dist.name}-${version}/${common.dist.name}-${version}.jar"
+          todir="${release.dir}" />
   </target>
 
   <target name="jarsrc" description="Build jar of source.">

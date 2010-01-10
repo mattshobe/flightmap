@@ -15,13 +15,19 @@
  */
 package com.google.blackbox;
 
-import android.app.ListActivity;
-import android.database.Cursor;
+import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.SimpleCursorAdapter;
+import android.view.View;
+import android.widget.LinearLayout;
+import android.widget.TableLayout;
+import android.widget.TableRow;
+import android.widget.TextView;
 
-public class BlackBox extends ListActivity {
+import com.google.blackbox.AirportDbAdapter.AirportDistance;
+import com.google.blackbox.data.LatLng;
+
+public class BlackBox extends Activity {
   private static final String TAG = BlackBox.class.getSimpleName();
   private AirportDbAdapter airportReader;
 
@@ -29,27 +35,46 @@ public class BlackBox extends ListActivity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    setContentView(R.layout.airport_list);
     airportReader = new AirportDbAdapter(this);
     airportReader.open();
-    Log.d(TAG, "About to read airport data");
-    readAirportData();
+  }
+
+  @Override
+  protected void onResume() {
+    super.onResume();
+    AirportDistance[] airportDistances = airportReader.getNearestAirports(
+        new LatLng(20, 30), 5);
+    if (null == airportDistances) {
+      Log.w(TAG, "No airports returned");
+      return;
+    }
+    TableLayout table = new TableLayout(this);
+    table.setLayoutParams(new LinearLayout.LayoutParams(
+        LinearLayout.LayoutParams.FILL_PARENT,
+        LinearLayout.LayoutParams.FILL_PARENT));
+    table.setColumnStretchable(1, true);
+    for (int i = 0; i < airportDistances.length; i++) {
+      AirportDistance airportDistance = airportDistances[i];
+      TableRow row = new TableRow(this);
+      row.addView(createTextView(airportDistance.airport.icao));
+      row.addView(createTextView(airportDistance.airport.name));
+      row.addView(createTextView(String
+          .format("%.1f", airportDistance.distance)));
+      table.addView(row);
+    }
+    setContentView(table);
+  }
+
+  private View createTextView(String text) {
+    TextView result = new TextView(this);
+    result.setText(text);
+    result.setPadding(3, 3, 3, 3);
+    return result;
   }
 
   @Override
   protected void onDestroy() {
     super.onDestroy();
     airportReader.close();
-  }
-
-  private void readAirportData() {
-    Cursor c = airportReader.fetchAllAirports();
-    startManagingCursor(c);
-
-    // Create an adapter to display the cursor using the airport_row layout.
-    String[] from = new String[] {AirportDbAdapter.ICAO_COLUMN, AirportDbAdapter.NAME_COLUMN};
-    int[] to = new int[] {R.id.ident, R.id.name};
-    SimpleCursorAdapter airports = new SimpleCursorAdapter(this, R.layout.airport_row, c, from, to);
-    setListAdapter(airports);
   }
 }

@@ -21,11 +21,9 @@ package com.google.blackbox.data;
  *<p>
  * Internal representation is in E6 format (degrees times 1E6, rounded to the 
  * closest integer).
- * </p>
  * <p>
  * <b>Beware of integer under/overflows</b> when working with those values 
  * (using a {@code long} buffer might be necessary)
- * </p>
  *
  * @author aristidis@google.com (Aristidis Papaioannou)
  */
