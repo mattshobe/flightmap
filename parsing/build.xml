@@ -24,7 +24,7 @@ limitations under the License.
        or in IDEA, in the ant properties dialog -->
   <property name="version" value="snapshot"/>
 
-  <target name="compile" depends="common-jar" description="Compile Java source.">
+  <target name="compile" description="Compile Java source.">
     <mkdir dir="${build.dir}/classes"/>
     <javac
       srcdir="${src.dir}"
@@ -37,16 +37,12 @@ limitations under the License.
       <compilerarg value="-Xlint:all"/>
       <classpath>
         <pathelement location="${lib.dir}/sqlitejdbc-v056.jar"/>
-        <pathelement location="../common/${build.dir}/dist/blackbox-common-${version}/blackbox-common-${version}.jar"/>
+        <fileset dir="../common/release">
+          <include name="*.jar" />
+        </fileset>
       </classpath>
     </javac>
   </target>
-
-  <target name="common-jar" description="Build the common jar.">
-    <ant dir="../common" target="jar"/>
-  </target>
-
-
 
   <!-- Uncomment when tests are added
   <target name="testfw" description="Compile test framework.">
