@@ -44,24 +44,42 @@ public class AirportParser {
       System.exit(1);
     }
 
+    (new AirportParser(args[0], args[1])).run();
+  }
+
+  private void run() {
     try {
-      (new AirportParser(args[0], args[1])).run();
+      Connection dbConn = this.initDB();
+      this.addAndroidMetadataToDb(dbConn);
+      this.addAirportDataToDb(dbConn);
+      dbConn.close();
     } catch (Exception ex) {
       ex.printStackTrace();
+      System.exit(2);
     }
   }
 
-  private void run() throws Exception {
+  private void addAndroidMetadataToDb(Connection conn) throws SQLException {
+    Statement stat = conn.createStatement();
+    stat.executeUpdate("DROP TABLE IF EXISTS android_metadata;");
+    stat.executeUpdate("CREATE TABLE android_metadata (locale TEXT);");
+    stat.executeUpdate("INSERT INTO android_metadata VALUES ('en_US');");
+    stat.close();
+
+  }
+
+  private void addAirportDataToDb(Connection conn) 
+      throws SQLException, IOException {
     BufferedReader in = new BufferedReader(new FileReader(this._sourceFile));
     String line;
 
-    Connection conn = this.initDB();
     Statement stat = conn.createStatement();
     stat.executeUpdate("DROP TABLE IF EXISTS airports;");
     stat.executeUpdate(
         "CREATE TABLE airports (id INTEGER PRIMARY KEY ASC, " +
         "icao TEXT UNIQUE NOT NULL, name TEXT NOT NULL, " +
         "lat INTEGER NOT NULL, lng INTEGER NOT NULL);");
+    stat.close();
 
     PreparedStatement airportStatement = conn.prepareStatement(
         "INSERT INTO airports (icao, name, lat, lng) VALUES (?, ?, ?, ?);");
@@ -120,8 +138,10 @@ public class AirportParser {
     conn.setAutoCommit(false);
     airportStatement.executeBatch();
     conn.setAutoCommit(true);
+    airportStatement.close();
 
-
+    /*
+    stat = conn.createStatement();
     ResultSet rs = stat.executeQuery("select * from airports;");
     while (rs.next()) {
       int id = rs.getInt(1);
@@ -132,17 +152,11 @@ public class AirportParser {
 //      System.out.println(id + " " + icao + " " + name + " " + latE6 + " " + lngE6);
       System.out.println( (lngE6*1e-6)+ " " + (latE6*1e-6));
     }
-
-    conn.close();
+    */
   }
 
-  private Connection initDB() {
-    try {
+  private Connection initDB() throws ClassNotFoundException, SQLException {
       Class.forName("org.sqlite.JDBC");
       return DriverManager.getConnection("jdbc:sqlite:"+this._targetFile);
-    } catch (Exception ex) {
-      ex.printStackTrace();
-      return null;
-    }
   }
 }
