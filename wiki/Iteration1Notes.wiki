@@ -64,17 +64,15 @@ After doing the above, the `droid` Android Virtual Device will have a 16 MB SD c
 $ emulator -avd droid &  # Start the android emulator
 $ cd ~/src/blackbox
 $ adb push data/aviation.db /sdcard/com.google.blackbox/aviation.db
-1798 KB/s (970752 bytes in 0.527s)
+238 KB/s (722944 bytes in 2.958s)
 $ adb shell
 # cd sdcard
 # ls -l
-d---rwxr-x system   sdcard_rw          2010-01-02 02:33 LOST.DIR
-----rwxr-x system   sdcard_rw       28 2010-01-01 19:42 sdcard-file.txt
-d---rwxr-x system   sdcard_rw          2010-01-04 17:20 com.google.blackbox
+d---rwxr-x system   sdcard_rw          2010-01-21 14:14 LOST.DIR
+d---rwxr-x system   sdcard_rw          2010-01-21 14:14 com.google.blackbox
 # cd com.google.blackbox/
 # ls -l
-----rwxr-x system   sdcard_rw   970752 2009-12-20 18:19 airports.db
-#
+----rwxr-x system   sdcard_rw   722944 2010-01-21 13:49 aviation.db
 }}}
 
 == Exception due to missing metadata ==
