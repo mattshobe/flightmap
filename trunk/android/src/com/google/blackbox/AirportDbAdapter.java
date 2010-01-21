@@ -35,7 +35,7 @@ import com.google.common.collect.Sets;
  */
 public class AirportDbAdapter {
   private static final String TAG = AirportDbAdapter.class.getSimpleName();
-  public static final String ID_COLUMN = "id";
+  public static final String ID_COLUMN = "_id";
   public static final String ICAO_COLUMN = "icao";
   public static final String NAME_COLUMN = "name";
   public static final String LAT_COLUMN = "lat";
