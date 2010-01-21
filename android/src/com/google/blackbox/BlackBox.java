@@ -43,7 +43,7 @@ public class BlackBox extends Activity {
   protected void onResume() {
     super.onResume();
     AirportDistance[] airportDistances = airportReader.getNearestAirports(
-        new LatLng(20, 30), 5);
+        new LatLng(37385888, -122083748), 10);
     if (null == airportDistances) {
       Log.w(TAG, "No airports returned");
       return;
