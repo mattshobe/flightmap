@@ -50,3 +50,6 @@ bin/create-airport-db FAANFD18
 }}}
 
 That will create an [http://sqlite.org SQLite] database that can be deployed to the phone. _Need to figure out whether this is installed as part of the `.apk` or is separate_
+
+= Eclipse Setup =
+Configure Eclipse to use a 1.6 compiler (the default is 1.5). For the` android` code,  you'll need to add `common/lib/google-collect-1.0.jar` and  `common/release/blackbox-common-VERSION.jar` to your Java build path.
