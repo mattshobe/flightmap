@@ -15,22 +15,17 @@
  */
 package com.google.blackbox;
 
-import android.content.ContentValues;
-import android.content.Context;
+import java.util.SortedSet;
+
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
 import com.google.blackbox.data.Airport;
 import com.google.blackbox.data.LatLng;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Sets;
-
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 /**
  * Provides read-only access to the airport database. The database is created
@@ -45,18 +40,11 @@ public class AirportDbAdapter {
   public static final String NAME_COLUMN = "name";
   public static final String LAT_COLUMN = "lat";
   public static final String LNG_COLUMN = "lng";
-  private static final String DATABASE_PATH = "/sdcard/com.google.blackbox/airports.db";
-  private static final int DATABASE_VERSION = 5;
+  private static final String DATABASE_PATH = "/sdcard/com.google.blackbox/aviation.db";
   private static final String AIRPORT_TABLE = "airports";
   private static final String[] AIRPORT_COLUMNS =
       new String[] {ID_COLUMN, ICAO_COLUMN, NAME_COLUMN, LAT_COLUMN, LNG_COLUMN};
-  private Context context;
-  private DatabaseHelper dbHelper;
   private SQLiteDatabase database;
-
-  public AirportDbAdapter(Context context) {
-    this.context = context;
-  }
 
   /**
    * Opens the airport database.
@@ -65,59 +53,16 @@ public class AirportDbAdapter {
    * @throws SQLException on database error.
    */
   public synchronized AirportDbAdapter open() throws SQLException {
-    dbHelper = new DatabaseHelper(context);
-    database = dbHelper.getWritableDatabase();
+    database = SQLiteDatabase.openDatabase(DATABASE_PATH, null, SQLiteDatabase.OPEN_READONLY);
     return this;
   }
 
   public synchronized void close() {
-    dbHelper.close();
+    database.close();
   }
 
   public synchronized Cursor fetchAllAirports() {
     return database.query(AIRPORT_TABLE, AIRPORT_COLUMNS, null, null, null, null, null);
-  }
-
-  private static class DatabaseHelper extends SQLiteOpenHelper {
-
-    public DatabaseHelper(Context context) {
-      super(context, "hardcodedairports", null, DATABASE_VERSION);
-    }
-
-    @Override
-    public void onCreate(SQLiteDatabase db) {
-      db.execSQL("CREATE TABLE airports" + " (" + ID_COLUMN + " INTEGER PRIMARY KEY AUTOINCREMENT,"
-          + ICAO_COLUMN + " TEXT UNIQUE NOT NULL," + " name TEXT NOT NULL," + LAT_COLUMN
-          + " INTEGER NOT NULL," + LNG_COLUMN + " INTEGER NOT NULL);");
-      addAirport(db, "FJDG", "DIEGO GARCIA NSF", -7300000, 72400000);
-      addAirport(db, "00AK", "LOWELL FIELD", 59856111, -151696264);
-      addAirport(db, "01A", "PURKEYPILE", 62943611, -152270017);
-      addAirport(db, "02AK", "RUSTIC WILDERNESS", 61876911, -150097639);
-      addAirport(db, "03AK", "JOE CLOUDS", 60727222, -151132778);
-      addAirport(db, "05AK", "WASILLA CREEK AIRPARK", 61668661, -149187389);
-      addAirport(db, "06AK", "JUNE LAKE AIRPARK", 61627619, -149575331);
-      addAirport(db, "08AK", "FISHER", 61569639, -149724439);
-      addAirport(db, "09AK", "WEST BEAVER", 61589361, -149847333);
-      addAirport(db, "0AK", "PILOT STATION", 61934556, -162899556);
-    }
-
-    private void addAirport(SQLiteDatabase db, String icao, String name, int lat, int lng) {
-      ContentValues values = new ContentValues();
-      values.put(ICAO_COLUMN, icao);
-      values.put(NAME_COLUMN, name);
-      values.put(LAT_COLUMN, lat);
-      values.put(LNG_COLUMN, lng);
-      long rowId = db.insert(AIRPORT_TABLE, null, values);
-      Log.d(TAG, String.format("%s inserted. rowid=%d", icao, rowId));
-    }
-
-    @Override
-    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-      Log.w(TAG, "Upgrading database from version " + oldVersion + " to " + newVersion
-          + ", which will destroy all old data");
-      db.execSQL("DROP TABLE IF EXISTS airports");
-      onCreate(db);
-    }
   }
 
   /**

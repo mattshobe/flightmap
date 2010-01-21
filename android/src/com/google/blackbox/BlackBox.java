@@ -35,7 +35,7 @@ public class BlackBox extends Activity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    airportReader = new AirportDbAdapter(this);
+    airportReader = new AirportDbAdapter();
     airportReader.open();
   }
 
