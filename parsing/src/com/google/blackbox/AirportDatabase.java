@@ -135,7 +135,7 @@ public class AirportDatabase {
 
     Connection dbConn = this.getDbConnection();
     Statement dbStmt = dbConn.createStatement();
-    ResultSet rs = dbStmt.executeQuery("SELECT id, lat, lng FROM airports");
+    ResultSet rs = dbStmt.executeQuery("SELECT _id, lat, lng FROM airports");
     while (rs.next()) {
       int id = rs.getInt(1);
       int lat = rs.getInt(2);
@@ -158,7 +158,7 @@ public class AirportDatabase {
     dbStmt.close();
 
     PreparedStatement airportFromIdStmt = dbConn.prepareStatement(
-      "SELECT icao, name FROM airports WHERE id = ?");
+      "SELECT icao, name FROM airports WHERE _id = ?");
     AirportDistance[] nearestAirports = new AirportDistance[count];
     int index = 0;
     for (AirportIdDistance nearestAirportIdDistance: nearestAirportIDs) {
@@ -197,11 +197,11 @@ public class AirportDatabase {
 
     Connection dbConn = this.getDbConnection();
     PreparedStatement airportFromIdStmt = dbConn.prepareStatement(
-      "SELECT icao, name FROM airports WHERE id = ?");
+      "SELECT icao, name FROM airports WHERE _id = ?");
 
     Statement dbStmt = dbConn.createStatement();
 
-    ResultSet rs = dbStmt.executeQuery("SELECT id, lat, lng FROM airports");
+    ResultSet rs = dbStmt.executeQuery("SELECT _id, lat, lng FROM airports");
     while (rs.next()) {
       int id = rs.getInt(1);
       int lat = rs.getInt(2);
