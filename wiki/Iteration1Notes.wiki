@@ -4,7 +4,7 @@
 
 This iteration is to just show the list of the 10 nearest airports. Much of the work is in getting our feet with with Android development, Ant build files, etc.
 
-= Current Status (updated 1/7/10) =
+= Current Status (updated 1/21/10) =
 
 Aris created the coding in `parsing` that parses FAA data into an SQLite database. That database is checked into version control (for now) at `tmp/airports.db`.
 
@@ -63,7 +63,7 @@ After doing the above, the `droid` Android Virtual Device will have a 16 MB SD c
 {{{
 $ emulator -avd droid &  # Start the android emulator
 $ cd ~/src/blackbox
-$ adb push tmp/airports.db /sdcard/com.google.blackbox/airports.db
+$ adb push data/aviation.db /sdcard/com.google.blackbox/aviation.db
 1798 KB/s (970752 bytes in 0.527s)
 $ adb shell
 # cd sdcard
