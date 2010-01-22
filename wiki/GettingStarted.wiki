@@ -85,6 +85,6 @@ $ adb push data/aviation.db /sdcard/com.google.blackbox/aviation.db
 = Eclipse Setup =
 Configure Eclipse to use a 1.6 compiler (the default is 1.5).
 
-You should create 3 projects: Blackbox-android, Blackbox-common and BlackbBox parsing. The first one should be an Android project, while the others are just normal Java projects.
+You should create 3 projects: Blackbox-android, Blackbox-common and Blackbox parsing. The first one should be an Android project, while the others are just normal Java projects.
 
 For the` android` code,  you'll need to add `common/lib/google-collect-1.0.jar` and  `common/release/blackbox-common-VERSION.jar` to your Java build path.
