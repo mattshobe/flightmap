@@ -12,6 +12,7 @@ BlackBox developers will need the following things installed:
     * Recommended install location on Linux/Mac is `/usr/local/android`
   * [http://ant.apache.org/ Apache Ant] 1.7.1 or higher
   * [http://java.sun.com/javase/downloads/ Java SDK] 1.6 or higher
+  * An SD card in your Android emulator or actual device.
 
 You must add the `tools` directory of the Android SDK to your PATH.
 = Build =
@@ -25,14 +26,16 @@ android update project -p android
 }}}
 This will create a file called `android/local.properties` which points to your sdk install location.
 
-=== Normal build ===
+=== Build and install to emulator (or real device) ===
 Execute these commands to build a debug version of the Android `.apk` file and install it to a running android emulator.
 {{{
 cd android
 ant install
 }}}
 
-=== Troublshooting build problems ===
+Before running the application, see the [GettingStarted#Copy_Data Copy Data] section below.
+
+=== Troublshooting android build problems ===
 If the build fails with this error: `taskdef class com.android.ant.SetupTask cannot be found` that means you didn't read the instructions above under *Configure your local build*
 
 == Parsing Code ==
@@ -51,9 +54,37 @@ bin/create-airport-db FAANFD18
 
 That will create an [http://sqlite.org SQLite] database that can be deployed to the phone. _Need to figure out whether this is installed as part of the `.apk` or is separate_
 
+= Copy Data =
+== Emulator Set Up ==
+Create an emulated device with an SD card that has at least 4 MB of storage space. When Phil did this, he found he had to create 16 MB of storage, due to some emulator errors with smaller sizes. Here's an example of how to create an emulated device with SD card storage.
+{{{
+$ android create avd --name droid --target 3 --skin WVGA800 --sdcard 16M
+}}}
+
+See the [GettingStarted#Copy_Database Copy Database] section for the next step.
+
+== Actual Device Set Up ==
+Details on how to connect your development device to your computer are [http://developer.android.com/guide/developing/device.html here]. Once you've connected your device via USB, you can test that it's working like this:
+{{{
+$ adb devices
+List of devices attached 
+HT9C7P800556	device
+}}}
+
+If you don't see any devices listed, you didn't set it up right. Make sure you enabled USB debugging on your device.
+
+Once your device is connected to your computer, go to the next section for how to copy the database over.
+
+== Copy Database ==
+Copy the navigation data to your SD card with these commands.
+{{{
+$ adb push data/aviation.db /sdcard/com.google.blackbox/aviation.db
+238 KB/s (722944 bytes in 2.958s)
+}}}
+
 = Eclipse Setup =
 Configure Eclipse to use a 1.6 compiler (the default is 1.5).
 
-You should create 3 projects: BlackBox-android, BlackBox-common and BlackBox parsing. The first one should be an Android project, while the others are just normal Java projects.
+You should create 3 projects: Blackbox-android, Blackbox-common and BlackbBox parsing. The first one should be an Android project, while the others are just normal Java projects.
 
- For the` android` code,  you'll need to add `common/lib/google-collect-1.0.jar` and  `common/release/blackbox-common-VERSION.jar` to your Java build path.
+For the` android` code,  you'll need to add `common/lib/google-collect-1.0.jar` and  `common/release/blackbox-common-VERSION.jar` to your Java build path.
