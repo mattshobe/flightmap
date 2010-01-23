@@ -47,12 +47,7 @@ cd parsing
 ant
 }}}
 
-Parse an FAA airport data file named `FAANFD18` like this:
-{{{
-bin/create-airport-db FAANFD18
-}}}
-
-That will create an [http://sqlite.org SQLite] database that can be deployed to the phone. _Need to figure out whether this is installed as part of the `.apk` or is separate_
+The parsing code is used to create the `data/aviation.db` SQLite database.
 
 = Copy Data =
 == Emulator Set Up ==
