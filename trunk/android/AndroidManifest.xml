@@ -11,6 +11,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service android:name="ManageLocation"
+                  android:process=":locationservice"
+                  android:label="BlackBox Location Service"
+                  android:icon="@drawable/icon"
+                  android:enabled="true" > 
+        </service>
     </application>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-sdk android:minSdkVersion="4" android:targetSdkVersion="6"/>
