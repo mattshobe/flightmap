@@ -4,11 +4,11 @@
 
 This iteration is to just show the list of the 10 nearest airports. Much of the work is in getting our feet with with Android development, Ant build files, etc.
 
-= Current Status (updated 1/21/10) =
+= Current Status (updated 1/29/10) =
 
-Aris created the coding in `parsing` that parses FAA data into an SQLite database. That database is checked into version control (for now) at `tmp/airports.db`.
+Aris created the coding in `parsing` that parses FAA data into an SQLite database. That database is checked into version control (for now) at `data/aviation.db`.
 
-Phil is working on the UI code to read that database. What's checked it as r22 is his work-in-progress code. He copied the `airports.db` file to the SD card on the Android emulator, and then tried to read it. Unforunately he got an exception due to missing Android metadata (see details below). This may mean that we need to add some metadata to the SQLite database for Android to read it.
+r54 has the UI code to read the database and show the list of 10 nearest airports. Currently the location is hard coded, and Bonnie is working on getting the location stuff wired up.
 
 == Getting the SQLite database onto the phone ==
 Normally an application's data is stored in the /data/data/<package.name>/databases directory which is in the limited built-in memory and constrained to the application's data space, not on the SD card. The database containing just the airport code, name and latlng is 948 KB which is probably pretty big already for just application data. Once we start adding airspace and terrain data, our space needs are going to grow dramatically. Phil looked into just copying the `airports.db` file to the SD card, and found a few helpful posts on the topic. See [https://groups.google.com/group/android-developers/browse_thread/thread/f8a030cf8841b111 here] and [https://groups.google.com/group/android-developers/browse_thread/thread/87facd5ed49ac4ce here].
@@ -73,41 +73,4 @@ d---rwxr-x system   sdcard_rw          2010-01-21 14:14 com.google.blackbox
 # cd com.google.blackbox/
 # ls -l
 ----rwxr-x system   sdcard_rw   722944 2010-01-21 13:49 aviation.db
-}}}
-
-== Exception due to missing metadata ==
-Here's the exceptions thrown when running r22 now. I think the bit about "no such table: android_metadata" is the problem. We just need to figure out how to get that in there.
-
-{{{
-01-04 20:22:58.604: ERROR/Database(220): Failed to setLocale() when constructing, closing the database
-01-04 20:22:58.604: ERROR/Database(220): android.database.sqlite.SQLiteException: no such table: android_metadata
-}}}
-
-Phil tried creating a new SQLite database on the phone itself through the API with a few hardcoded airports. That shows what the needed metadata is. Also note that the `id` column is named `_id` which makes a bunch of magic things happen in the Android SDK.
-
-{{{
-$ adb shell  # log into android emulator
-# ls /data/data/com.google.blackbox/databases/
-hardcodedairports
-# sqlite3 /data/data/com.google.blackbox/databases/hardcodedairports
-SQLite version 3.5.9
-Enter ".help" for instructions
-sqlite> .dump
-BEGIN TRANSACTION;
-CREATE TABLE android_metadata (locale TEXT);
-INSERT INTO "android_metadata" VALUES('en_US');
-CREATE TABLE airports (_id INTEGER PRIMARY KEY AUTOINCREMENT, icao TEXT UNIQUE NOT NULL, name TEXT NOT NULL, lat INTEGER NOT NULL, lng INTEGER NOT NULL);
-INSERT INTO "airports" VALUES(1,'FJDG','DIEGO GARCIA NSF',-7300000,72400000);
-INSERT INTO "airports" VALUES(2,'00AK','LOWELL FIELD',59856111,-151696264);
-INSERT INTO "airports" VALUES(3,'01A','PURKEYPILE',62943611,-152270017);
-INSERT INTO "airports" VALUES(4,'02AK','RUSTIC WILDERNESS',61876911,-150097639);
-INSERT INTO "airports" VALUES(5,'03AK','JOE CLOUDS',60727222,-151132778);
-INSERT INTO "airports" VALUES(6,'05AK','WASILLA CREEK AIRPARK',61668661,-149187389);
-INSERT INTO "airports" VALUES(7,'06AK','JUNE LAKE AIRPARK',61627619,-149575331);
-INSERT INTO "airports" VALUES(8,'08AK','FISHER',61569639,-149724439);
-INSERT INTO "airports" VALUES(9,'09AK','WEST BEAVER',61589361,-149847333);
-INSERT INTO "airports" VALUES(10,'0AK','PILOT STATION',61934556,-162899556);
-DELETE FROM sqlite_sequence;
-INSERT INTO "sqlite_sequence" VALUES('airports',10);
-COMMIT;
 }}}
