@@ -16,6 +16,8 @@
 
 package com.google.blackbox.parser;
 
+import com.google.blackbox.CustomGridUtil;
+
 import java.sql.*;
 import java.util.regex.*;
 import java.io.*;
@@ -70,34 +72,31 @@ public class AirportParser {
 
   }
 
-  private void addAirportDataToDb(Connection conn) throws SQLException,
-      IOException {
+  private void addAirportDataToDb(Connection conn) throws SQLException, IOException {
     BufferedReader in = new BufferedReader(new FileReader(this.sourceFile));
-    String line;
 
-    Statement stat = conn.createStatement();
-    stat.executeUpdate("DROP TABLE IF EXISTS airports;");
-    stat.executeUpdate("CREATE TABLE airports (_id INTEGER PRIMARY KEY ASC, "
-        + "icao TEXT UNIQUE NOT NULL, name TEXT NOT NULL, "
-        + "lat INTEGER NOT NULL, lng INTEGER NOT NULL);");
-    stat.close();
+    initAirportsTable(conn);
 
     PreparedStatement airportStatement = conn
-        .prepareStatement("INSERT INTO airports (icao, name, lat, lng) VALUES (?, ?, ?, ?);");
+        .prepareStatement(
+            "INSERT INTO airports (icao, name, lat, lng, cell_id) VALUES (?, ?, ?, ?, ?);");
 
     Pattern airportArincPattern = Pattern
         .compile("S...P (.{4})..A.{5}   .{11}(.{9})(.{10}).{42}(.{30})\\d{9}");
     Matcher airportArincMatcher;
 
+    // Airport data variables
     String icao, name, latString, lngString;
     int latDeg, latMin, latSecHundredths;
     int lngDeg, lngMin, lngSecHundredths;
     double lat, lng;
     int latE6, lngE6;
 
+    String line;
     while ((line = in.readLine()) != null) {
       airportArincMatcher = airportArincPattern.matcher(line);
       if (!airportArincMatcher.matches()) {
+        // Not an airport entry
         continue;
       }
 
@@ -106,31 +105,32 @@ public class AirportParser {
       lngString = airportArincMatcher.group(3);
       name = airportArincMatcher.group(4).trim();
 
+      latDeg = Integer.parseInt(latString.substring(1, 3));
+      latMin = Integer.parseInt(latString.substring(3, 5));
+      latSecHundredths = Integer.parseInt(latString.substring(5, 9));
+      lat = 1e6 * latDeg + 1e6 * latMin / 60.0 + 1e6 * latSecHundredths / 360000.0;
+      latE6 = (int) (lat + 0.5);
+      if (latString.charAt(0) == 'S')
+        latE6 *= -1;
+
+      lngDeg = Integer.parseInt(lngString.substring(1, 4));
+      lngMin = Integer.parseInt(lngString.substring(4, 6));
+      lngSecHundredths = Integer.parseInt(lngString.substring(6, 10));
+      lng = 1e6 * lngDeg + 1e6 * lngMin / 60.0 + 1e6 * lngSecHundredths / 360000.0;
+      lngE6 = (int) (lng + 0.5);
+      if (lngString.charAt(0) == 'W')
+        lngE6 *= -1;
+
+      int cellId = CustomGridUtil.GetCellId(latE6, lngE6);
+
       try {
-        latDeg = Integer.parseInt(latString.substring(1, 3));
-        latMin = Integer.parseInt(latString.substring(3, 5));
-        latSecHundredths = Integer.parseInt(latString.substring(5, 9));
-        lat = 1e6 * latDeg + 1e6 * latMin / 60.0 + 1e6 * latSecHundredths
-            / 360000.0;
-        latE6 = (int) (lat + 0.5);
-        if (latString.charAt(0) == 'S')
-          latE6 *= -1;
-
-        lngDeg = Integer.parseInt(lngString.substring(1, 4));
-        lngMin = Integer.parseInt(lngString.substring(4, 6));
-        lngSecHundredths = Integer.parseInt(lngString.substring(6, 10));
-        lng = 1e6 * lngDeg + 1e6 * lngMin / 60.0 + 1e6 * lngSecHundredths
-            / 360000.0;
-        lngE6 = (int) (lng + 0.5);
-        if (lngString.charAt(0) == 'W')
-          lngE6 *= -1;
-
+        // Add current airport db statement to queue.
         airportStatement.setString(1, icao);
         airportStatement.setString(2, name);
         airportStatement.setInt(3, latE6);
         airportStatement.setInt(4, lngE6);
+        airportStatement.setInt(5, cellId);
         airportStatement.addBatch();
-
       } catch (SQLException sqlEx) {
         System.err.println(icao + " " + name);
         sqlEx.printStackTrace();
@@ -148,5 +148,21 @@ public class AirportParser {
   private Connection initDB() throws ClassNotFoundException, SQLException {
     Class.forName("org.sqlite.JDBC");
     return DriverManager.getConnection("jdbc:sqlite:" + this.targetFile);
+  }
+
+  private void initAirportsTable(Connection conn) throws SQLException {
+    Statement stat = null;
+    try {
+      stat = conn.createStatement();
+      stat.executeUpdate("DROP TABLE IF EXISTS airports;");
+      stat.executeUpdate("DROP INDEX IF EXISTS airports_cell_id_index;");
+      stat.executeUpdate("CREATE TABLE airports (_id INTEGER PRIMARY KEY ASC, " +
+                         "icao TEXT UNIQUE NOT NULL, name TEXT NOT NULL, " +
+                         "lat INTEGER NOT NULL, lng INTEGER NOT NULL, cell_id INTEGER NOT NULL);");
+      stat.executeUpdate("CREATE INDEX airports_cell_id_index ON airports (cell_id)");
+    } finally {
+      if (stat != null)
+        stat.close();
+    }
   }
 }

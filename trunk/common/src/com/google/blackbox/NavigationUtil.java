@@ -24,7 +24,7 @@ import com.google.blackbox.data.LatLng;
  * @author Phil Verghese
  */
 public class NavigationUtil {
-  private static final double EARTH_RADIUS = 6371.009 / 1.852; // KM to NM
+  public static final double EARTH_RADIUS = 6371.009 / 1.852; // KM to NM
 
   /**
    * Returns the distance in nautical miles between point1 and point2.
@@ -36,6 +36,23 @@ public class NavigationUtil {
     final double lat2 = point2.latRad();
     final double lng2 = point2.lngRad();
 
+    return computeDistance(lat1, lng1, lat2, lng2);
+  }
+
+  public static double computeDistance(int lat1E6, int lng1E6, int lat2E6, int lng2E6) {
+    final double lat1 = Math.toRadians(lat1E6*1e-6);
+    final double lng1 = Math.toRadians(lng1E6*1e-6);
+    final double lat2 = Math.toRadians(lat2E6*1e-6);
+    final double lng2 = Math.toRadians(lng2E6*1e-6);
+
+    return computeDistance(lat1, lng1, lat2, lng2);
+  }
+
+  public static double computeDistance(LatLng point1, int lat2E6, int lng2E6) {
+    return computeDistance(point1.lat, point1.lng, lat2E6, lng2E6);
+  }
+
+  public static double computeDistance(double lat1, double lng1, double lat2, double lng2) {
     final double dLat = lat2 - lat1;
     final double dLng = lng2 - lng1;
     final double a = Math.pow(Math.sin(dLat / 2), 2) + Math.cos(lat1)
