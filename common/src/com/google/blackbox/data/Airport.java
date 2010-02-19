@@ -21,7 +21,7 @@ package com.google.blackbox.data;
  * 
  * @author aristidis@google.com (Aristidis Papaioannou)
  */
-public class Airport {
+public class Airport implements Comparable<Airport> {
   /**
    * ICAO identifier. A 3-4 character string that must be unique in the
    * database.
@@ -51,5 +51,25 @@ public class Airport {
   @Override
   public String toString() {
     return String.format("%s (%s)", icao, name);
+  }
+
+  @Override
+  public int compareTo(Airport o) {
+    return this.icao.compareTo(o.icao);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == this) return true;
+    if ( !(obj instanceof Airport)) return false;
+
+    Airport other = (Airport)obj;
+//System.err.println("Comparing: " + this.toString() + " and " + other.toString());
+    return this.compareTo(other) == 0;
+  }
+
+  @Override
+  public int hashCode() {
+    return this.icao.hashCode();
   }
 }
