@@ -16,23 +16,17 @@
 package com.google.blackbox;
 
 import android.app.Activity;
-import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.Message;
-import android.os.RemoteException;
-import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
-import android.widget.Toast;
 
 public class BlackBox extends Activity {
   private static final String TAG = BlackBox.class.getSimpleName();
@@ -41,11 +35,10 @@ public class BlackBox extends Activity {
   private static final double METERS_PER_FOOT = 3.2808399;
   private static final double METERS_PER_SEC_TO_KNOTS = 2.2369;
   private AirportDbAdapter airportReader;
-  private final LocationServiceConnection locationServiceConnection =
-      new LocationServiceConnection();
   private boolean isRunning;
   private long lastUpdateTime;
   private UpdateHandler updater = new UpdateHandler();
+  private LocationHandler locationHandler;
 
   // Debugging frequency of location updates
   private long numLocationUpdates;
@@ -55,6 +48,8 @@ public class BlackBox extends Activity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    locationHandler =
+        new LocationHandler((LocationManager) getSystemService(Context.LOCATION_SERVICE));
     airportReader = new AirportDbAdapter();
     airportReader.open();
   }
@@ -62,8 +57,7 @@ public class BlackBox extends Activity {
   @Override
   protected void onResume() {
     super.onResume();
-    bindService(new Intent(ILocationService.class.getName()), locationServiceConnection,
-        Context.BIND_AUTO_CREATE);
+    locationHandler.startListening();
     isRunning = true;
     update();
   }
@@ -72,7 +66,7 @@ public class BlackBox extends Activity {
   protected void onPause() {
     super.onPause();
     isRunning = false;
-    unbindService(locationServiceConnection);
+    locationHandler.stopListening();
   }
 
   @Override
@@ -102,7 +96,7 @@ public class BlackBox extends Activity {
     table.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT,
         LinearLayout.LayoutParams.FILL_PARENT));
     table.setColumnStretchable(1, true);
-    Location location = locationServiceConnection.getLocation();
+    Location location = locationHandler.getLocation();
     if (null == location) {
       table.addView(createLabelValueRow("Location", "Unknown"));
       setContentView(table);
@@ -164,38 +158,5 @@ public class BlackBox extends Activity {
       removeMessages(UPDATE_MESSAGE);
       sendMessageDelayed(obtainMessage(UPDATE_MESSAGE), delay);
     }
-  }
-
-  /**
-   * Connects to the ILocationService.
-   */
-  private class LocationServiceConnection implements ServiceConnection {
-    private ILocationService locationService;
-
-    public Location getLocation() {
-      if (null != locationService) {
-        try {
-          return locationService.getLocation();
-        } catch (RemoteException e) {
-          Log.e(TAG, "RPC exception", e);
-        }
-      } else {
-        Log.d(TAG, "locationService is null");
-      }
-      return null;
-    }
-
-    @Override
-    public void onServiceConnected(ComponentName name, IBinder service) {
-      locationService = ILocationService.Stub.asInterface(service);
-      Toast.makeText(BlackBox.this, "Connected to ILocationService", Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void onServiceDisconnected(ComponentName name) {
-      Toast.makeText(BlackBox.this, "Disconnected from ILocationService", Toast.LENGTH_LONG).show();
-      locationService = null;
-    }
-
   }
 }
