@@ -15,6 +15,11 @@
  */
 package com.google.blackbox;
 
+import com.google.blackbox.AirportDbAdapter.AirportDistance;
+import com.google.blackbox.data.LatLng;
+
+import java.util.SortedSet;
+
 import android.app.Activity;
 import android.content.Context;
 import android.location.Location;
@@ -22,6 +27,7 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TableLayout;
@@ -32,18 +38,12 @@ public class BlackBox extends Activity {
   private static final String TAG = BlackBox.class.getSimpleName();
   /** Milliseconds beteween screen updates. */
   private static final int UPDATE_RATE = 100;
-  private static final double METERS_PER_FOOT = 3.2808399;
-  private static final double METERS_PER_SEC_TO_KNOTS = 2.2369;
   private AirportDbAdapter airportReader;
   private boolean isRunning;
   private long lastUpdateTime;
   private UpdateHandler updater = new UpdateHandler();
   private LocationHandler locationHandler;
-
-  // Debugging frequency of location updates
-  private long numLocationUpdates;
-  private long timeBetweenUpdatesTotal;
-  private long lastLocationTime;
+  private Location previousLocation;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -102,26 +102,20 @@ public class BlackBox extends Activity {
       setContentView(table);
       return;
     }
-    table.addView(createLabelValueRow("Lat", String.format("%4.6f", location.getLatitude())));
-    table.addView(createLabelValueRow("Lng", String.format("%4.6f", location.getLongitude())));
-    table.addView(createLabelValueRow("Alt", String.format("%.0f", location.getAltitude()
-        * METERS_PER_FOOT)));
-    table.addView(createLabelValueRow("Knots", String.format("%.0f", location.getSpeed()
-        * METERS_PER_SEC_TO_KNOTS)));
-    table.addView(createLabelValueRow("Bearing", String.format("%.1f", location.getBearing())));
-    table.addView(createLabelValueRow("Accuracy", String.format("%.3f", location.getAccuracy())));
-    table.addView(createLabelValueRow("Location time", "" + location.getTime()));
-    table.addView(createLabelValueRow("Current time", "" + System.currentTimeMillis()));
-    if (lastLocationTime != location.getTime()) {
-      numLocationUpdates++;
-      if (lastLocationTime > 0) {
-        timeBetweenUpdatesTotal += location.getTime() - lastLocationTime;
-      }
-      lastLocationTime = location.getTime();
+    if (location.equals(previousLocation)) {
+      return;
     }
-    if (numLocationUpdates > 0) {
-      table.addView(createLabelValueRow("Avg update rate", ""
-          + Math.round((float) timeBetweenUpdatesTotal / numLocationUpdates)));
+    previousLocation = location;
+    
+    LatLng position = LatLng.fromDouble(location.getLatitude(), location.getLongitude());
+    Log.i(TAG, "About to fetch airports...");
+    SortedSet<AirportDistance> airports = airportReader.getAirportsWithinRadius(position, 50);
+    Log.i(TAG, String.format("Got %d airports", airports.size()));
+
+    table.addView(createLabelValueRow("Airport", "Dist"));
+    for (AirportDistance airportDistance : airports) {
+      table.addView(createLabelValueRow(airportDistance.airport.name, String.format("%.1f",
+          airportDistance.distance)));
     }
     setContentView(table);
   }
