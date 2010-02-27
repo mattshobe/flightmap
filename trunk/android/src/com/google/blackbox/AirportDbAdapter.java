@@ -15,7 +15,9 @@
  */
 package com.google.blackbox;
 
+import java.util.List;
 import java.util.SortedSet;
+import java.util.TreeSet;
 
 import android.database.Cursor;
 import android.database.SQLException;
@@ -40,10 +42,16 @@ public class AirportDbAdapter {
   public static final String NAME_COLUMN = "name";
   public static final String LAT_COLUMN = "lat";
   public static final String LNG_COLUMN = "lng";
+  public static final String CELL_ID_COLUMN = "cell_id";
   private static final String DATABASE_PATH = "/sdcard/com.google.blackbox/aviation.db";
   private static final String AIRPORT_TABLE = "airports";
+  private static final String CELL_ID_WHERE =
+      String.format("%s >= ? and %s < ?", CELL_ID_COLUMN, CELL_ID_COLUMN);
+  private static final String ID_WHERE = ID_COLUMN + " = ?";
+  private static final String[] LOCATION_COLUMNS =
+      new String[] {ID_COLUMN, LAT_COLUMN, LNG_COLUMN, CELL_ID_COLUMN};
   private static final String[] AIRPORT_COLUMNS =
-      new String[] {ID_COLUMN, ICAO_COLUMN, NAME_COLUMN, LAT_COLUMN, LNG_COLUMN};
+      new String[] {ID_COLUMN, ICAO_COLUMN, NAME_COLUMN};
   private SQLiteDatabase database;
 
   /**
@@ -61,88 +69,93 @@ public class AirportDbAdapter {
     database.close();
   }
 
-  public synchronized Cursor fetchAllAirports() {
-    return database.query(AIRPORT_TABLE, AIRPORT_COLUMNS, null, null, null, null, null);
-  }
-
   /**
    * Find the nearest airports to a given position.
-   * <p>
-   * Currently does a naive linear scan over all (~14'000) airports.
    * 
    * @param position Target position.
    * @param numAirports Maximum number of airports to return.
-   * @return array of results, or null on error.
+   * @return Airports sorted by increasing distance. Returns an empty set on
+   *         error.
    */
-  public AirportDistance[] getNearestAirports(final LatLng position, final int numAirports) {
-    final SortedSet<AirportDistance> nearestAirportIDs = Sets.newTreeSet();
-    boolean ok = applyPredicateToAirports(new Predicate<Airport>() {
-      @Override
-      public boolean apply(Airport airport) {
-        double distance = NavigationUtil.computeDistance(position, airport.location);
-        nearestAirportIDs.add(new AirportDistance(airport, distance));
-        if (nearestAirportIDs.size() > numAirports) {
-          nearestAirportIDs.remove(nearestAirportIDs.last());
-        }
-        return true;
-      }
-    });
-    return ok ? nearestAirportIDs.toArray(new AirportDistance[1]) : null;
+  public SortedSet<AirportDistance> getNearestAirports(final LatLng position, final int numAirports) {
+    Log.e(TAG, "getNearestAirports not implemented yet.");
+    return new TreeSet<AirportDistance>();
   }
 
   /**
    * Find the airports within {@code radius} from {@code position}.
-   * <p>
-   * Currently does a naive linear scan over all (~14'000) airports.
-   * </p>
    * 
-   * @return Airports within radius, sorted by increasing distance. Returns null
-   *         on error.
+   * @param position position to search from.
+   * @param radius in nautical miles.
+   * @return Airports within radius, sorted by increasing distance. Returns an
+   *         empty set on error.
    */
-  public AirportDistance[] getAirportsWithinRadius(final LatLng position, final double radius) {
-    final SortedSet<AirportDistance> airportsWithinRadius = Sets.newTreeSet();
-    boolean ok = applyPredicateToAirports(new Predicate<Airport>() {
-      @Override
-      public boolean apply(Airport airport) {
-        double distance = NavigationUtil.computeDistance(position, airport.location);
-        if (distance <= radius) {
-          airportsWithinRadius.add(new AirportDistance(airport, distance));
+  public synchronized SortedSet<AirportDistance> getAirportsWithinRadius(final LatLng position,
+      final double radius) {
+    List<int[]> cellRanges =
+        CustomGridUtil.GetCellsInRadius(position, getRadiusE6(position, radius));
+    Log.d(TAG, "cellRanges.size=" + cellRanges.size());
+    final SortedSet<AirportDistance> result = Sets.newTreeSet();
+
+    final String[] stringRange = new String[2]; // query requires a String[].
+    for (int[] range : cellRanges) {
+      stringRange[0] = Integer.toString(range[0]);
+      stringRange[1] = Integer.toString(range[1]);
+      Cursor locations =
+          database.query(AIRPORT_TABLE, LOCATION_COLUMNS, CELL_ID_WHERE, stringRange, null, null,
+              null);
+      try {
+        if (!locations.moveToFirst()) { // No airports in cell_id range.
+          continue;
         }
-        return true;
+
+        final int idColumn = locations.getColumnIndexOrThrow(ID_COLUMN);
+        final int latColumn = locations.getColumnIndexOrThrow(LAT_COLUMN);
+        final int lngColumn = locations.getColumnIndexOrThrow(LNG_COLUMN);
+        do {
+          int lat = locations.getInt(latColumn);
+          int lng = locations.getInt(lngColumn);
+          LatLng location = new LatLng(lat, lng);
+          double distance = NavigationUtil.computeDistance(position, location);
+          if (distance <= radius) {
+            int id = locations.getInt(idColumn);
+            result.add(new AirportDistance(getAirport(id, location), (float) distance));
+          }
+        } while (locations.moveToNext());
+      } finally {
+        locations.close();
       }
-    });
-    return ok ? airportsWithinRadius.toArray(new AirportDistance[1]) : null;
+    }
+    return result;
+  }
+
+  private int getRadiusE6(final LatLng position, final double radius) {
+    double earthRadiusAtLat =
+        NavigationUtil.EARTH_RADIUS * Math.sin(Math.PI / 2 - position.latRad());
+    double longRadius = radius / (2 * Math.PI * earthRadiusAtLat) * 360;
+    double latRadius = radius / 60;
+    return (int) (Math.max(longRadius, latRadius) * 1E6);
   }
 
   /**
-   * Loops over all airports in the database and applies {@code predicate} to
-   * each one.
-   * 
-   * @return true on success, false on failure.
+   * Returns the airport with ICAO code and name for the given database id, and
+   * set to the given location.
    */
-  private boolean applyPredicateToAirports(final Predicate<Airport> predicate) {
-    Cursor airports = fetchAllAirports();
-    if (!airports.moveToFirst()) {
-      Log.e(TAG, "No airports in database");
-      return false;
-    }
-
-    final int icaoColumn = airports.getColumnIndexOrThrow(ICAO_COLUMN);
-    final int nameColumn = airports.getColumnIndexOrThrow(NAME_COLUMN);
-    final int latColumn = airports.getColumnIndexOrThrow(LAT_COLUMN);
-    final int lngColumn = airports.getColumnIndexOrThrow(LNG_COLUMN);
-    do {
-      String icao = airports.getString(icaoColumn);
-      String name = airports.getString(nameColumn);
-      int lat = airports.getInt(latColumn);
-      int lng = airports.getInt(lngColumn);
-      Airport airport = new Airport(icao, name, lat, lng);
-      if (!predicate.apply(airport)) {
-        Log.w(TAG, "Predicate failure for " + airport);
-        return false;
+  private Airport getAirport(int id, LatLng location) {
+    String[] stringId = {Integer.toString(id)};
+    Cursor airports =
+        database.query(AIRPORT_TABLE, AIRPORT_COLUMNS, ID_WHERE, stringId, null, null, null);
+    try {
+      if (!airports.moveToFirst()) {
+        Log.e(TAG, "No airport for id =" + id);
+        return null;
       }
-    } while (airports.moveToNext());
-    return true;
+      String icao = airports.getString(airports.getColumnIndexOrThrow(ICAO_COLUMN));
+      String name = airports.getString(airports.getColumnIndexOrThrow(NAME_COLUMN));
+      return new Airport(icao, name, location);
+    } finally {
+      airports.close();
+    }
   }
 
   /**
@@ -151,9 +164,9 @@ public class AirportDbAdapter {
   public static class AirportDistance implements Comparable<AirportDistance> {
     public final Airport airport;
     /** Distance to {@link #airport} in nautical miles. */
-    public final double distance;
+    public final float distance;
 
-    public AirportDistance(Airport airport, double distance) {
+    public AirportDistance(Airport airport, float distance) {
       this.airport = airport;
       this.distance = distance;
     }

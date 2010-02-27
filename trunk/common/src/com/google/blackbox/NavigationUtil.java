@@ -25,6 +25,8 @@ import com.google.blackbox.data.LatLng;
  */
 public class NavigationUtil {
   public static final double EARTH_RADIUS = 6371.009 / 1.852; // KM to NM
+  private static final double METERS_PER_FOOT = 3.2808399;
+  private static final double METERS_PER_SEC_TO_KNOTS = 2.2369;
 
   /**
    * Returns the distance in nautical miles between point1 and point2.
@@ -40,10 +42,10 @@ public class NavigationUtil {
   }
 
   public static double computeDistance(int lat1E6, int lng1E6, int lat2E6, int lng2E6) {
-    final double lat1 = Math.toRadians(lat1E6*1e-6);
-    final double lng1 = Math.toRadians(lng1E6*1e-6);
-    final double lat2 = Math.toRadians(lat2E6*1e-6);
-    final double lng2 = Math.toRadians(lng2E6*1e-6);
+    final double lat1 = Math.toRadians(lat1E6 * 1e-6);
+    final double lng1 = Math.toRadians(lng1E6 * 1e-6);
+    final double lat2 = Math.toRadians(lat2E6 * 1e-6);
+    final double lng2 = Math.toRadians(lng2E6 * 1e-6);
 
     return computeDistance(lat1, lng1, lat2, lng2);
   }
@@ -55,8 +57,9 @@ public class NavigationUtil {
   public static double computeDistance(double lat1, double lng1, double lat2, double lng2) {
     final double dLat = lat2 - lat1;
     final double dLng = lng2 - lng1;
-    final double a = Math.pow(Math.sin(dLat / 2), 2) + Math.cos(lat1)
-        * Math.cos(lat2) * Math.pow(Math.sin(dLng / 2), 2);
+    final double a =
+        Math.pow(Math.sin(dLat / 2), 2) + Math.cos(lat1) * Math.cos(lat2)
+            * Math.pow(Math.sin(dLng / 2), 2);
     return EARTH_RADIUS * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 }
