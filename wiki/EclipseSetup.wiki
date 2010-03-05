@@ -19,7 +19,7 @@ Depending on what part of the project you are working on, you may not actually n
 
 Create a new Android Project:
   # File > New > Project... > *Android Project*
-  # Project Name: *FlightMap-Android*
+  # Project Name: *!FlightMap-Android*
   # *Create project from existing source*
   # Set Location to where you have the `android` directory checked out (e.g. `/src/flightmap/android`).
   # Build Target
@@ -39,6 +39,13 @@ The project icon will have a little red X and lots of problems indicated. That's
 
 Now the little red X should be gone from the FlightMap-Android project.
 
+= Troubleshooting =
+
+If something isn't working right with Eclipse, try re-creating the project as follows.
+  # Quit Eclipse
+  # `cd` into the appropriate subdirectory (`android`, `common`, or `parsing`)
+  # `rm .project .classpath`  <-- note that's two files
+  # Restart Eclipse and re-create the project as described above.
 == TODO ==
 
 *The following is unfinished*
