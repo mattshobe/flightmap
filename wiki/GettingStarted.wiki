@@ -17,7 +17,7 @@ BlackBox developers will need the following things installed:
 You must add the `tools` directory of the Android SDK to your PATH.
 = Build =
 == Android Code ==
-The code that is deployed to the phone is in the `android` directory. 
+The code that is deployed to the phone is in the `android` directory. See ProjectDirectories for information on the directory structure.
 
 === Configure your local build ===
 Before you can build for the first time, you need to run this command *once* from the `blackbox` top-level directory.
@@ -76,12 +76,3 @@ Copy the navigation data to your SD card with these commands.
 $ adb push data/aviation.db /sdcard/com.google.blackbox/aviation.db
 238 KB/s (722944 bytes in 2.958s)
 }}}
-
-= Eclipse Setup =
-Configure Eclipse to use a 1.6 compiler (the default is 1.5).
-  * Preferences > Java > Compiler > Compiler - should be 1.6 with all boxes checked. 
-  * Preferences > Java > Installed JREs - check "JVM 1.6" 
-
-You should create 3 projects: Blackbox-android, Blackbox-common and Blackbox parsing. The first one should be an Android project, while the others are just normal Java projects.
-
-For the` android` code,  you'll need to add `common/lib/google-collect-1.0.jar` and  `common/release/blackbox-common-VERSION.jar` to your Java build path.
