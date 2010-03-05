@@ -76,3 +76,6 @@ Copy the navigation data to your SD card with these commands.
 $ adb push data/aviation.db /sdcard/com.google.blackbox/aviation.db
 238 KB/s (722944 bytes in 2.958s)
 }}}
+
+= Eclipse Setup =
+See EclipseSetup.
