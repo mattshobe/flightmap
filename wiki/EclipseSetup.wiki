@@ -1,0 +1,33 @@
+#summary How to configure Eclipse for development.
+
+= Introduction =
+
+Eclipse is the easiest way to do Flight Map development, but it's not required. Here's how to set up Eclipse for this project. These instructions assume you know the basics of how to develop Java code in Eclipse, and that you've worked through one or more of the Android SDK tutorials using Eclipse.
+
+= Java Compiler Version =
+
+Configure Eclipse to use a 1.6 compiler.
+  * Preferences > Java > Compiler > Compiler - should be 1.6 with all boxes checked. 
+  * Preferences > Java > Installed JREs - check "JVM 1.6" 
+
+= Eclipse Projects =
+You'll need to create 3 different projects to correspond to the 3 code ProjectDirectories. One will be an Android project for the phone code, one will be for the common code and a third will be for the parsing code.
+
+Depending on what part of the project you are working on, you may not actually need all three projects, but it's probably best to just set all three up in the beginning.
+
+== Android Project ==
+
+Create a new *Android Project* 
+  # File > New > Project... > Android Project
+    # Project Name: FlightMap-Android
+    # Create project from existing source
+    # Set Location to where you have the `android` directory checked out (e.g. `/src/flightmap/android`).
+
+
+== TODO ==
+
+*The following is unfinished*
+
+You should create 3 projects: Blackbox-android, Blackbox-common and Blackbox parsing. The first one should be an Android project, while the others are just normal Java projects.
+
+For the` android` code,  you'll need to add `common/lib/google-collect-1.0.jar` and  `common/release/blackbox-common-VERSION.jar` to your Java build path.
