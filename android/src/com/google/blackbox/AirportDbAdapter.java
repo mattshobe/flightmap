@@ -26,6 +26,8 @@ import android.util.Log;
 
 import com.google.blackbox.data.Airport;
 import com.google.blackbox.data.LatLng;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Sets;
 
 /**
  * Provides read-only access to the airport database. The database is created
@@ -93,7 +95,7 @@ public class AirportDbAdapter {
     List<int[]> cellRanges =
         CustomGridUtil.GetCellsInRadius(position, getRadiusE6(position, radius));
     Log.d(TAG, "cellRanges.size=" + cellRanges.size());
-    final SortedSet<AirportDistance> result = new TreeSet<AirportDistance>();
+    final SortedSet<AirportDistance> result = Sets.newTreeSet();
 
     final String[] stringRange = new String[2]; // query requires a String[].
     for (int[] range : cellRanges) {

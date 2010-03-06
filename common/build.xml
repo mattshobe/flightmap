@@ -115,8 +115,8 @@ limitations under the License.
   <target name="release" depends="jar" description="Create a released version">
       <mkdir dir="${release.dir}" />
       <copy
-        file="${build.dir}/dist/${common.dist.name}-${version}/${common.dist.name}-${version}.jar"
-        todir="${release.dir}" />
+          file="${build.dir}/dist/${common.dist.name}-${version}/${common.dist.name}-${version}.jar"
+          todir="${release.dir}" />
   </target>
 
   <target name="jarsrc" description="Build jar of source.">

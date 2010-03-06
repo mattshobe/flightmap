@@ -13,5 +13,5 @@
         </activity>
     </application>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-sdk android:minSdkVersion="6" android:targetSdkVersion="6"/>
+    <uses-sdk android:minSdkVersion="4" android:targetSdkVersion="6"/>
 </manifest> 
