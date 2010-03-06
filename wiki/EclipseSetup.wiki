@@ -16,6 +16,16 @@ You'll need to create 3 different projects to correspond to the 3 code ProjectDi
 
 Depending on what part of the project you are working on, you may not actually need all three projects, but it's probably best to just set all three up in the beginning.
 
+= Important Note on changing Common Code =
+
+You'll notice that the first two projects created depend on `common/release/blackbox-common-VERSION.jar`
+
+If you make any changes to code in the *common* project, you'll need to re-generate the above jar file. Please use `ant` to do that as follows:
+{{{
+  cd common
+  ant release
+}}}
+
 == Android Project (1 of 3) ==
 
 Create a new Android Project:
@@ -38,7 +48,23 @@ The project icon will have a little red X and lots of problems indicated. That's
 
 Now the little red X should be gone from the !FlightMap-Android project. You are done creating the Android project. Next, create the remaining two Eclipse projects.
 
-== Common Project (2 of 3) ==
+== Parsing Project (2 of 3) ==
+Do the same as for the common project above to create the !FlightMap-Parsing project.
+  # File > New > *Java Project*
+  # Project Name: *!FlightMap-Parsing*
+  # *Create project from existing source*
+  # Set Location to where you have the `common` directory checked out (e.g. `/src/flightmap/parsing`).
+  # Finish
+
+Just like with the !FlightMap-Android project, this one will have a little red X because you need to add the common jar to the build path. It's the same steps as before.
+
+=== Add common jar to build path ===
+  # Right-click on the newly-created !FlightMap-Parsing project in the Package Explorer window on the left side.
+  # Build Path > Add External Archives...
+  # Browse to common/release/blackbox-common-VERSION.jar, select that
+  # You should see blackbox-common-VERSION.jar listed under the "Referenced Libraries" area of the !FlightMap-Parsing project.
+
+== Common Project (3 of 3) ==
 Create a project for the common code.
   # File > New > *Java Project*
   # Project Name: *!FlightMap-Common*
@@ -46,13 +72,7 @@ Create a project for the common code.
   # Set Location to where you have the `common` directory checked out (e.g. `/src/flightmap/common`).
   # Finish
 
-== Parsing Project (3 of 3) ==
-Do the same as for the common project above to create the !FlightMap-Parsing project.
-  # File > New > *Java Project*
-  # Project Name: *!FlightMap-Parsing*
-  # *Create project from existing source*
-  # Set Location to where you have the `common` directory checked out (e.g. `/src/flightmap/parsing`).
-  # Finish
+No need to add the common jar to this project.
 
 = Eclipse Troubleshooting =
 
