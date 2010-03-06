@@ -26,7 +26,10 @@ If you make any changes to code in the *common* project, you'll need to re-gener
   ant release
 }}}
 
-Then refresh the android and parsing projects (right-click on the project > Refresh). That's needed for Eclipse to know that the jar file changed.
+After doing the above, there are two more things to do:
+  # Refresh the android and parsing projects (right-click on the project > Refresh).
+    * That's needed for Eclipse to know that the jar file changed.
+  # Check in the updated blackbox-common-VERSION.jar file.
 
 == Android Project (1 of 3) ==
 
