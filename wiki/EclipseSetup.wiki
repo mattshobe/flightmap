@@ -26,6 +26,8 @@ If you make any changes to code in the *common* project, you'll need to re-gener
   ant release
 }}}
 
+Then refresh the android and parsing projects (right-click on the project > Refresh). That's needed for Eclipse to know that the jar file changed.
+
 == Android Project (1 of 3) ==
 
 Create a new Android Project:
