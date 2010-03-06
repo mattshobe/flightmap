@@ -16,7 +16,7 @@ You'll need to create 3 different projects to correspond to the 3 code ProjectDi
 
 Depending on what part of the project you are working on, you may not actually need all three projects, but it's probably best to just set all three up in the beginning.
 
-= Important Note on changing Common Code =
+== Important Note on changing Common Code ==
 
 You'll notice that the first two projects created depend on `common/release/blackbox-common-VERSION.jar`
 
