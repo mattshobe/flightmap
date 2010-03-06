@@ -31,11 +31,9 @@ The project icon will have a little red X and lots of problems indicated. That's
 
 === Add common jar to build path ===
   # Right-click on the newly-created !FlightMap-Android project in the Package Explorer window on the left side.
-  # Build Path > Configure Build Path...
-  # Add External JARs...
+  # Build Path > Add External Archives...
   # Browse to common/release/blackbox-common-VERSION.jar, select that
-  # You should see blackbox-common-VERSION.jar listed under the "JARS and class folders on the build path"
-  # Hit OK
+  # You should see blackbox-common-VERSION.jar listed under the "Referenced Libraries" area of the !FlightMap-Android project.
 
 Now the little red X should be gone from the FlightMap-Android project.
 
