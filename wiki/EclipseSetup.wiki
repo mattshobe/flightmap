@@ -30,7 +30,7 @@ Create a new Android Project:
 The project icon will have a little red X and lots of problems indicated. That's because the Android code has a dependency on the `common` code that you need to configure in the project properties.
 
 === Add common jar to build path ===
-  # Right-click on the newly-created FlightMap-Android project in the Package Explorer window on the left side.
+  # Right-click on the newly-created !FlightMap-Android project in the Package Explorer window on the left side.
   # Build Path > Configure Build Path...
   # Add External JARs...
   # Browse to common/release/blackbox-common-VERSION.jar, select that
