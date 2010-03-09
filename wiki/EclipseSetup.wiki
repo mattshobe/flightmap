@@ -3,13 +3,18 @@
 <wiki:toc max_depth="3" />
 = Introduction =
 
-Eclipse is the easiest way to do Flight Map development, but it's not required. Here's how to set up Eclipse for this project. These instructions assume you know the basics of how to develop Java code in Eclipse, and that you've worked through one or more of the Android SDK tutorials using Eclipse.
+Eclipse is the easiest way to do Flight Map development, but it's not required. Here's how to set up Eclipse for this project. These instructions assume you know the basics of how to develop Java code in Eclipse, and that you've worked through one or more of the Android SDK tutorials using Eclipse. See the [http://developer.android.com/sdk/eclipse-adt.html Android Eclipse setup instructions] for details on installing the Eclipse plugin.
 
 = Java Compiler Version =
 
 Configure Eclipse to use a 1.6 compiler.
   * Preferences > Java > Compiler > Compiler - should be 1.6 with all boxes checked. 
   * Preferences > Java > Installed JREs - check "JVM 1.6" 
+
+= Tips =
+Use the *!LogCat* view to see log output from your emulator (Window > View > Other > !LogCat).
+
+Use the *DDMS* perpective to send mock locations or replay a GPS track from a GPX file to your emulator (Window > Open Perspective > Other > DDMS).
 
 = Eclipse Projects =
 You'll need to create 3 different projects to correspond to the 3 code ProjectDirectories. One will be an Android project for the phone code, one will be for the common code and a third will be for the parsing code.
