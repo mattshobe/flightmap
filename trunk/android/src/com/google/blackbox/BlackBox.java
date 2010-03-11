@@ -15,11 +15,6 @@
  */
 package com.google.blackbox;
 
-import com.google.blackbox.AirportDbAdapter.AirportDistance;
-import com.google.blackbox.data.LatLng;
-
-import java.util.SortedSet;
-
 import android.app.Activity;
 import android.content.Context;
 import android.location.Location;
@@ -34,24 +29,29 @@ import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 
+import com.google.blackbox.data.AirportDistance;
+import com.google.blackbox.data.LatLng;
+
+import java.util.SortedSet;
+
 public class BlackBox extends Activity {
   private static final String TAG = BlackBox.class.getSimpleName();
   /** Milliseconds beteween screen updates. */
   private static final int UPDATE_RATE = 100;
-  private AirportDbAdapter airportReader;
   private boolean isRunning;
   private long lastUpdateTime;
   private UpdateHandler updater = new UpdateHandler();
   private LocationHandler locationHandler;
   private Location previousLocation;
+  private CustomGridAirportDirectory airportDirectory;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     locationHandler =
         new LocationHandler((LocationManager) getSystemService(Context.LOCATION_SERVICE));
-    airportReader = new AirportDbAdapter();
-    airportReader.open();
+    airportDirectory = new CustomGridAirportDirectory(new AndroidAviationDbAdapter());
+    airportDirectory.open();
   }
 
   @Override
@@ -72,7 +72,7 @@ public class BlackBox extends Activity {
   @Override
   protected void onDestroy() {
     super.onDestroy();
-    airportReader.close();
+    airportDirectory.close();
   }
 
   /**
@@ -109,7 +109,7 @@ public class BlackBox extends Activity {
     
     LatLng position = LatLng.fromDouble(location.getLatitude(), location.getLongitude());
     Log.i(TAG, "About to fetch airports...");
-    SortedSet<AirportDistance> airports = airportReader.getAirportsWithinRadius(position, 50);
+    SortedSet<AirportDistance> airports = airportDirectory.getAirportsWithinRadius(position, 50);
     Log.i(TAG, String.format("Got %d airports", airports.size()));
 
     table.addView(createLabelValueRow("Airport", "Dist"));
