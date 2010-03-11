@@ -10,4 +10,4 @@ The Flight Map code is split into multiple top-level directories. This needed be
 || android || The Android application code || Yes || Yes ||
 || common || Code that is used by the `android` code as well as other code. || Yes || No ||
 || data || Databases and other static files that are deployed to the phone || Yes || No ||
-|| parsing || Code that is not deployed to the phone. This is what parses the raw data from the FAA and other public sources and creates the databases in `data`. || No || No ||
+|| preprocessing|| Code that is not deployed to the phone. This is what parses the raw data from the FAA and other public sources and creates the databases in `data`. || No || No ||
