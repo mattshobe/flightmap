@@ -16,20 +16,20 @@
 
 package com.google.blackbox;
 
-import com.google.blackbox.data.AirportDistance;
-import com.google.blackbox.data.LatLng;
+import com.google.blackbox.data.Airport;
 
-import java.sql.SQLException;
-import java.util.TreeSet;
+import java.util.LinkedList;
 
-public interface AirportDirectory {
-  public TreeSet<AirportDistance> getNearestAirports(final LatLng position, final int numAirports)
-      throws SQLException;
-
-  public TreeSet<AirportDistance> getAirportsWithinRadius(final LatLng position, final double radius)
-      throws SQLException;
-  
+/**
+ * Low level interface to database entities.
+ */
+public interface AviationDbAdapter {
   public void open();
-  
+
   public void close();
+
+  public Airport getAirport(int id);
+
+  public LinkedList<Airport> getAirportsInCells(int startCell, int endCell);
+
 }
