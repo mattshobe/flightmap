@@ -63,7 +63,7 @@ Do the same as for the common project above to create the !FlightMap-Preprocessi
   # File > New > *Java Project*
   # Project Name: *!FlightMap-Preprocessing*
   # *Create project from existing source*
-  # Set Location to where you have the `common` directory checked out (e.g. `/src/flightmap/preprocessing`).
+  # Set Location to where you have the `preprocessing` directory checked out (e.g. `/src/flightmap/preprocessing`).
   # Finish
 
 Just like with the !FlightMap-Android project, this one will have a little red X because you need to add the common jar to the build path. It's the same steps as before.
