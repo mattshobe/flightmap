@@ -3,6 +3,8 @@
 <wiki:toc max_depth="3" />
 = Introduction =
 
+Read GettingStarted if you haven't already.
+
 Eclipse is the easiest way to do Flight Map development, but it's not required. Here's how to set up Eclipse for this project. These instructions assume you know the basics of how to develop Java code in Eclipse, and that you've worked through one or more of the Android SDK tutorials using Eclipse. See the [http://developer.android.com/sdk/eclipse-adt.html Android Eclipse setup instructions] for details on installing the Eclipse plugin.
 
 = Java Compiler Version =
