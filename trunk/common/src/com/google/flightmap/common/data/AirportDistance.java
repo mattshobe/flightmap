@@ -1,6 +1,6 @@
 // Copyright 2010 Google Inc. All Rights Reserved.
 
-package com.google.blackbox.data;
+package com.google.flightmap.common.data;
 
 /**
  *

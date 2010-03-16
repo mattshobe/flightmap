@@ -1,11 +1,11 @@
 // Copyright 2010 Google Inc. All Rights Reserved.
 
-package com.google.blackbox;
+package com.google.flightmap.common;
 
 
-import com.google.blackbox.data.Airport;
-import com.google.blackbox.data.AirportDistance;
-import com.google.blackbox.data.LatLng;
+import com.google.flightmap.common.data.Airport;
+import com.google.flightmap.common.data.AirportDistance;
+import com.google.flightmap.common.data.LatLng;
 
 import java.util.LinkedList;
 import java.util.TreeSet;

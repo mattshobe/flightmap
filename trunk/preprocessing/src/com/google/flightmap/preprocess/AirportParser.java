@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.google.blackbox.parser;
-
-import com.google.blackbox.CustomGridUtil;
+package com.google.flightmap.preprocess;
 
 import java.sql.*;
 import java.util.regex.*;
 import java.io.*;
+
+import com.google.flightmap.common.CustomGridUtil;
 
 /**
  * Parses airports from ARINC 424-18 file and adds them to a SQLite database

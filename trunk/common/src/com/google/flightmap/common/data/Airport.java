@@ -14,7 +14,7 @@
  * the License.
  */
 
-package com.google.blackbox.data;
+package com.google.flightmap.common.data;
 
 /**
  * Airport data structure.

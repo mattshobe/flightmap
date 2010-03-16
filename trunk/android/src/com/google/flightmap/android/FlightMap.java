@@ -13,7 +13,9 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.blackbox;
+package com.google.flightmap.android;
+
+import java.util.SortedSet;
 
 import android.app.Activity;
 import android.content.Context;
@@ -29,13 +31,12 @@ import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 
-import com.google.blackbox.data.AirportDistance;
-import com.google.blackbox.data.LatLng;
+import com.google.flightmap.common.CustomGridAirportDirectory;
+import com.google.flightmap.common.data.AirportDistance;
+import com.google.flightmap.common.data.LatLng;
 
-import java.util.SortedSet;
-
-public class BlackBox extends Activity {
-  private static final String TAG = BlackBox.class.getSimpleName();
+public class FlightMap extends Activity {
+  private static final String TAG = FlightMap.class.getSimpleName();
   /** Milliseconds beteween screen updates. */
   private static final int UPDATE_RATE = 100;
   private boolean isRunning;
