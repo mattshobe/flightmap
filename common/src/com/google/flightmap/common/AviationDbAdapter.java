@@ -14,9 +14,9 @@
  * the License.
  */
 
-package com.google.blackbox;
+package com.google.flightmap.common;
 
-import com.google.blackbox.data.Airport;
+import com.google.flightmap.common.data.Airport;
 
 import java.util.LinkedList;
 

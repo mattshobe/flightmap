@@ -1,10 +1,10 @@
 // Copyright 2010 Google Inc. All Rights Reserved.
 
-package com.google.blackbox;
+package com.google.flightmap.common;
 
 import java.util.LinkedList;
 
-import com.google.blackbox.data.LatLng;
+import com.google.flightmap.common.data.LatLng;
 
 /**
  *

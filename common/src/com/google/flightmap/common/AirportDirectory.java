@@ -14,10 +14,10 @@
  * the License.
  */
 
-package com.google.blackbox;
+package com.google.flightmap.common;
 
-import com.google.blackbox.data.AirportDistance;
-import com.google.blackbox.data.LatLng;
+import com.google.flightmap.common.data.AirportDistance;
+import com.google.flightmap.common.data.LatLng;
 
 import java.sql.SQLException;
 import java.util.TreeSet;

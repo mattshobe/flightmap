@@ -14,9 +14,9 @@
  * the License.
  */
 
-package com.google.blackbox;
+package com.google.flightmap.common;
 
-import com.google.blackbox.data.LatLng;
+import com.google.flightmap.common.data.LatLng;
 
 /**
  * Utility class for navigation calculations such as distance, bearing, etc.

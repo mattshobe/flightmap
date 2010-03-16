@@ -1,14 +1,15 @@
-package com.google.blackbox;
+package com.google.flightmap.android;
+
+import java.util.LinkedList;
 
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
-import com.google.blackbox.data.Airport;
-import com.google.blackbox.data.LatLng;
-
-import java.util.LinkedList;
+import com.google.flightmap.common.AviationDbAdapter;
+import com.google.flightmap.common.data.Airport;
+import com.google.flightmap.common.data.LatLng;
 
 public class AndroidAviationDbAdapter implements AviationDbAdapter {
   private static final String TAG = AndroidAviationDbAdapter.class.getSimpleName();
@@ -18,7 +19,7 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   public static final String LAT_COLUMN = "lat";
   public static final String LNG_COLUMN = "lng";
   public static final String CELL_ID_COLUMN = "cell_id";
-  private static final String DATABASE_PATH = "/sdcard/com.google.blackbox/aviation.db";
+  private static final String DATABASE_PATH = "/sdcard/com.google.flightmap/aviation.db";
   private static final String AIRPORT_TABLE = "airports";
   private static final String CELL_ID_WHERE =
       String.format("%s >= ? and %s < ?", CELL_ID_COLUMN, CELL_ID_COLUMN);

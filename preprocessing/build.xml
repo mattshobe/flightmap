@@ -15,10 +15,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-<project name="blackbox" default="compile">
+<project name="FlightMap" default="compile">
   <property environment="env"/>
   <property file="build.properties"/>
-  <property name="dist.name" value="blackbox-parsing" />
+  <property name="dist.name" value="flightmap-preprocessing" />
 
   <!-- can be overridden at the command line with -Dversion=
        or in IDEA, in the ant properties dialog -->
@@ -141,12 +141,12 @@ limitations under the License.
     <delete dir="${build.dir}/javadoc"/>
     <mkdir dir="${build.dir}/javadoc"/>
     <javadoc
-      packagenames="com.google.blackbox.parser"
+      packagenames="com.google.flightmap.preprocessing"
          destdir="${build.dir}/javadoc"
          use="true"
          author="true"
          protected="true"
-         windowtitle="BlackBox ${version}">
+         windowtitle="Flight Map ${version}">
       <sourcepath>
         <pathelement location="${src.dir}"/>
         <pathelement location="${env.JAVA_HOME}/src"/>
