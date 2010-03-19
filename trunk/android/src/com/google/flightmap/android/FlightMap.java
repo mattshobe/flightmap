@@ -80,7 +80,7 @@ public class FlightMap extends Activity {
       Toast.makeText(mcontext, "Change North", Toast.LENGTH_LONG);
       return true;
     case MENU_EXIT:
-//		quit();
+//	quit();
       return true;
      }
      return false; 
