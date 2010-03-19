@@ -20,8 +20,6 @@ import com.google.flightmap.common.data.LatLng;
 
 /**
  * Utility class for navigation calculations such as distance, bearing, etc.
- * 
- * @author Phil Verghese
  */
 public class NavigationUtil {
   public static final double EARTH_RADIUS = 6371.009 / 1.852; // KM to NM
