@@ -65,25 +65,25 @@ public class FlightMap extends Activity {
 
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
-	  super.onCreateOptionsMenu(menu);
-	  menu.add(0, MENU_NORTH_TOGGLE, 0, "Toggle North");
-	  menu.add(0, MENU_EXIT, 0, "Exit Flight Map");
-	  return super.onCreateOptionsMenu(menu);
+    super.onCreateOptionsMenu(menu);
+    menu.add(0, MENU_NORTH_TOGGLE, 0, "Toggle North");
+    menu.add(0, MENU_EXIT, 0, "Exit Flight Map");
+    return super.onCreateOptionsMenu(menu);
   }
  
   @Override
   public boolean onOptionsItemSelected(MenuItem item) {	
-	super.onOptionsItemSelected(item);
-	Context mcontext = getApplicationContext();
-	switch (item.getItemId()) {
-	case MENU_NORTH_TOGGLE:
-		Toast.makeText(mcontext, "Change North", Toast.LENGTH_LONG);
-		return true;
-	case MENU_EXIT:
+    super.onOptionsItemSelected(item);
+    Context mcontext = getApplicationContext();
+    switch (item.getItemId()) {
+    case MENU_NORTH_TOGGLE:
+      Toast.makeText(mcontext, "Change North", Toast.LENGTH_LONG);
+      return true;
+    case MENU_EXIT:
 //		quit();
-		return true;
-	}
-    return false; 
+      return true;
+     }
+     return false; 
   }
   
   @Override
@@ -124,26 +124,24 @@ public class FlightMap extends Activity {
   }
 
   private void drawTopLabel() {	  
-		LinearLayout topLayout = new LinearLayout(this);
-		topLayout.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT, 30));
-		topLayout.setVerticalGravity(Gravity.TOP);
-	    Location location = locationHandler.getLocation();
-	    if (null == location) {
-	    	topLayout.addView(createTopLabel("0", "0", "0"));
-	    	setContentView(topLayout);    	
-	    	return;
-	    }
-	    else if (location.equals(previousLocation)) {
-	      return;
-	    }
-	    else {
-	    	topLayout.addView(createTopLabel(String.valueOf(location.getSpeed()), String.valueOf(location.getBearing()), String.valueOf(location.getAltitude())));
-	    	setContentView(topLayout);
-		    previousLocation = location;
-	    	drawUi();
-	    }
-	    
-
+    LinearLayout topLayout = new LinearLayout(this);
+    topLayout.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT, 30));
+    topLayout.setVerticalGravity(Gravity.TOP);
+    Location location = locationHandler.getLocation();
+    if (null == location) {
+      topLayout.addView(createTopLabel("0", "0", "0"));
+      setContentView(topLayout);    	
+        return;
+      }
+      else if (location.equals(previousLocation)) {
+        return;
+      }
+      else {
+        topLayout.addView(createTopLabel(String.valueOf(location.getSpeed()), String.valueOf(location.getBearing()), String.valueOf(location.getAltitude())));
+        setContentView(topLayout);
+        previousLocation = location;
+        drawUi();
+      }    
   }
   
   private void drawUi() {
