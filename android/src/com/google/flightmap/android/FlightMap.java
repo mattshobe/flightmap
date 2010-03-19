@@ -25,11 +25,16 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.flightmap.common.CustomGridAirportDirectory;
 import com.google.flightmap.common.data.AirportDistance;
@@ -37,7 +42,7 @@ import com.google.flightmap.common.data.LatLng;
 
 public class FlightMap extends Activity {
   private static final String TAG = FlightMap.class.getSimpleName();
-  /** Milliseconds beteween screen updates. */
+  /** Milliseconds between screen updates. */
   private static final int UPDATE_RATE = 100;
   private boolean isRunning;
   private long lastUpdateTime;
@@ -45,7 +50,10 @@ public class FlightMap extends Activity {
   private LocationHandler locationHandler;
   private Location previousLocation;
   private CustomGridAirportDirectory airportDirectory;
+  private static final int MENU_NORTH_TOGGLE = 0;
+  private static final int MENU_EXIT = 1;
 
+  
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -55,6 +63,29 @@ public class FlightMap extends Activity {
     airportDirectory.open();
   }
 
+  @Override
+  public boolean onCreateOptionsMenu(Menu menu) {
+	  super.onCreateOptionsMenu(menu);
+	  menu.add(0, MENU_NORTH_TOGGLE, 0, "Toggle North");
+	  menu.add(0, MENU_EXIT, 0, "Exit Flight Map");
+	  return super.onCreateOptionsMenu(menu);
+  }
+ 
+  @Override
+  public boolean onOptionsItemSelected(MenuItem item) {	
+	super.onOptionsItemSelected(item);
+	Context mcontext = getApplicationContext();
+	switch (item.getItemId()) {
+	case MENU_NORTH_TOGGLE:
+		Toast.makeText(mcontext, "Change North", Toast.LENGTH_LONG);
+		return true;
+	case MENU_EXIT:
+//		quit();
+		return true;
+	}
+    return false; 
+  }
+  
   @Override
   protected void onResume() {
     super.onResume();
@@ -86,27 +117,43 @@ public class FlightMap extends Activity {
     }
     long now = System.currentTimeMillis();
     if (now - lastUpdateTime > UPDATE_RATE) {
-      drawUi();
+      drawTopLabel();
       lastUpdateTime = now;
     }
     updater.scheduleUpdate(UPDATE_RATE);
   }
 
+  private void drawTopLabel() {	  
+		LinearLayout topLayout = new LinearLayout(this);
+		topLayout.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT, 30));
+		topLayout.setVerticalGravity(Gravity.TOP);
+	    Location location = locationHandler.getLocation();
+	    if (null == location) {
+	    	topLayout.addView(createTopLabel("0", "0", "0"));
+	    	setContentView(topLayout);    	
+	    	return;
+	    }
+	    else if (location.equals(previousLocation)) {
+	      return;
+	    }
+	    else {
+	    	topLayout.addView(createTopLabel(String.valueOf(location.getSpeed()), String.valueOf(location.getBearing()), String.valueOf(location.getAltitude())));
+	    	setContentView(topLayout);
+		    previousLocation = location;
+	    	drawUi();
+	    }
+	    
+
+  }
+  
   private void drawUi() {
+	
+    Location location = locationHandler.getLocation();
+    
     TableLayout table = new TableLayout(this);
     table.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT,
         LinearLayout.LayoutParams.FILL_PARENT));
     table.setColumnStretchable(1, true);
-    Location location = locationHandler.getLocation();
-    if (null == location) {
-      table.addView(createLabelValueRow("Location", "Unknown"));
-      setContentView(table);
-      return;
-    }
-    if (location.equals(previousLocation)) {
-      return;
-    }
-    previousLocation = location;
     
     LatLng position = LatLng.fromDouble(location.getLatitude(), location.getLongitude());
     Log.i(TAG, "About to fetch airports...");
@@ -121,6 +168,14 @@ public class FlightMap extends Activity {
     setContentView(table);
   }
 
+  private TableRow createTopLabel(String speed, String heading, String altitude) {
+	TableRow result = new TableRow(this);
+	result.addView(createTextView(speed));
+	result.addView(createTextView(heading));
+	result.addView(createTextView(altitude));
+	return result;
+  }
+  
   private TableRow createLabelValueRow(String label, String value) {
     TableRow result = new TableRow(this);
     result.addView(createTextView(label));
