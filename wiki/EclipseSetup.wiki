@@ -25,7 +25,7 @@ Depending on what part of the project you are working on, you may not actually n
 
 == Important Note on changing Common Code ==
 
-You'll notice that the first two projects created depend on `common/release/blackbox-common-VERSION.jar`
+You'll notice that the first two projects created depend on `common/release/flightmap-common-VERSION.jar`
 
 If you make any changes to code in the *common* project, you'll need to re-generate the above jar file. Please use `ant` to do that as follows:
 {{{
@@ -34,9 +34,9 @@ If you make any changes to code in the *common* project, you'll need to re-gener
 }}}
 
 After doing the above, there are two more things to do:
-  # Refresh the android and preprocessing projects (right-click on the project > Refresh).
+  # Refresh the `android` and `preprocessing` projects (right-click on the project > Refresh).
     * That's needed for Eclipse to know that the jar file changed.
-  # Check in the updated blackbox-common-VERSION.jar file.
+  # Check in the updated flightmap-common-VERSION.jar file.
 
 == Android Project (1 of 3) ==
 
@@ -55,8 +55,8 @@ The project icon will have a little red X and lots of problems indicated. That's
 === Add common jar to build path ===
   # Right-click on the newly-created !FlightMap-Android project in the Package Explorer window on the left side.
   # Build Path > Add External Archives...
-  # Browse to common/release/blackbox-common-VERSION.jar, select that
-  # You should see blackbox-common-VERSION.jar listed under the "Referenced Libraries" area of the !FlightMap-Android project.
+  # Browse to common/release/flightmap-common-VERSION.jar, select that
+  # You should see flightmap-common-VERSION.jar listed under the "Referenced Libraries" area of the !FlightMap-Android project.
 
 Now the little red X should be gone from the !FlightMap-Android project. You are done creating the Android project. Next, create the remaining two Eclipse projects.
 
@@ -73,8 +73,8 @@ Just like with the !FlightMap-Android project, this one will have a little red X
 === Add common jar to build path ===
   # Right-click on the newly-created !FlightMap-Preprocessing project in the Package Explorer window on the left side.
   # Build Path > Add External Archives...
-  # Browse to common/release/blackbox-common-VERSION.jar, select that
-  # You should see blackbox-common-VERSION.jar listed under the "Referenced Libraries" area of the !FlightMap-Preprocessing project.
+  # Browse to common/release/flightmap-common-VERSION.jar, select that
+  # You should see flightmap-common-VERSION.jar listed under the "Referenced Libraries" area of the !FlightMap-Preprocessing project.
 
 == Common Project (3 of 3) ==
 Create a project for the common code.
