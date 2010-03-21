@@ -24,7 +24,7 @@ import android.graphics.Point;
  * http://en.wikipedia.org/wiki/Mercator_projection for the math.
  */
 public class MercatorProjection {
-  private static final int ZOOM_0_EQUATOR_PIXELS = 256;
+  private static final int ZOOM_0_EQUATOR_PIXELS = 512;
 
   private MercatorProjection() {
     // Utility class.

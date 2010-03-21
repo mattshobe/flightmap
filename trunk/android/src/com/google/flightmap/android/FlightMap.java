@@ -37,8 +37,8 @@ public class FlightMap extends Activity {
   private boolean isRunning;
   private UpdateHandler updater = new UpdateHandler();
   private LocationHandler locationHandler;
-  private CustomGridAirportDirectory airportDirectory;
   private MapView mapView;
+  CustomGridAirportDirectory airportDirectory;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
