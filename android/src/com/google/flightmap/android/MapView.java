@@ -38,27 +38,29 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   private static final String TAG = MapView.class.getSimpleName();
   private static final Paint MAGENTA_PAINT = new Paint();
   private static final Paint WHITE_PAINT = new Paint();
-  
-  // Zoom constants
+
+  // Zoom constants.
   private static final int MIN_ZOOM = 0;
   private static final int MAX_ZOOM = 30;
-  private static final double ZOOM_STEP = 1.0 / 3.0;
+  private static final double ZOOM_STEP = 0.5;
 
-  private boolean active; // TODO: This may not be needed.
+  // Main class.
   private final FlightMap flightMap;
 
   // Coordinates to draw the aircraft on the map.
   private int aircraftX;
   private int aircraftY;
-  
-  // Zoom
+
+  // Zoom variables.
   private ZoomButtonsController zoomController;
   private double zoom = 12;
 
+  // Static initialization.
   static {
     MAGENTA_PAINT.setAntiAlias(true);
     MAGENTA_PAINT.setColor(Color.MAGENTA);
     WHITE_PAINT.setColor(Color.WHITE);
+    WHITE_PAINT.setStrokeWidth(3);
   }
 
   public MapView(FlightMap flightMap) {
@@ -74,14 +76,13 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     return true;
   }
 
-
   @Override
   public boolean onTrackballEvent(MotionEvent event) {
     showZoomController();
     return true;
   }
 
-  private void showZoomController() {
+  private synchronized void showZoomController() {
     if (null != zoomController) {
       zoomController.setVisible(true);
     }
@@ -95,47 +96,38 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       int height) {
     Log.i(TAG, String.format("format=%d w=%d h=%d", format, width, height));
     aircraftX = width / 2;
-    aircraftY = height / 2;
-    zoomController = new ZoomButtonsController(this);
-    zoomController.setOnZoomListener(new ZoomButtonsController.OnZoomListener() {
-      
-      @Override
-      public void onZoom(boolean zoomIn) {
-        if (zoomIn) {
-          zoom += ZOOM_STEP;
-          zoom = Math.min(zoom, MAX_ZOOM);
-        } else {
-          zoom -= ZOOM_STEP;
-          zoom = Math.max(zoom, MIN_ZOOM);
-        }
-        zoomController.setZoomInEnabled(zoom < MAX_ZOOM);
-        zoomController.setZoomOutEnabled(zoom > MIN_ZOOM);
-      }
-      
-      @Override
-      public void onVisibilityChanged(boolean visible) {
-        // Ignored.
-      }
-    });
+    aircraftY = height - (height / 4);
   }
 
   @Override
   public void surfaceCreated(SurfaceHolder holder) {
-    Log.i(TAG, "surfaceCreated");
-    setActive(true);
+    zoomController = new ZoomButtonsController(this);
+    zoomController
+        .setOnZoomListener(new ZoomButtonsController.OnZoomListener() {
+          @Override
+          public void onZoom(boolean zoomIn) {
+            final double zoomCopy = getZoom(); // copy for thread safety.
+            if (zoomIn) {
+              setZoom(zoomCopy + ZOOM_STEP);
+            } else {
+              setZoom(zoomCopy - ZOOM_STEP);
+            }
+            zoomController.setZoomInEnabled(getZoom() < MAX_ZOOM);
+            zoomController.setZoomOutEnabled(getZoom() > MIN_ZOOM);
+          }
+
+          @Override
+          public void onVisibilityChanged(boolean visible) {
+            // Ignored.
+          }
+        });
   }
 
   @Override
   public void surfaceDestroyed(SurfaceHolder holder) {
-    Log.i(TAG, "surfaceDestroyed");
-    setActive(false);
   }
 
   public void drawMap(Location location) {
-    if (!isActive()) {
-      Log.i(TAG, "Not active");
-      return;
-    }
     SurfaceHolder holder = null;
     Canvas c = null;
     try {
@@ -159,12 +151,13 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       Log.i(TAG, "null canvas");
       return;
     }
-    Log.i(TAG, "Map update");
     c.drawColor(Color.BLACK);
     if (null == location) {
       c.drawText("No location", 20, 600, WHITE_PAINT);
       return;
     }
+
+    Log.i(TAG, "Map update " + location);
 
     // Rotate to make the track up, center on where the aircraft is drawn.
     c.translate(aircraftX, aircraftY);
@@ -174,32 +167,39 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     // drawn relative to the aircraft location.
     LatLng locationLatLng = LatLng.fromDouble(location.getLatitude(), location
         .getLongitude());
-    Point aircraftPoint = MercatorProjection.toPoint(zoom, locationLatLng);
+    final double zoomCopy = getZoom(); // copy for thread safety.
+    Point aircraftPoint = MercatorProjection.toPoint(zoomCopy, locationLatLng);
     c.translate(-aircraftPoint.x, -aircraftPoint.y);
 
     // Draw airport
     SortedSet<AirportDistance> nearbyAirports = flightMap.airportDirectory
-        .getAirportsWithinRadius(locationLatLng, 50);
+        .getAirportsWithinRadius(locationLatLng, 20);
     for (AirportDistance airportDistance : nearbyAirports) {
-      Point airportPoint = MercatorProjection.toPoint(zoom,
+      Point airportPoint = MercatorProjection.toPoint(zoomCopy,
           airportDistance.airport.location);
       c.drawCircle(airportPoint.x, airportPoint.y, 5, MAGENTA_PAINT);
-      c.drawText(airportDistance.airport.icao, airportPoint.x, airportPoint.y + 10, WHITE_PAINT);
+      c.drawText(airportDistance.airport.icao, airportPoint.x,
+          airportPoint.y + 10, WHITE_PAINT);
     }
 
     // Draw airplane
     c.translate(aircraftPoint.x, aircraftPoint.y);
-    c.rotate(location.getBearing()); // Undo track-up rotation so airplane points up.
+    c.rotate(location.getBearing()); // Undo track-up rotation.
     c.drawLine(0, -5, 0, 10, WHITE_PAINT);
     c.drawLine(-7, 0, 7, 0, WHITE_PAINT);
 
   }
 
-  private synchronized boolean isActive() {
-    return active;
+  /**
+   * On return MIN_ZOOM <= zoom <= MAX_ZOOM
+   */
+  public synchronized void setZoom(double zoom) {
+    zoom = Math.max(zoom, MIN_ZOOM);
+    zoom = Math.min(zoom, MAX_ZOOM);
+    this.zoom = zoom;
   }
 
-  private synchronized void setActive(boolean active) {
-    this.active = active;
+  public synchronized double getZoom() {
+    return zoom;
   }
 }
