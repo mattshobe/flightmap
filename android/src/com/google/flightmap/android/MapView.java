@@ -15,10 +15,16 @@
  */
 package com.google.flightmap.android;
 
-import android.content.Context;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
+import com.google.flightmap.common.data.AirportDistance;
+import com.google.flightmap.common.data.LatLng;
+
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Point;
 import android.location.Location;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -29,25 +35,25 @@ import android.view.SurfaceView;
  */
 public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   private static final String TAG = MapView.class.getSimpleName();
-  private static final Paint YELLOW_PAINT = new Paint();
+  private static final Paint MAGENTA_PAINT = new Paint();
+  private static final Paint WHITE_PAINT = new Paint();
 
-  private boolean active;
-  private int width;
-  private int height;
-  
-  // temp variables to bounce the circle
-  int x = 200;
-  int y = 300;
-  int dx = 5;
-  int dy = -3;
-  
+  private boolean active; // TODO: This may not be needed.
+  private final FlightMap flightMap;
+
+  // Coordinates to draw the aircraft on the map.
+  private int aircraftX;
+  private int aircraftY;
+
   static {
-    YELLOW_PAINT.setAntiAlias(true);
-    YELLOW_PAINT.setARGB(180, 255, 255, 0);
+    MAGENTA_PAINT.setAntiAlias(true);
+    MAGENTA_PAINT.setColor(Color.MAGENTA);
+    WHITE_PAINT.setColor(Color.WHITE);
   }
 
-  public MapView(Context context) {
-    super(context);
+  public MapView(FlightMap flightMap) {
+    super(flightMap);
+    this.flightMap = flightMap;
     getHolder().addCallback(this);
     setFocusable(true); // make sure we get key events
   }
@@ -56,10 +62,11 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
    * Surface dimensions changed.
    */
   @Override
-  public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+  public void surfaceChanged(SurfaceHolder holder, int format, int width,
+      int height) {
     Log.i(TAG, String.format("format=%d w=%d h=%d", format, width, height));
-    this.width = width;
-    this.height = height;
+    aircraftX = width / 2;
+    aircraftY = height / 2;
   }
 
   @Override
@@ -103,19 +110,42 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       return;
     }
     Log.i(TAG, "Map update");
-    c.drawColor(Color.GREEN);
-    c.drawCircle(x, y, 50, YELLOW_PAINT);
-    x += dx;
-    y += dy;
-    if (x <= 0 || x >= width) {
-      dx *= -1;
+    c.drawColor(Color.BLACK);
+    if (null == location) {
+      c.drawText("No location", 20, 600, WHITE_PAINT);
+      return;
     }
-    if (y <= 0 || y >= height) {
-      dy *= -1;
+
+    // Rotate to make the track up, center on where the aircraft is drawn.
+    c.translate(aircraftX, aircraftY);
+    c.rotate(360 - location.getBearing());
+
+    // HACK - Fixed zoom
+    int zoom = 8;
+
+    // Get aircraft pixel coordinates. Then set translation so everything is
+    // drawn relative to the aircraft location.
+    LatLng locationLatLng = LatLng.fromDouble(location.getLatitude(), location
+        .getLongitude());
+    Point aircraftPoint = MercatorProjection.toPoint(zoom, locationLatLng);
+    c.translate(-aircraftPoint.x, -aircraftPoint.y);
+
+    // Draw airport
+    SortedSet<AirportDistance> nearbyAirports = flightMap.airportDirectory
+        .getAirportsWithinRadius(locationLatLng, 50);
+    for (AirportDistance airportDistance : nearbyAirports) {
+      Point airportPoint = MercatorProjection.toPoint(zoom,
+          airportDistance.airport.location);
+      c.drawCircle(airportPoint.x, airportPoint.y, 5, MAGENTA_PAINT);
+      c.drawText(airportDistance.airport.icao, airportPoint.x, airportPoint.y + 10, WHITE_PAINT);
     }
-//    if (null == location) {
-//      c.drawText("No location", 20, 600, WHITE_PAINT);
-//    }
+
+    // Draw airplane
+    c.translate(aircraftPoint.x, aircraftPoint.y);
+    c.rotate(location.getBearing()); // Undo track-up rotation so airplane points up.
+    c.drawLine(0, -5, 0, 10, WHITE_PAINT);
+    c.drawLine(-7, 0, 7, 0, WHITE_PAINT);
+
   }
 
   private synchronized boolean isActive() {
