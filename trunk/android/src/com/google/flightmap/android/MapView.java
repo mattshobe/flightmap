@@ -16,10 +16,6 @@
 package com.google.flightmap.android;
 
 import java.util.SortedSet;
-import java.util.TreeSet;
-
-import com.google.flightmap.common.data.AirportDistance;
-import com.google.flightmap.common.data.LatLng;
 
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -27,8 +23,13 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.location.Location;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.widget.ZoomButtonsController;
+
+import com.google.flightmap.common.data.AirportDistance;
+import com.google.flightmap.common.data.LatLng;
 
 /**
  * View for the moving map.
@@ -37,6 +38,11 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   private static final String TAG = MapView.class.getSimpleName();
   private static final Paint MAGENTA_PAINT = new Paint();
   private static final Paint WHITE_PAINT = new Paint();
+  
+  // Zoom constants
+  private static final int MIN_ZOOM = 0;
+  private static final int MAX_ZOOM = 30;
+  private static final double ZOOM_STEP = 1.0 / 3.0;
 
   private boolean active; // TODO: This may not be needed.
   private final FlightMap flightMap;
@@ -44,6 +50,10 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   // Coordinates to draw the aircraft on the map.
   private int aircraftX;
   private int aircraftY;
+  
+  // Zoom
+  private ZoomButtonsController zoomController;
+  private double zoom = 12;
 
   static {
     MAGENTA_PAINT.setAntiAlias(true);
@@ -58,6 +68,25 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     setFocusable(true); // make sure we get key events
   }
 
+  @Override
+  public boolean onTouchEvent(MotionEvent event) {
+    showZoomController();
+    return true;
+  }
+
+
+  @Override
+  public boolean onTrackballEvent(MotionEvent event) {
+    showZoomController();
+    return true;
+  }
+
+  private void showZoomController() {
+    if (null != zoomController) {
+      zoomController.setVisible(true);
+    }
+  }
+
   /**
    * Surface dimensions changed.
    */
@@ -67,6 +96,27 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     Log.i(TAG, String.format("format=%d w=%d h=%d", format, width, height));
     aircraftX = width / 2;
     aircraftY = height / 2;
+    zoomController = new ZoomButtonsController(this);
+    zoomController.setOnZoomListener(new ZoomButtonsController.OnZoomListener() {
+      
+      @Override
+      public void onZoom(boolean zoomIn) {
+        if (zoomIn) {
+          zoom += ZOOM_STEP;
+          zoom = Math.min(zoom, MAX_ZOOM);
+        } else {
+          zoom -= ZOOM_STEP;
+          zoom = Math.max(zoom, MIN_ZOOM);
+        }
+        zoomController.setZoomInEnabled(zoom < MAX_ZOOM);
+        zoomController.setZoomOutEnabled(zoom > MIN_ZOOM);
+      }
+      
+      @Override
+      public void onVisibilityChanged(boolean visible) {
+        // Ignored.
+      }
+    });
   }
 
   @Override
@@ -119,9 +169,6 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     // Rotate to make the track up, center on where the aircraft is drawn.
     c.translate(aircraftX, aircraftY);
     c.rotate(360 - location.getBearing());
-
-    // HACK - Fixed zoom
-    int zoom = 8;
 
     // Get aircraft pixel coordinates. Then set translation so everything is
     // drawn relative to the aircraft location.
