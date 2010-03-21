@@ -17,7 +17,7 @@ package com.google.flightmap.common.data;
 
 /**
  * Latitude and Longitude data structure.
- *<p>
+ * <p>
  * Internal representation is in E6 format (degrees times 1E6, rounded to the
  * closest integer).
  * <p>
@@ -58,14 +58,28 @@ public class LatLng {
    * @see java.lang.Math#toRadians(double)
    */
   public double latRad() {
-    return Math.toRadians(this.lat * 1e-6);
+    return Math.toRadians(this.lat * 1E-6);
   }
 
   /**
-   * @return Latitude in Radians
+   * @return Longitude in Radians
    * @see java.lang.Math#toRadians(double)
    */
   public double lngRad() {
-    return Math.toRadians(this.lng * 1e-6);
+    return Math.toRadians(this.lng * 1E-6);
+  }
+
+  /**
+   * @return Latitude in degrees.
+   */
+  public double latDeg() {
+    return lat * 1E-6;
+  }
+
+  /**
+   * @return Longitude in degrees.
+   */
+  public double lngDeg() {
+    return lng * 1E-6;
   }
 }
