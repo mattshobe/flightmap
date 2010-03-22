@@ -23,8 +23,8 @@ import com.google.flightmap.common.data.LatLng;
  */
 public class NavigationUtil {
   public static final double EARTH_RADIUS = 6371.009 / 1.852; // KM to NM
-  private static final double METERS_PER_FOOT = 3.2808399;
-  private static final double METERS_PER_SEC_TO_KNOTS = 2.2369;
+  public static final double METERS_PER_FOOT = 3.2808399;
+  public static final double METERS_PER_SEC_TO_KNOTS = 1.94384449;
 
   /**
    * Returns the distance in nautical miles between point1 and point2.

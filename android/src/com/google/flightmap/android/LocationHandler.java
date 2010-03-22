@@ -28,26 +28,24 @@ import android.util.Log;
  */
 public class LocationHandler implements LocationListener {
   private static final String TAG = LocationHandler.class.getSimpleName();
-  private static final long MIN_TIME_DIFF = 1000;
-  private static final float MIN_DIST_DIFF = 50; // meters
   private final LocationManager locationManager;
   private Location location;
 
   public LocationHandler(LocationManager locationManager) {
     this.locationManager = locationManager;
   }
-  
+
   /**
    * Returns current location or null if not available.
    */
   public synchronized Location getLocation() {
     return location;
   }
-  
+
   public void startListening() {
     Log.d(TAG, "requesting location updates");
-    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_TIME_DIFF,
-        MIN_DIST_DIFF, this);
+    // Get GPS updates as frequently as possible.
+    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
   }
 
   public void stopListening() {
