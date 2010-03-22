@@ -13,6 +13,13 @@ Configure Eclipse to use a 1.6 compiler.
   * Preferences > Java > Compiler > Compiler - should be 1.6 with all boxes checked. 
   * Preferences > Java > Installed JREs - check "JVM 1.6" 
 
+= Code Style =
+Use the Eclipse auto-formatter to format your code in a style that's consistent with other Flight Map developers. Here's how:
+  # Download the [http://flightmap.googlecode.com/files/flightmap-eclipse-format.xml flightmap-eclipse-format.xml] file.
+  # In Eclipse, File > Import. General > Preferences. Then select the above file.
+
+Use the Eclipse auto-formatter by hitting ctl+shift+F (ctl+cmd+F on a Mac).
+
 = Tips =
 Use the *!LogCat* view to see log output from your emulator (Window > View > Other > !LogCat).
 
