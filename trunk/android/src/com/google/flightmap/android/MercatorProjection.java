@@ -40,11 +40,11 @@ public class MercatorProjection {
    * @param location location to convert to a point.
    */
   public static Point toPoint(double zoom, LatLng location) {
-    double lng = location.latDeg();
+    double lng = location.lngDeg();
     double equatorPixels = ZOOM_0_EQUATOR_PIXELS * Math.pow(2, zoom);
     double centerPixel = equatorPixels / 2;
     double x = centerPixel + (equatorPixels * (lng / 360));
-    double sinLat = Math.sin(location.lngRad());
+    double sinLat = Math.sin(location.latRad());
     double y = centerPixel - Math.log((1 + sinLat) / (1 - sinLat)) / 4 / Math.PI * equatorPixels;
     return new Point((int) Math.round(x), (int) Math.round(y));
   }
