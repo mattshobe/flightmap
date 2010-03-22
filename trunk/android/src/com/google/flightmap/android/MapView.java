@@ -63,7 +63,6 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   private static final float PANEL_TEXT_BASELINE =
       PANEL_HEIGHT - PANEL_NOTCH_HEIGHT - PANEL_TEXT_MARGIN;
   private static final String DEGREES_SYMBOL = "\u00b0";
-
   private Path topPanel;
 
   // Main class.
@@ -197,7 +196,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       c.drawText("No GPS satellites available.", c.getWidth() / 2, c.getHeight() / 2, AIRPORT_LABEL_PAINT);
       return;
     }
-
+    
     // Rotate to make the track up, center on where the aircraft is drawn.
     c.translate(aircraftX, aircraftY);
     c.rotate(360 - location.getBearing());
@@ -217,9 +216,11 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     for (AirportDistance airportDistance : nearbyAirports) {
       Point airportPoint = MercatorProjection.toPoint(zoomCopy, airportDistance.airport.location);
       c.drawCircle(airportPoint.x, airportPoint.y, 15, MAGENTA_PAINT);
+      // Undo, then redo the track-up rotation so the labels are always at the bottom.
+      c.rotate(location.getBearing(), airportPoint.x, airportPoint.y);
       c.drawText(airportDistance.airport.icao, airportPoint.x, airportPoint.y + 40,
           AIRPORT_LABEL_PAINT);
-      // TODO: The airport labels should not be rotated.
+      c.rotate(360 - location.getBearing(), airportPoint.x, airportPoint.y);
     }
 
     // Draw airplane
