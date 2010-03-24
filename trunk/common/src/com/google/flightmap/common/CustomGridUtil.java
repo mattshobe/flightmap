@@ -6,10 +6,7 @@ import java.util.LinkedList;
 
 import com.google.flightmap.common.data.LatLng;
 
-/**
- *
- * @author aristidis@google.com (Aristidis Papaioannou)
- */
+
 public class CustomGridUtil {
   static private final int MAX_LEVEL = (int)(Math.log(Integer.MAX_VALUE)/Math.log(4));
 

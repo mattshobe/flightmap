@@ -18,6 +18,7 @@ package com.google.flightmap.common;
 
 import com.google.flightmap.common.data.Airport;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 
 /**
@@ -28,8 +29,11 @@ public interface AviationDbAdapter {
 
   public void close();
 
-  public Airport getAirport(int id);
+  public Airport getAirport(int airportId);
 
   public LinkedList<Airport> getAirportsInCells(int startCell, int endCell);
 
+  public HashMap<String, String> getAirportProperties(int airportId);
+
+  public HashMap<String, String> getRunwayEndProperties(int runwayEndId);
 }

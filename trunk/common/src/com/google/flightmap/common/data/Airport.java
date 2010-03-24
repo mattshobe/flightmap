@@ -16,12 +16,18 @@
 
 package com.google.flightmap.common.data;
 
+import java.util.SortedSet;
+
 /**
  * Airport data structure.
- * 
- * @author aristidis@google.com (Aristidis Papaioannou)
  */
 public class Airport implements Comparable<Airport> {
+  /**
+   * Application-specific identifier.  An integer uniquely identifying the
+   * airport for the application.
+   */
+  public final int id;
+
   /**
    * ICAO identifier. A 3-4 character string that must be unique in the
    * database.
@@ -33,19 +39,41 @@ public class Airport implements Comparable<Airport> {
    */
   public final String name;
 
+
+  /**
+   * Airport type (land airport, seaplane base, heliport)
+   */
+  public final String type;
+
+  /**
+   * Airport city.  Not unique.
+   */
+  public final String city;
+
   /**
    * Airport location
    */
   public final LatLng location;
 
-  public Airport(String icao, String name, LatLng location) {
+  /** 
+   * Airport runways.  In decreasing order of length, then width.
+   */
+  public final SortedSet<Runway> runways;
+
+  public Airport(int id,
+                 String icao,
+                 String name,
+                 String type,
+                 String city,
+                 LatLng location,
+                 SortedSet<Runway> runways) {
+    this.id = id;
     this.icao = icao;
     this.name = name;
+    this.type = type;
+    this.city = city;
     this.location = location;
-  }
-
-  public Airport(String icao, String name, int lat, int lng) {
-    this(icao, name, new LatLng(lat, lng));
+    this.runways = runways;
   }
 
   @Override
@@ -55,7 +83,7 @@ public class Airport implements Comparable<Airport> {
 
   @Override
   public int compareTo(Airport o) {
-    return this.icao.compareTo(o.icao);
+    return this.id - o.id;
   }
 
   @Override
@@ -64,7 +92,6 @@ public class Airport implements Comparable<Airport> {
     if ( !(obj instanceof Airport)) return false;
 
     Airport other = (Airport)obj;
-//System.err.println("Comparing: " + this.toString() + " and " + other.toString());
     return this.compareTo(other) == 0;
   }
 
