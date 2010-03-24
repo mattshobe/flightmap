@@ -37,6 +37,7 @@ limitations under the License.
       <compilerarg value="-Xlint:all"/>
       <classpath>
         <pathelement location="${lib.dir}/sqlitejdbc-v056.jar"/>
+        <pathelement location="${lib.dir}/commons-lang-2.5.jar"/>
         <fileset dir="../common/release">
           <include name="*.jar" />
         </fileset>

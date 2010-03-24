@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-package com.google.flightmap.preprocess;
+package com.google.flightmap.parser;
+
+import com.google.flightmap.common.CustomGridUtil;
 
 import java.sql.*;
 import java.util.regex.*;
 import java.io.*;
 
-import com.google.flightmap.common.CustomGridUtil;
-
 /**
  * Parses airports from ARINC 424-18 file and adds them to a SQLite database
  * 
- * @author aristidis@google.com (Aristidis Papaioannou)
  */
-public class AirportParser {
+public class NfdParser {
   private String sourceFile;
   private String targetFile;
 
@@ -37,26 +36,26 @@ public class AirportParser {
    * @param targetFile
    *          Target SQLite filename. Existing data is silently overwritten.
    */
-  public AirportParser(String sourceFile, String targetFile) {
+  public NfdParser(String sourceFile, String targetFile) {
     this.sourceFile = sourceFile;
     this.targetFile = targetFile;
   }
 
   public static void main(String args[]) {
     if (args.length != 2) {
-      System.err.println("Usage: java AirportParser <NFD file> <DB file>");
+      System.err.println("Usage: java NfdParser <NFD file> <DB file>");
       System.exit(1);
     }
 
-    (new AirportParser(args[0], args[1])).run();
+    (new NfdParser(args[0], args[1])).run();
   }
 
   private void run() {
     try {
-      Connection dbConn = initDB();
-      addAndroidMetadataToDb(dbConn);
-      addAirportDataToDb(dbConn);
-      dbConn.close();
+//      Connection dbConn = initDB();
+//      addAndroidMetadataToDb(dbConn);
+      addAirportDataToDb();
+//      dbConn.close();
     } catch (Exception ex) {
       ex.printStackTrace();
       System.exit(2);
@@ -72,21 +71,22 @@ public class AirportParser {
 
   }
 
-  private void addAirportDataToDb(Connection conn) throws SQLException, IOException {
+  private void addAirportDataToDb() throws SQLException, IOException {
     BufferedReader in = new BufferedReader(new FileReader(this.sourceFile));
 
+    /*
     initAirportsTable(conn);
 
     PreparedStatement airportStatement = conn
         .prepareStatement(
             "INSERT INTO airports (icao, name, lat, lng, cell_id) VALUES (?, ?, ?, ?, ?);");
-
+*/
     Pattern airportArincPattern = Pattern
-        .compile("S...P (.{4})..A.{5}   .{11}(.{9})(.{10}).{42}(.{30})\\d{9}");
+        .compile("S...P (.{4})..A(.{3})..   .{11}(.{9})(.{10}).{42}(.{30})\\d{9}");
     Matcher airportArincMatcher;
 
     // Airport data variables
-    String icao, name, latString, lngString;
+    String icao, iata, name, latString, lngString;
     int latDeg, latMin, latSecHundredths;
     int lngDeg, lngMin, lngSecHundredths;
     double lat, lng;
@@ -101,9 +101,14 @@ public class AirportParser {
       }
 
       icao = airportArincMatcher.group(1).trim();
-      latString = airportArincMatcher.group(2);
-      lngString = airportArincMatcher.group(3);
-      name = airportArincMatcher.group(4).trim();
+      iata = airportArincMatcher.group(2).trim();
+      if ( !(iata.isEmpty() || icao.isEmpty()) && !iata.equals(icao) )
+        System.out.println(iata + " " + icao);
+      continue;
+      /*
+      latString = airportArincMatcher.group(3);
+      lngString = airportArincMatcher.group(4);
+      name = airportArincMatcher.group(5).trim();
 
       latDeg = Integer.parseInt(latString.substring(1, 3));
       latMin = Integer.parseInt(latString.substring(3, 5));
@@ -135,16 +140,18 @@ public class AirportParser {
         System.err.println(icao + " " + name);
         sqlEx.printStackTrace();
       }
+      */
     }
 
     in.close();
-
+/*
     conn.setAutoCommit(false);
     airportStatement.executeBatch();
     conn.setAutoCommit(true);
     airportStatement.close();
+    */
   }
-
+/*
   private Connection initDB() throws ClassNotFoundException, SQLException {
     Class.forName("org.sqlite.JDBC");
     return DriverManager.getConnection("jdbc:sqlite:" + this.targetFile);
@@ -165,4 +172,5 @@ public class AirportParser {
         stat.close();
     }
   }
+  */
 }
