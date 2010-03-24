@@ -56,25 +56,25 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   private static final HashSet<String> INTEGER_AIRPORT_PROPERTIES;
   //   runways
   private static final String RUNWAYS_TABLE = "runways";
-  private static final String RUNWAY_ID_COLUMN = "runway_id";
   private static final String RUNWAY_LETTERS_COLUMN = "letters";
   private static final String RUNWAY_LENGTH_COLUMN = "length";
   private static final String RUNWAY_WIDTH_COLUMN = "width";
   private static final String RUNWAY_SURFACE_COLUMN = "surface";
-  private static final String RUNWAY_ID_WHERE = RUNWAY_ID_COLUMN + " = ?";
   private static final String[] RUNWAY_COLUMNS =
-      new String[] {RUNWAY_ID_COLUMN, RUNWAY_LETTERS_COLUMN, RUNWAY_LENGTH_COLUMN,
+      new String[] {ID_COLUMN, RUNWAY_LETTERS_COLUMN, RUNWAY_LENGTH_COLUMN,
                     RUNWAY_WIDTH_COLUMN, RUNWAY_SURFACE_COLUMN};
   //  runway_ends
   private static final String RUNWAY_ENDS_TABLE = "runway_ends";
-  private static final String RUNWAY_END_ID_COLUMN = "runway_end_id";
+  private static final String RUNWAY_ID_COLUMN = "runway_id";
   private static final String RUNWAY_END_LETTERS_COLUMN = "letters";
-  private static final String RUNWAY_END_ID_WHERE = RUNWAY_END_ID_COLUMN + " = ? ";
+  private static final String RUNWAY_ID_WHERE = RUNWAY_ID_COLUMN + " = ?";
   private static final String[] RUNWAY_END_COLUMNS =
-      new String[] {RUNWAY_END_ID_COLUMN, RUNWAY_END_LETTERS_COLUMN};
+      new String[] {ID_COLUMN, RUNWAY_END_LETTERS_COLUMN};
   //  runway_end_properties
   private static final String RUNWAY_END_PROPERTIES_TABLE = "runway_end_properties";
+  private static final String RUNWAY_END_ID_COLUMN = "runway_end_id";
   private static final HashSet<String> INTEGER_RUNWAY_END_PROPERTIES;
+  private static final String RUNWAY_END_ID_WHERE = RUNWAY_END_ID_COLUMN + " = ? ";
 
   static {
     INTEGER_AIRPORT_PROPERTIES = new HashSet<String>();
@@ -249,7 +249,7 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
 
       do {
         final int runwayId = runwayCursor.getInt(
-                    runwayCursor.getColumnIndexOrThrow(RUNWAY_ID_COLUMN));
+                    runwayCursor.getColumnIndexOrThrow(ID_COLUMN));
         final String runwayLetters = runwayCursor.getString(
             runwayCursor.getColumnIndexOrThrow(RUNWAY_LETTERS_COLUMN));
         final int runwayLength = runwayCursor.getInt(
@@ -291,7 +291,7 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
 
       do {
         final int runwayEndId = runwayEndCursor.getInt(
-            runwayEndCursor.getColumnIndexOrThrow(RUNWAY_END_ID_COLUMN));
+            runwayEndCursor.getColumnIndexOrThrow(ID_COLUMN));
         final String runwayEndLetters = runwayEndCursor.getString(
             runwayEndCursor.getColumnIndexOrThrow(RUNWAY_END_LETTERS_COLUMN));
 
