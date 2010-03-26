@@ -22,8 +22,12 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.google.flightmap.common.CustomGridAirportDirectory;
@@ -34,6 +38,8 @@ public class FlightMap extends Activity {
   private static final int UPDATE_RATE = 100;
   private static final int MENU_NORTH_TOGGLE = 0;
   private static final int MENU_EXIT = 1;
+  private static final String DISCLAIMER_ACCEPTED = "disclaimer-accepted";
+  private boolean disclaimerAccepted;
   private boolean isRunning;
   private UpdateHandler updater = new UpdateHandler();
   private LocationHandler locationHandler;
@@ -48,8 +54,48 @@ public class FlightMap extends Activity {
     airportDirectory = new CustomGridAirportDirectory(new AndroidAviationDbAdapter());
     airportDirectory.open();
 
-    mapView = new MapView(this);
-    setContentView(mapView);
+    // Show the disclaimer screen if there's no previous state, or the user
+    // didn't accept the disclaimer.
+    if (null == savedInstanceState || !savedInstanceState.getBoolean(DISCLAIMER_ACCEPTED)) {
+      if (null == savedInstanceState) {
+        Log.d(TAG, "*** Showing disclaimer: null saved instance");
+      } else {
+        Log.d(TAG, "*** Showing disclaimer: disclaimer accepted="
+            + savedInstanceState.getBoolean(DISCLAIMER_ACCEPTED));
+      }
+      showDisclaimerView();
+    } else { // disclaimer accepted.
+      Log.d(TAG, String.format("Showing map: savedStateNull=%b disclaimerAccepted=%b",
+          (null == savedInstanceState), savedInstanceState.getBoolean(DISCLAIMER_ACCEPTED)));
+      showMapView();
+    }
+  }
+
+  @Override
+  public void onSaveInstanceState(Bundle outState) {
+    super.onSaveInstanceState(outState);
+    Log.d(TAG, "onSaveInstanceState disclaimer=" + isDisclaimerAccepted());
+    outState.putBoolean(DISCLAIMER_ACCEPTED, isDisclaimerAccepted());
+  }
+
+  private void showDisclaimerView() {
+    setContentView(R.layout.disclaimer);
+
+    // Set disclaimer "agree" button to switch to map view.
+    Button agreeButton = (Button) findViewById(R.id.agree);
+    agreeButton.setOnClickListener(new OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        setDisclaimerAccepted(true);
+        showMapView();
+      }
+    });
+  }
+
+  private void showMapView() {
+    MapView map = new MapView(FlightMap.this);
+    setMapView(map);
+    setContentView(map);
   }
 
   @Override
@@ -79,14 +125,14 @@ public class FlightMap extends Activity {
   protected void onResume() {
     super.onResume();
     locationHandler.startListening();
-    isRunning = true;
+    setRunning(true);
     update();
   }
 
   @Override
   protected void onPause() {
     super.onPause();
-    isRunning = false;
+    setRunning(false);
     locationHandler.stopListening();
   }
 
@@ -101,7 +147,7 @@ public class FlightMap extends Activity {
    * {@link UpdateHandler}.
    */
   private void update() {
-    if (!isRunning) {
+    if (!isRunning()) {
       return;
     }
     drawUi();
@@ -109,8 +155,12 @@ public class FlightMap extends Activity {
   }
 
   private void drawUi() {
+    MapView map = getMapView();
+    if (null == map) {
+      return; // Disclaimer not accepted yet.
+    }
     Location location = locationHandler.getLocation();
-    mapView.drawMap(location);
+    map.drawMap(location);
   }
 
   /**
@@ -131,5 +181,29 @@ public class FlightMap extends Activity {
       removeMessages(UPDATE_MESSAGE);
       sendMessageDelayed(obtainMessage(UPDATE_MESSAGE), delay);
     }
+  }
+
+  private synchronized boolean isRunning() {
+    return isRunning;
+  }
+
+  private synchronized void setRunning(boolean isRunning) {
+    this.isRunning = isRunning;
+  }
+
+  private synchronized MapView getMapView() {
+    return mapView;
+  }
+
+  private synchronized void setMapView(MapView mapView) {
+    this.mapView = mapView;
+  }
+
+  public synchronized void setDisclaimerAccepted(boolean disclaimerAccepted) {
+    this.disclaimerAccepted = disclaimerAccepted;
+  }
+
+  public synchronized boolean isDisclaimerAccepted() {
+    return disclaimerAccepted;
   }
 }
