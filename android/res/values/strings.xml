@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <string name="app_name">Flight Map</string>
-  <string name="no_airports">No airports found</string>
   <string name="agree">I Agree</string>
+  <string name="app_name">Flight Map</string>
   <string name="disclaimer_heading">WARNING</string>
   <string name="disclaimer_text">
     This will be replaced by an actual disclaimer.
   </string>
+  <string name="no_airports">No airports found</string>
+  <string name="old_location">Searching for GPS...</string>
 </resources>

@@ -25,6 +25,7 @@ import android.graphics.Point;
 import android.graphics.Typeface;
 import android.graphics.Paint.Align;
 import android.location.Location;
+import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -40,6 +41,8 @@ import com.google.flightmap.common.data.LatLng;
  */
 public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   private static final String TAG = MapView.class.getSimpleName();
+  // Saved instance state constants
+  private static final String ZOOM_LEVEL = "zoom-level";
 
   // Paints.
   private static final Paint MAGENTA_PAINT = new Paint();
@@ -63,6 +66,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   private static final float PANEL_TEXT_BASELINE =
       PANEL_HEIGHT - PANEL_NOTCH_HEIGHT - PANEL_TEXT_MARGIN;
   private static final String DEGREES_SYMBOL = "\u00b0";
+
   private Path topPanel;
 
   // Main class.
@@ -71,6 +75,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   // Coordinates to draw the aircraft on the map.
   private int aircraftX;
   private int aircraftY;
+
+  // Underlying surface for this view.
+  private volatile SurfaceHolder holder;
 
   // Static initialization.
   static {
@@ -150,6 +157,12 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
 
   @Override
   public void surfaceCreated(SurfaceHolder holder) {
+    this.holder = holder;
+  }
+
+  @Override
+  public void surfaceDestroyed(SurfaceHolder holder) {
+    this.holder = null;
   }
 
   /**
@@ -176,18 +189,13 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       }
     });
   }
-  
-  @Override
-  public void surfaceDestroyed(SurfaceHolder holder) {
-  }
 
   public void drawMap(Location location) {
-    SurfaceHolder holder = null;
     Canvas c = null;
     try {
-      holder = getHolder();
       if (null == holder) {
         Log.w(TAG, "Null holder");
+        return;
       }
       c = holder.lockCanvas(null);
       synchronized (holder) {
@@ -202,15 +210,16 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
 
   private void drawMapOnCanvas(Canvas c, Location location) {
     if (null == c) {
-      Log.i(TAG, "null canvas");
+      Log.w(TAG, "null canvas");
       return;
     }
     c.drawColor(Color.BLACK);
     if (null == location) {
-      c.drawText("No GPS satellites available.", c.getWidth() / 2, c.getHeight() / 2, AIRPORT_LABEL_PAINT);
+      c.drawText(flightMap.getText(R.string.old_location).toString(), c.getWidth() / 2, //
+          c.getHeight() / 2, AIRPORT_LABEL_PAINT);
       return;
     }
-    
+
     // Rotate to make the track up, center on where the aircraft is drawn.
     c.translate(aircraftX, aircraftY);
     c.rotate(360 - location.getBearing());
@@ -230,7 +239,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     for (AirportDistance airportDistance : nearbyAirports) {
       Point airportPoint = MercatorProjection.toPoint(zoomCopy, airportDistance.airport.location);
       c.drawCircle(airportPoint.x, airportPoint.y, 15, MAGENTA_PAINT);
-      // Undo, then redo the track-up rotation so the labels are always at the bottom.
+      // Undo, then redo the track-up rotation so the labels are always at the
+      // bottom.
       c.rotate(location.getBearing(), airportPoint.x, airportPoint.y);
       c.drawText(airportDistance.airport.icao, airportPoint.x, airportPoint.y + 40,
           AIRPORT_LABEL_PAINT);
@@ -290,5 +300,22 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
 
   public synchronized float getZoom() {
     return zoom;
+  }
+
+  /**
+   * Saves map-specific state info to {@code outState}.
+   */
+  public void saveInstanceState(Bundle outState) {
+    outState.putFloat(ZOOM_LEVEL, getZoom());
+  }
+
+  /**
+   * Restores map-specific state info from {@code savedInstanceState}
+   */
+  public void restoreInstanceState(Bundle savedInstanceState) {
+    if (null == savedInstanceState || !savedInstanceState.containsKey(ZOOM_LEVEL)) {
+      return;
+    }
+    setZoom(savedInstanceState.getFloat(ZOOM_LEVEL));
   }
 }
