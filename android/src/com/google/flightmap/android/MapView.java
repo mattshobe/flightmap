@@ -44,6 +44,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   // Saved instance state constants
   private static final String ZOOM_LEVEL = "zoom-level";
 
+  /** Position is considered "old" after this many milliseconds. */
+  private static final long MAX_LOCATION_AGE = 300000; // 5 minutes.
+
   // Paints.
   private static final Paint MAGENTA_PAINT = new Paint();
   private static final Paint AIRCRAFT_PAINT = new Paint();
@@ -214,7 +217,11 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       return;
     }
     c.drawColor(Color.BLACK);
-    if (null == location) {
+    if (null == location || System.currentTimeMillis() - location.getTime() > MAX_LOCATION_AGE) {
+      if (null != location) {
+        Log.i(TAG, "Old location. now" + System.currentTimeMillis());
+        Log.i(TAG, "    location time=%d" + location.getTime());
+      }
       c.drawText(flightMap.getText(R.string.old_location).toString(), c.getWidth() / 2, //
           c.getHeight() / 2, AIRPORT_LABEL_PAINT);
       return;
