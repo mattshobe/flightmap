@@ -38,7 +38,10 @@ public class FlightMap extends Activity {
   private static final int UPDATE_RATE = 100;
   private static final int MENU_NORTH_TOGGLE = 0;
   private static final int MENU_EXIT = 1;
+
+  // Saved instance state constants
   private static final String DISCLAIMER_ACCEPTED = "disclaimer-accepted";
+
   private boolean disclaimerAccepted;
   private boolean isRunning;
   private UpdateHandler updater = new UpdateHandler();
@@ -54,19 +57,17 @@ public class FlightMap extends Activity {
     airportDirectory = new CustomGridAirportDirectory(new AndroidAviationDbAdapter());
     airportDirectory.open();
 
+    if (null == getMapView()) {
+      setMapView(new MapView(FlightMap.this));
+    }
+
     // Show the disclaimer screen if there's no previous state, or the user
     // didn't accept the disclaimer.
     if (null == savedInstanceState || !savedInstanceState.getBoolean(DISCLAIMER_ACCEPTED)) {
-      if (null == savedInstanceState) {
-        Log.d(TAG, "*** Showing disclaimer: null saved instance");
-      } else {
-        Log.d(TAG, "*** Showing disclaimer: disclaimer accepted="
-            + savedInstanceState.getBoolean(DISCLAIMER_ACCEPTED));
-      }
+      setDisclaimerAccepted(false);
       showDisclaimerView();
     } else { // disclaimer accepted.
-      Log.d(TAG, String.format("Showing map: savedStateNull=%b disclaimerAccepted=%b",
-          (null == savedInstanceState), savedInstanceState.getBoolean(DISCLAIMER_ACCEPTED)));
+      setDisclaimerAccepted(true);
       showMapView();
     }
   }
@@ -74,8 +75,21 @@ public class FlightMap extends Activity {
   @Override
   public void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
-    Log.d(TAG, "onSaveInstanceState disclaimer=" + isDisclaimerAccepted());
     outState.putBoolean(DISCLAIMER_ACCEPTED, isDisclaimerAccepted());
+    MapView map = getMapView();
+    if (null != map) {
+      map.saveInstanceState(outState);
+    }
+  }
+
+  @Override
+  protected void onRestoreInstanceState(Bundle savedInstanceState) {
+    super.onRestoreInstanceState(savedInstanceState);
+
+    MapView map = getMapView();
+    if (null != map) {
+      map.restoreInstanceState(savedInstanceState);
+    }
   }
 
   private void showDisclaimerView() {
@@ -93,9 +107,7 @@ public class FlightMap extends Activity {
   }
 
   private void showMapView() {
-    MapView map = new MapView(FlightMap.this);
-    setMapView(map);
-    setContentView(map);
+    setContentView(getMapView());
   }
 
   @Override
