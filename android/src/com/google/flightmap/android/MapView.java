@@ -96,6 +96,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     getHolder().addCallback(this);
     setFocusable(true); // make sure we get key events
     setKeepScreenOn(true);
+    createZoomController();
   }
 
   @Override
@@ -113,6 +114,13 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   private synchronized void showZoomController() {
     if (null != zoomController) {
       zoomController.setVisible(true);
+    }
+  }
+
+  @Override
+  protected void onDetachedFromWindow() {
+    if (null != zoomController) {
+      zoomController.setVisible(false);
     }
   }
 
@@ -142,6 +150,12 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
 
   @Override
   public void surfaceCreated(SurfaceHolder holder) {
+  }
+
+  /**
+   * 
+   */
+  private void createZoomController() {
     zoomController = new ZoomButtonsController(this);
     zoomController.setOnZoomListener(new ZoomButtonsController.OnZoomListener() {
       @Override
@@ -162,7 +176,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       }
     });
   }
-
+  
   @Override
   public void surfaceDestroyed(SurfaceHolder holder) {
   }
