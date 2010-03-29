@@ -192,11 +192,13 @@ public class AviationMasterRecordParser {
       final String airportUse = airportFields[headerPosition.get(AIRPORT_USE_HEADER)];
 
       // Skip private airports.
+      /*
       if ("PR".equals(airportUse)) {
         continue;
       } else if (! "PU".equals(airportUse)) {
         throw new RuntimeException("Unknown airport use: " + airportUse);
       }
+      */
 
       // Extract fields
       // Basic fields: ID, type, name, location
@@ -268,37 +270,46 @@ public class AviationMasterRecordParser {
       }
 
       //   Beacon Color
-      final String airportBeaconColor =
-          airportFields[headerPosition.get(AIRPORT_BEACON_COLOR_HEADER)];
-      final String airportBeaconColorProperty = parseAirportBeaconColor(airportBeaconColor);
-      if (airportBeaconColorProperty != null) {
-        addAirportProperty(airportDbId, AIRPORT_BEACON_COLOR_HEADER, airportBeaconColorProperty);
-      }
+      try {
+        final String airportBeaconColor =
+            airportFields[headerPosition.get(AIRPORT_BEACON_COLOR_HEADER)];
+        final String airportBeaconColorProperty = parseAirportBeaconColor(airportBeaconColor);
+        if (airportBeaconColorProperty != null) {
+          addAirportProperty(airportDbId, AIRPORT_BEACON_COLOR_HEADER, airportBeaconColorProperty);
+        }
+      } catch (Exception ex) {}
 
       //   Fuel Types
-      final String airportFuelTypes = airportFields[headerPosition.get(AIRPORT_FUEL_TYPES_HEADER)];
-      final String airportFuelTypesProperty = parseAirportFuelTypes(airportFuelTypes);
-      if (airportFuelTypesProperty != null) {
-        addAirportProperty(airportDbId, AIRPORT_FUEL_TYPES_HEADER, airportFuelTypesProperty);
-      }
+      try {
+        final String airportFuelTypes =
+            airportFields[headerPosition.get(AIRPORT_FUEL_TYPES_HEADER)];
+        final String airportFuelTypesProperty = parseAirportFuelTypes(airportFuelTypes);
+        if (airportFuelTypesProperty != null) {
+          addAirportProperty(airportDbId, AIRPORT_FUEL_TYPES_HEADER, airportFuelTypesProperty);
+        }
+      } catch (Exception ex) { }
 
       //   Non-Commercial Landing Fee
-      final String airportLandingFee =
-          airportFields[headerPosition.get(AIRPORT_LANDING_FEE_HEADER)];
-      final String airportLandingFeeProperty = parseBooleanProperty(airportLandingFee);
-      if (airportLandingFeeProperty != null) {
-        addAirportProperty(airportDbId, AIRPORT_LANDING_FEE_HEADER, airportLandingFeeProperty);
-      }
+      try {
+        final String airportLandingFee =
+            airportFields[headerPosition.get(AIRPORT_LANDING_FEE_HEADER)];
+        final String airportLandingFeeProperty = parseBooleanProperty(airportLandingFee);
+        if (airportLandingFeeProperty != null) {
+          addAirportProperty(airportDbId, AIRPORT_LANDING_FEE_HEADER, airportLandingFeeProperty);
+        }
+      } catch (Exception ex) { }
 
       //   Segmented circle
-      final String airportSegmentedCircle =
-          airportFields[headerPosition.get(AIRPORT_SEGMENTED_CIRCLE_HEADER)];
-      final String airportSegmentedCircleProperty = parseBooleanProperty(airportSegmentedCircle);
-      if (airportSegmentedCircleProperty != null) {
-        addAirportProperty(airportDbId,
-                           AIRPORT_SEGMENTED_CIRCLE_HEADER,
-                           airportSegmentedCircleProperty);
-      }
+      try {
+        final String airportSegmentedCircle =
+            airportFields[headerPosition.get(AIRPORT_SEGMENTED_CIRCLE_HEADER)];
+        final String airportSegmentedCircleProperty = parseBooleanProperty(airportSegmentedCircle);
+        if (airportSegmentedCircleProperty != null) {
+          addAirportProperty(airportDbId,
+                             AIRPORT_SEGMENTED_CIRCLE_HEADER,
+                             airportSegmentedCircleProperty);
+        }
+      } catch (Exception ex) { }
 
       //   Effective date
       final String airportEffectiveDate =
@@ -309,15 +320,17 @@ public class AviationMasterRecordParser {
       addAirportProperty(airportDbId, AIRPORT_EFFECTIVE_DATE_HEADER, airportEffectiveDate);
 
       // Wind indicator field can be "N", "Y", "Y-L" or non existent.
-      final int windIndicatorHeaderPosition = headerPosition.get(AIRPORT_WIND_INDICATOR_HEADER);
-      if (airportFields.length > windIndicatorHeaderPosition) {
-        final String airportWindIndicator = airportFields[windIndicatorHeaderPosition];
-        final String airportWindIndicatorProperty =
-            parseAirportWindIndicatorProperty(airportWindIndicator);
-        addAirportProperty(airportDbId,
-                           AIRPORT_WIND_INDICATOR_HEADER,
-                           airportWindIndicatorProperty);
-      }
+      try {
+        final int windIndicatorHeaderPosition = headerPosition.get(AIRPORT_WIND_INDICATOR_HEADER);
+        if (airportFields.length > windIndicatorHeaderPosition) {
+          final String airportWindIndicator = airportFields[windIndicatorHeaderPosition];
+          final String airportWindIndicatorProperty =
+              parseAirportWindIndicatorProperty(airportWindIndicator);
+          addAirportProperty(airportDbId,
+                             AIRPORT_WIND_INDICATOR_HEADER,
+                             airportWindIndicatorProperty);
+        }
+      } catch (Exception ex) { }
     }
 
     in.close();
