@@ -28,6 +28,9 @@ import android.util.Log;
  */
 public class LocationHandler implements LocationListener {
   private static final String TAG = LocationHandler.class.getSimpleName();
+  // Get coarse location updates every 5 minutes or 1 km.
+  private static final long COARSE_LOCATION_TIME = 300000; // 5 minutes.
+  private static final float COARSE_LOCATION_DIST = 1000; // 1 km.
   private final LocationManager locationManager;
   private Location location;
 
@@ -48,6 +51,9 @@ public class LocationHandler implements LocationListener {
     Log.d(TAG, "requesting location updates");
     // Get GPS updates as frequently as possible.
     locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+    // As a back up, get network location periodically.
+    locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, COARSE_LOCATION_TIME,
+        COARSE_LOCATION_DIST, this);
   }
 
   public void stopListening() {
