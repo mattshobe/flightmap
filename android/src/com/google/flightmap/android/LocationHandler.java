@@ -33,6 +33,8 @@ public class LocationHandler implements LocationListener {
 
   public LocationHandler(LocationManager locationManager) {
     this.locationManager = locationManager;
+    // Seed with last known coarse location.
+    location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
   }
 
   /**
