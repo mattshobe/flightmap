@@ -168,9 +168,6 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     this.holder = null;
   }
 
-  /**
-   * 
-   */
   private void createZoomController() {
     zoomController = new ZoomButtonsController(this);
     zoomController.setOnZoomListener(new ZoomButtonsController.OnZoomListener() {
@@ -218,10 +215,6 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     }
     c.drawColor(Color.BLACK);
     if (null == location || System.currentTimeMillis() - location.getTime() > MAX_LOCATION_AGE) {
-      if (null != location) {
-        Log.i(TAG, "Old location. now" + System.currentTimeMillis());
-        Log.i(TAG, "    location time=%d" + location.getTime());
-      }
       c.drawText(flightMap.getText(R.string.old_location).toString(), c.getWidth() / 2, //
           c.getHeight() / 2, AIRPORT_LABEL_PAINT);
       return;
@@ -279,7 +272,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
         track = String.format(" %03.0f%s", location.getBearing(), DEGREES_SYMBOL);
       }
       if (location.hasAltitude()) {
-        // Round altitude to nearest 10 feet increment to avoid jitter.
+        // Round altitude to nearest 10 foot increment to avoid jitter.
         int altitudeNearestTen =
             (int) (Math.round(location.getAltitude() * NavigationUtil.METERS_PER_FOOT / 10.0) * 10);
         altitude = String.format("%,5d FT", altitudeNearestTen);
