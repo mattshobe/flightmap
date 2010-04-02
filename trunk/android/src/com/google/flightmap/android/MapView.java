@@ -22,6 +22,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.Paint.Align;
 import android.location.Location;
@@ -41,18 +42,20 @@ import com.google.flightmap.common.data.LatLng;
  */
 public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   private static final String TAG = MapView.class.getSimpleName();
-  // Saved instance state constants
+  // Saved instance state constants.
   private static final String ZOOM_LEVEL = "zoom-level";
 
   /** Position is considered "old" after this many milliseconds. */
   private static final long MAX_LOCATION_AGE = 300000; // 5 minutes.
 
   // Paints.
-  private static final Paint MAGENTA_PAINT = new Paint();
+  private static final Paint ERROR_TEXT_PAINT = new Paint();
+  private static final Paint TOWERED_PAINT = new Paint();
+  private static final Paint NON_TOWERED_PAINT = new Paint();
   private static final Paint AIRCRAFT_PAINT = new Paint();
-  private static final Paint AIRPORT_LABEL_PAINT = new Paint();
-  private static final Paint PANEL_PAINT = new Paint();
-  private static final Paint PANEL_TEXT_PAINT = new Paint();
+  private static final Paint PANEL_BACKGROUND_PAINT = new Paint();
+  private static final Paint PANEL_DIGITS_PAINT = new Paint();
+  private static final Paint PANEL_UNITS_PAINT = new Paint();
 
   // Zoom items.
   private static final int MIN_ZOOM = 0;
@@ -62,14 +65,13 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   private float zoom = 12;
 
   // Top panel items.
-  private static final float PANEL_HEIGHT = 50;
+  private static final float PANEL_HEIGHT = 75;
   private static final float PANEL_TEXT_MARGIN = 10;
-  private static final float PANEL_NOTCH_HEIGHT = 10;
+  private static final float PANEL_NOTCH_HEIGHT = 15;
   private static final float PANEL_NOTCH_WIDTH = 10;
   private static final float PANEL_TEXT_BASELINE =
       PANEL_HEIGHT - PANEL_NOTCH_HEIGHT - PANEL_TEXT_MARGIN;
   private static final String DEGREES_SYMBOL = "\u00b0";
-
   private Path topPanel;
 
   // Main class.
@@ -82,22 +84,34 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   // Underlying surface for this view.
   private volatile SurfaceHolder holder;
 
+  // Rect used to get text width. Create so we don't new one for each frame.
+  private final Rect textBounds = new Rect();
+
   // Static initialization.
   static {
-    MAGENTA_PAINT.setAntiAlias(true);
-    MAGENTA_PAINT.setColor(Color.MAGENTA);
-    AIRPORT_LABEL_PAINT.setColor(Color.WHITE);
-    AIRPORT_LABEL_PAINT.setTypeface(Typeface.SANS_SERIF);
-    AIRPORT_LABEL_PAINT.setTextSize(20);
-    AIRPORT_LABEL_PAINT.setAntiAlias(true);
-    AIRPORT_LABEL_PAINT.setTextAlign(Align.CENTER);
-    AIRCRAFT_PAINT.setColor(Color.WHITE);
+    // Remember to add any paints with a text size to scalePaintText() below.
+    ERROR_TEXT_PAINT.setAntiAlias(true);
+    ERROR_TEXT_PAINT.setColor(Color.WHITE);
+    ERROR_TEXT_PAINT.setTextSize(15);
+    TOWERED_PAINT.setAntiAlias(true);
+    TOWERED_PAINT.setARGB(0xff, 0x0, 0xcc, 0xff);
+    TOWERED_PAINT.setTextSize(15);
+    TOWERED_PAINT.setTextAlign(Align.CENTER);
+    NON_TOWERED_PAINT.setAntiAlias(true);
+    NON_TOWERED_PAINT.setARGB(0xff, 0x99, 0x33, 0x66);
+    NON_TOWERED_PAINT.setTextSize(15);
+    NON_TOWERED_PAINT.setTextAlign(Align.CENTER);
+    AIRCRAFT_PAINT.setColor(Color.GREEN);
     AIRCRAFT_PAINT.setStrokeWidth(3);
-    PANEL_PAINT.setARGB(200, 200, 200, 200);
-    PANEL_TEXT_PAINT.setColor(Color.WHITE);
-    PANEL_TEXT_PAINT.setTypeface(Typeface.SANS_SERIF);
-    PANEL_TEXT_PAINT.setTextSize(30);
-    PANEL_TEXT_PAINT.setAntiAlias(true);
+    PANEL_BACKGROUND_PAINT.setARGB(0x80, 0x66, 0x66, 0x66); // 0.5 alpha, #666
+    PANEL_DIGITS_PAINT.setAntiAlias(true);
+    PANEL_DIGITS_PAINT.setColor(Color.WHITE);
+    PANEL_DIGITS_PAINT.setTypeface(Typeface.SANS_SERIF);
+    PANEL_DIGITS_PAINT.setTextSize(26);
+    PANEL_UNITS_PAINT.setAntiAlias(true);
+    PANEL_UNITS_PAINT.setARGB(0xff, 0x99, 0x99, 0x99);
+    PANEL_UNITS_PAINT.setTypeface(Typeface.SANS_SERIF);
+    PANEL_UNITS_PAINT.setTextSize(18);
   }
 
   public MapView(FlightMap flightMap) {
@@ -107,6 +121,24 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     setFocusable(true); // make sure we get key events
     setKeepScreenOn(true);
     createZoomController();
+    scalePaintText();
+  }
+
+  private void scalePaintText() {
+    // The text sizes in the paint constants are in absolute pixels. Scale them
+    // based on the actual screen density. See
+    // http://developer.android.com/guide/practices/screens_support.html#dips-pels
+    final float density = flightMap.getResources().getDisplayMetrics().density;
+    scalePaintToDensity(ERROR_TEXT_PAINT, density);
+    scalePaintToDensity(TOWERED_PAINT, density);
+    scalePaintToDensity(NON_TOWERED_PAINT, density);
+    scalePaintToDensity(PANEL_DIGITS_PAINT, density);
+    scalePaintToDensity(PANEL_UNITS_PAINT, density);
+  }
+
+  private void scalePaintToDensity(Paint paint, final float density) {
+    float absolute_pixel_size = paint.getTextSize();
+    paint.setTextSize(absolute_pixel_size * density);
   }
 
   @Override
@@ -194,7 +226,6 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     Canvas c = null;
     try {
       if (null == holder) {
-        Log.w(TAG, "Null holder");
         return;
       }
       c = holder.lockCanvas(null);
@@ -213,10 +244,14 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       Log.w(TAG, "null canvas");
       return;
     }
+
+    // Clear the map.
     c.drawColor(Color.BLACK);
+
+    // Display message about no current location and return.
     if (null == location || System.currentTimeMillis() - location.getTime() > MAX_LOCATION_AGE) {
       c.drawText(flightMap.getText(R.string.old_location).toString(), c.getWidth() / 2, //
-          c.getHeight() / 2, AIRPORT_LABEL_PAINT);
+          c.getHeight() / 2, ERROR_TEXT_PAINT);
       return;
     }
 
@@ -238,12 +273,12 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     // Need a new aviation db interface that takes a lat/lng bounding box.
     for (AirportDistance airportDistance : nearbyAirports) {
       Point airportPoint = MercatorProjection.toPoint(zoomCopy, airportDistance.airport.location);
-      c.drawCircle(airportPoint.x, airportPoint.y, 15, MAGENTA_PAINT);
+      c.drawCircle(airportPoint.x, airportPoint.y, 15, TOWERED_PAINT);
       // Undo, then redo the track-up rotation so the labels are always at the
-      // bottom.
+      // top.
       c.rotate(location.getBearing(), airportPoint.x, airportPoint.y);
-      c.drawText(airportDistance.airport.icao, airportPoint.x, airportPoint.y + 40,
-          AIRPORT_LABEL_PAINT);
+      c.drawText(airportDistance.airport.icao, airportPoint.x, airportPoint.y - 40,
+          TOWERED_PAINT);
       c.rotate(360 - location.getBearing(), airportPoint.x, airportPoint.y);
     }
 
@@ -260,13 +295,12 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
 
     // Polygon for top params display.
     if (null != topPanel) {
-      c.drawPath(topPanel, PANEL_PAINT);
-      String knots = "--- KTS";
+      c.drawPath(topPanel, PANEL_BACKGROUND_PAINT);
+      String knots = "---";
       String track = "---" + DEGREES_SYMBOL;
-      String altitude = "--- FT";
+      String altitude = "---";
       if (location.hasSpeed()) {
-        knots =
-            String.format("%.0f KTS", location.getSpeed() * NavigationUtil.METERS_PER_SEC_TO_KNOTS);
+        knots = String.format("%.0f", location.getSpeed() * NavigationUtil.METERS_PER_SEC_TO_KNOTS);
       }
       if (location.hasBearing()) {
         track = String.format(" %03.0f%s", location.getBearing(), DEGREES_SYMBOL);
@@ -275,18 +309,38 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
         // Round altitude to nearest 10 foot increment to avoid jitter.
         int altitudeNearestTen =
             (int) (Math.round(location.getAltitude() * NavigationUtil.METERS_PER_FOOT / 10.0) * 10);
-        altitude = String.format("%,5d FT", altitudeNearestTen);
+        altitude = String.format("%,5d", altitudeNearestTen);
       }
 
-      PANEL_TEXT_PAINT.setTextAlign(Align.LEFT);
-      c.drawText(knots, PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_TEXT_PAINT);
+      // Draw speed.
+      PANEL_DIGITS_PAINT.setTextAlign(Align.LEFT);
+      c.drawText(knots, PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_DIGITS_PAINT);
+      int textWidth = getTextWidth(knots, PANEL_DIGITS_PAINT);
+      PANEL_UNITS_PAINT.setTextAlign(Align.LEFT);
+      c.drawText(" kts", textWidth + PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_UNITS_PAINT);
+
+      // Draw track.
       final int width = c.getWidth();
       final float center = width / 2.0f;
-      PANEL_TEXT_PAINT.setTextAlign(Align.CENTER);
-      c.drawText(track, center, PANEL_TEXT_BASELINE, PANEL_TEXT_PAINT);
-      PANEL_TEXT_PAINT.setTextAlign(Align.RIGHT);
-      c.drawText(altitude, width - PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_TEXT_PAINT);
+      PANEL_DIGITS_PAINT.setTextAlign(Align.CENTER);
+      c.drawText(track, center, PANEL_TEXT_BASELINE, PANEL_DIGITS_PAINT);
+
+      // Draw altitude. Draw the units first, since it's right-aligned.
+      PANEL_UNITS_PAINT.setTextAlign(Align.RIGHT);
+      c.drawText(" ft", width - PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_UNITS_PAINT);
+      textWidth = getTextWidth(" ft", PANEL_UNITS_PAINT);
+      PANEL_DIGITS_PAINT.setTextAlign(Align.RIGHT);
+      c.drawText(altitude, width - textWidth - PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE,
+          PANEL_DIGITS_PAINT);
     }
+  }
+
+  /**
+   * Returns width in pixels of {@code text} drawn with {@code paint}.
+   */
+  private synchronized int getTextWidth(String text, Paint paint) {
+    paint.getTextBounds(text, 0, text.length(), textBounds);
+    return textBounds.right; // origin is always (0, 0).
   }
 
   /**

@@ -15,6 +15,7 @@
  */
 package com.google.flightmap.android;
 
+import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -37,7 +38,10 @@ public class LocationHandler implements LocationListener {
   public LocationHandler(LocationManager locationManager) {
     this.locationManager = locationManager;
     // Seed with last known coarse location.
-    location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+    Criteria criteria = new Criteria();
+    criteria.setAccuracy(Criteria.ACCURACY_COARSE);
+    location =
+        locationManager.getLastKnownLocation(locationManager.getBestProvider(criteria, true));
   }
 
   /**
@@ -49,11 +53,15 @@ public class LocationHandler implements LocationListener {
 
   public void startListening() {
     Log.d(TAG, "requesting location updates");
-    // Get GPS updates as frequently as possible.
-    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-    // As a back up, get network location periodically.
-    locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, COARSE_LOCATION_TIME,
-        COARSE_LOCATION_DIST, this);
+    // Get fine (GPS) updates as frequently as possible.
+    Criteria criteria = new Criteria();
+    criteria.setAccuracy(Criteria.ACCURACY_FINE);
+    locationManager.requestLocationUpdates(locationManager.getBestProvider(criteria, true), 0, 0,
+        this);
+    // As a back up, get coarse (network) location periodically.
+    criteria.setAccuracy(Criteria.ACCURACY_COARSE);
+    locationManager.requestLocationUpdates(locationManager.getBestProvider(criteria, true),
+        COARSE_LOCATION_TIME, COARSE_LOCATION_DIST, this);
   }
 
   public void stopListening() {
