@@ -15,8 +15,6 @@
  */
 package com.google.flightmap.android;
 
-import java.util.SortedSet;
-
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -34,8 +32,12 @@ import android.view.SurfaceView;
 import android.widget.ZoomButtonsController;
 
 import com.google.flightmap.common.NavigationUtil;
+import com.google.flightmap.common.data.Airport;
 import com.google.flightmap.common.data.AirportDistance;
 import com.google.flightmap.common.data.LatLng;
+
+import java.util.HashMap;
+import java.util.SortedSet;
 
 /**
  * View for the moving map.
@@ -93,6 +95,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     ERROR_TEXT_PAINT.setAntiAlias(true);
     ERROR_TEXT_PAINT.setColor(Color.WHITE);
     ERROR_TEXT_PAINT.setTextSize(15);
+    ERROR_TEXT_PAINT.setTextAlign(Align.CENTER);
     TOWERED_PAINT.setAntiAlias(true);
     TOWERED_PAINT.setARGB(0xff, 0x0, 0xcc, 0xff);
     TOWERED_PAINT.setTextSize(15);
@@ -171,7 +174,6 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
    */
   @Override
   public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-    Log.i(TAG, String.format("format=%d w=%d h=%d", format, width, height));
     aircraftX = width / 2;
     aircraftY = height - (height / 4);
     createTopPanelPath(width);
@@ -272,13 +274,13 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     // TODO: 20nm hardcoded, should get airports within bounding box of screen.
     // Need a new aviation db interface that takes a lat/lng bounding box.
     for (AirportDistance airportDistance : nearbyAirports) {
+      final Paint airportPaint = getAirportPaint(airportDistance.airport);
       Point airportPoint = MercatorProjection.toPoint(zoomCopy, airportDistance.airport.location);
-      c.drawCircle(airportPoint.x, airportPoint.y, 15, TOWERED_PAINT);
+      c.drawCircle(airportPoint.x, airportPoint.y, 15, airportPaint);
       // Undo, then redo the track-up rotation so the labels are always at the
       // top.
       c.rotate(location.getBearing(), airportPoint.x, airportPoint.y);
-      c.drawText(airportDistance.airport.icao, airportPoint.x, airportPoint.y - 40,
-          TOWERED_PAINT);
+      c.drawText(airportDistance.airport.icao, airportPoint.x, airportPoint.y - 20, airportPaint);
       c.rotate(360 - location.getBearing(), airportPoint.x, airportPoint.y);
     }
 
@@ -333,6 +335,33 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       c.drawText(altitude, width - textWidth - PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE,
           PANEL_DIGITS_PAINT);
     }
+  }
+
+  /**
+   * Return the appropriate paint based on whether the airport is towered or
+   * not.
+   */
+  private Paint getAirportPaint(Airport airport) {
+    // <rant>
+    // Note this method is called on each frame and the performance impact of
+    // creating a new HashMap each time getAirportProperties is called, then
+    // searching it makes me cry. Yes, I could cache the results, but then I
+    // have to have a scheme to clear the cache so we don't leak memory. This is
+    // awful code, and I hated writing it. Starting the timer before this code
+    // self-destructs now.
+    // </rant>
+    // TODO: Any airport property that needs to be accessed to draw the map
+    // needs to be a field in the Airport class: icao, towered, public, has
+    // fuel.
+    // <hack>
+    HashMap<String, String> airportProperties =
+        flightMap.aviationDbAdapter.getAirportProperties(airport.id);
+    String ct = airportProperties.get("Control tower");
+    if ("No".equals(ct)) {
+      return NON_TOWERED_PAINT;
+    }
+    return TOWERED_PAINT;
+    // </hack>
   }
 
   /**

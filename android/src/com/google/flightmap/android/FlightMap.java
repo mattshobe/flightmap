@@ -29,12 +29,16 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.google.flightmap.common.AviationDbAdapter;
 import com.google.flightmap.common.CustomGridAirportDirectory;
 
 public class FlightMap extends Activity {
   private static final String TAG = FlightMap.class.getSimpleName();
-  /** Milliseconds between screen updates. */
-  private static final int UPDATE_RATE = 100;
+  /**
+   * Milliseconds between screen updates. Note that the fastest I've seen GPS
+   * updates arrive is once per second.
+   */
+  private static final int UPDATE_RATE = 500;
   private static final int MENU_NORTH_TOGGLE = 0;
   private static final int MENU_EXIT = 1;
 
@@ -46,6 +50,7 @@ public class FlightMap extends Activity {
   private UpdateHandler updater = new UpdateHandler();
   private LocationHandler locationHandler;
   private MapView mapView;
+  AviationDbAdapter aviationDbAdapter;
   CustomGridAirportDirectory airportDirectory;
 
   @Override
@@ -53,7 +58,8 @@ public class FlightMap extends Activity {
     super.onCreate(savedInstanceState);
     locationHandler =
         new LocationHandler((LocationManager) getSystemService(Context.LOCATION_SERVICE));
-    airportDirectory = new CustomGridAirportDirectory(new AndroidAviationDbAdapter());
+    aviationDbAdapter = new AndroidAviationDbAdapter();
+    airportDirectory = new CustomGridAirportDirectory(aviationDbAdapter);
     airportDirectory.open();
 
     if (null == getMapView()) {
