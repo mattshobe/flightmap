@@ -91,18 +91,15 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
 
   // Static initialization.
   static {
-    // Remember to add any paints with a text size to scalePaintText() below.
+    // Do not put any calls to setTextSize here. Put them in #setTextSizes().
     ERROR_TEXT_PAINT.setAntiAlias(true);
     ERROR_TEXT_PAINT.setColor(Color.WHITE);
-    ERROR_TEXT_PAINT.setTextSize(15);
     ERROR_TEXT_PAINT.setTextAlign(Align.CENTER);
     TOWERED_PAINT.setAntiAlias(true);
     TOWERED_PAINT.setARGB(0xff, 0x0, 0xcc, 0xff);
-    TOWERED_PAINT.setTextSize(15);
     TOWERED_PAINT.setTextAlign(Align.CENTER);
     NON_TOWERED_PAINT.setAntiAlias(true);
     NON_TOWERED_PAINT.setARGB(0xff, 0x99, 0x33, 0x66);
-    NON_TOWERED_PAINT.setTextSize(15);
     NON_TOWERED_PAINT.setTextAlign(Align.CENTER);
     AIRCRAFT_PAINT.setColor(Color.GREEN);
     AIRCRAFT_PAINT.setStrokeWidth(3);
@@ -110,11 +107,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     PANEL_DIGITS_PAINT.setAntiAlias(true);
     PANEL_DIGITS_PAINT.setColor(Color.WHITE);
     PANEL_DIGITS_PAINT.setTypeface(Typeface.SANS_SERIF);
-    PANEL_DIGITS_PAINT.setTextSize(26);
     PANEL_UNITS_PAINT.setAntiAlias(true);
     PANEL_UNITS_PAINT.setARGB(0xff, 0x99, 0x99, 0x99);
     PANEL_UNITS_PAINT.setTypeface(Typeface.SANS_SERIF);
-    PANEL_UNITS_PAINT.setTextSize(18);
   }
 
   public MapView(FlightMap flightMap) {
@@ -124,24 +119,20 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     setFocusable(true); // make sure we get key events
     setKeepScreenOn(true);
     createZoomController();
-    scalePaintText();
+    setTextSizes();
   }
 
-  private void scalePaintText() {
-    // The text sizes in the paint constants are in absolute pixels. Scale them
-    // based on the actual screen density. See
-    // http://developer.android.com/guide/practices/screens_support.html#dips-pels
+  /**
+   * Scales text sizes based on screen density. See
+   * http://developer.android.com/guide/practices/screens_support.html#dips-pels
+   */
+  private synchronized void setTextSizes() {
     final float density = flightMap.getResources().getDisplayMetrics().density;
-    scalePaintToDensity(ERROR_TEXT_PAINT, density);
-    scalePaintToDensity(TOWERED_PAINT, density);
-    scalePaintToDensity(NON_TOWERED_PAINT, density);
-    scalePaintToDensity(PANEL_DIGITS_PAINT, density);
-    scalePaintToDensity(PANEL_UNITS_PAINT, density);
-  }
-
-  private void scalePaintToDensity(Paint paint, final float density) {
-    float absolute_pixel_size = paint.getTextSize();
-    paint.setTextSize(absolute_pixel_size * density);
+    ERROR_TEXT_PAINT.setTextSize(15 * density);
+    TOWERED_PAINT.setTextSize(15 * density);
+    NON_TOWERED_PAINT.setTextSize(15 * density);
+    PANEL_DIGITS_PAINT.setTextSize(26 * density);
+    PANEL_UNITS_PAINT.setTextSize(18 * density);
   }
 
   @Override
@@ -241,7 +232,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     }
   }
 
-  private void drawMapOnCanvas(Canvas c, Location location) {
+  private synchronized void drawMapOnCanvas(Canvas c, Location location) {
     if (null == c) {
       Log.w(TAG, "null canvas");
       return;
