@@ -15,6 +15,7 @@
  */
 package com.google.flightmap.android;
 
+import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -23,6 +24,7 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.Paint.Align;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
@@ -89,6 +91,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   // Rect used to get text width. Create so we don't new one for each frame.
   private final Rect textBounds = new Rect();
 
+  // Airplane image and location where to draw the left, top so it's centered.
+  private final Drawable airplaneImage;
+
   // Static initialization.
   static {
     // Do not put any calls to setTextSize here. Put them in #setTextSizes().
@@ -120,6 +125,16 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     setKeepScreenOn(true);
     createZoomController();
     setTextSizes();
+
+    // Set up airplane image.
+    Resources res = flightMap.getResources();
+    airplaneImage = res.getDrawable(R.drawable.aircraft);
+    int airplaneImageWidth = airplaneImage.getIntrinsicWidth();
+    int airplaneImageHeight = airplaneImage.getIntrinsicHeight();
+    // Set bounds so the airplane is centered when drawn.
+    int left = -airplaneImageWidth / 2;
+    int top = -airplaneImageHeight / 2;
+    airplaneImage.setBounds(left, top, left + airplaneImageWidth, top + airplaneImageHeight);
   }
 
   /**
@@ -278,10 +293,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     // Draw airplane
     c.translate(aircraftPoint.x, aircraftPoint.y);
     c.rotate(location.getBearing()); // Undo track-up rotation.
-    // TODO: Use a png here.
-    c.drawLine(0, -10, 0, 15, AIRCRAFT_PAINT);
-    c.drawLine(-10, 0, 10, 0, AIRCRAFT_PAINT);
-    c.drawLine(-6, 15, 6, 15, AIRCRAFT_PAINT);
+    airplaneImage.draw(c);
 
     // Draw items that are in fixed locations. Set origin to top-left corner.
     c.translate(-aircraftX, -aircraftY);
