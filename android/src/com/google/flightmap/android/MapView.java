@@ -46,6 +46,15 @@ import java.util.SortedSet;
  */
 public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   private static final String TAG = MapView.class.getSimpleName();
+
+  // TODO(Bonnie): remove this fake UserPreferences class and call the real class when
+  // it's ready.
+  private static final class FakeUserPreferences {
+    private static boolean isTrackUp() {
+      return true;
+    }
+  }
+
   // Saved instance state constants.
   private static final String ZOOM_LEVEL = "zoom-level";
 
@@ -66,7 +75,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   private static final int MAX_ZOOM = 30;
   private static final float ZOOM_STEP = 0.5f;
   private ZoomButtonsController zoomController;
-  private float zoom = 12;
+  private float zoom = 10;
 
   // Top panel items.
   private static final float PANEL_HEIGHT = 75;
@@ -180,8 +189,15 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
    */
   @Override
   public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-    aircraftX = width / 2;
-    aircraftY = height - (height / 4);
+    if (FakeUserPreferences.isTrackUp()) {
+      // Center the aircraft horizontally, and 3/4 of the way down vertically.
+      aircraftX = width / 2;
+      aircraftY = height - (height / 4);
+    } else {
+      // Center the aircraft on the screen.
+      aircraftX = width / 2;
+      aircraftY = height / 2;
+    }
     createTopPanelPath(width);
   }
 
@@ -263,16 +279,23 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       return;
     }
 
-    // Rotate to make the track up, center on where the aircraft is drawn.
-    c.translate(aircraftX, aircraftY);
-    c.rotate(360 - location.getBearing());
+    final boolean isTrackUp = FakeUserPreferences.isTrackUp(); // copy for
+    // thread
+    // safety.
 
-    // Get aircraft pixel coordinates. Then set translation so everything is
-    // drawn relative to the aircraft location.
+    // Draw everything relative to the aircraft.
+    c.translate(aircraftX, aircraftY);
+    if (isTrackUp) {
+      // Rotate to make track up (no rotation = north up).
+      c.rotate(360 - location.getBearing());
+    }
+
+    // Get location pixel coordinates. Then set translation so everything is
+    // drawn relative to the current location.
     LatLng locationLatLng = LatLng.fromDouble(location.getLatitude(), location.getLongitude());
     final float zoomCopy = getZoom(); // copy for thread safety.
-    Point aircraftPoint = MercatorProjection.toPoint(zoomCopy, locationLatLng);
-    c.translate(-aircraftPoint.x, -aircraftPoint.y);
+    Point locationPoint = MercatorProjection.toPoint(zoomCopy, locationLatLng);
+    c.translate(-locationPoint.x, -locationPoint.y);
 
     // Draw airports.
     SortedSet<AirportDistance> nearbyAirports =
@@ -284,16 +307,28 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       Point airportPoint = MercatorProjection.toPoint(zoomCopy, airportDistance.airport.location);
       c.drawCircle(airportPoint.x, airportPoint.y, 15, airportPaint);
       // Undo, then redo the track-up rotation so the labels are always at the
-      // top.
-      c.rotate(location.getBearing(), airportPoint.x, airportPoint.y);
+      // top for track up.
+      if (isTrackUp) {
+        c.rotate(location.getBearing(), airportPoint.x, airportPoint.y);
+      }
       c.drawText(airportDistance.airport.icao, airportPoint.x, airportPoint.y - 20, airportPaint);
-      c.rotate(360 - location.getBearing(), airportPoint.x, airportPoint.y);
+      if (isTrackUp) {
+        c.rotate(360 - location.getBearing(), airportPoint.x, airportPoint.y);
+      }
     }
 
-    // Draw airplane
-    c.translate(aircraftPoint.x, aircraftPoint.y);
-    c.rotate(location.getBearing()); // Undo track-up rotation.
+    // Draw airplane.
+    c.translate(locationPoint.x, locationPoint.y);
+    // Rotate no matter what. If track up, this will make the airplane point to
+    // the top of the screen. If north up, this will point the airplane at the
+    // current track.
+    c.rotate(location.getBearing());
     airplaneImage.draw(c);
+
+    // Undo to-track rotation for north up.
+    if (!isTrackUp) {
+      c.rotate(360 - location.getBearing());
+    }
 
     // Draw items that are in fixed locations. Set origin to top-left corner.
     c.translate(-aircraftX, -aircraftY);
