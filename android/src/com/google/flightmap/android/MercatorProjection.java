@@ -33,9 +33,9 @@ public class MercatorProjection {
   /**
    * Returns point corresponding to {@code location}
    * 
-   * @param zoom At zoom 0, the equator is 256 pixels wide. Each integer
-   *        increment zooms in by 2x, so zoom 1 has a 512-pixel wide equator and
-   *        zoom 2 has 1024 pixels at the equator. Fractional zooms are
+   * @param zoom At zoom 0, the equator is 512 pixels wide. Each integer
+   *        increment zooms in by 2x, so zoom 1 has a 1024-pixel wide equator
+   *        and zoom 2 has 2048 pixels at the equator. Fractional zooms are
    *        supported.
    * @param location location to convert to a point.
    */
@@ -50,10 +50,10 @@ public class MercatorProjection {
   }
 
   /**
-   * Returns a LatLng corresponding to point.
+   * Returns a LatLng corresponding to {@code point}.
    * 
    * @param zoom zoom level. See {@link #toPoint} for details.
-   * @param point point to convert.
+   * @param point point to convert to a LatLng.
    */
   public static LatLng fromPoint(double zoom, Point point) {
     double equatorPixels = ZOOM_0_EQUATOR_PIXELS * Math.pow(2, zoom);
