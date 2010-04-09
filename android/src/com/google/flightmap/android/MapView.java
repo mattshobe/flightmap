@@ -78,7 +78,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   private float zoom = 10;
 
   // Top panel items.
-  private static final float PANEL_HEIGHT = 75;
+  static final float PANEL_HEIGHT = 75;
   private static final float PANEL_TEXT_MARGIN = 10;
   private static final float PANEL_NOTCH_HEIGHT = 15;
   private static final float PANEL_NOTCH_WIDTH = 10;
@@ -102,6 +102,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
 
   // Airplane image and location where to draw the left, top so it's centered.
   private final Drawable airplaneImage;
+
+  // Screen density.
+  private final float density;
 
   // Static initialization.
   static {
@@ -129,6 +132,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   public MapView(FlightMap flightMap) {
     super(flightMap);
     this.flightMap = flightMap;
+    this.density = flightMap.getResources().getDisplayMetrics().density;
     getHolder().addCallback(this);
     setFocusable(true); // make sure we get key events
     setKeepScreenOn(true);
@@ -151,7 +155,6 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
    * http://developer.android.com/guide/practices/screens_support.html#dips-pels
    */
   private synchronized void setTextSizes() {
-    final float density = flightMap.getResources().getDisplayMetrics().density;
     ERROR_TEXT_PAINT.setTextSize(15 * density);
     TOWERED_PAINT.setTextSize(15 * density);
     NON_TOWERED_PAINT.setTextSize(15 * density);
@@ -333,6 +336,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     // Draw items that are in fixed locations. Set origin to top-left corner.
     c.translate(-aircraftX, -aircraftY);
 
+    ZoomScale.drawScale(c, location, density);
+    
     // Polygon for top params display.
     if (null != topPanel) {
       c.drawPath(topPanel, PANEL_BACKGROUND_PAINT);
