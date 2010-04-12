@@ -29,6 +29,9 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   private static final String NAME_COLUMN = "name";
   private static final String TYPE_COLUMN = "type";
   private static final String CITY_COLUMN = "city";
+  private static final String IS_OPEN_COLUMN = "is_open";
+  private static final String IS_PUBLIC_COLUMN = "is_public";
+  private static final String IS_TOWERED_COLUMN = "is_towered";
   private static final String LAT_COLUMN = "lat";
   private static final String LNG_COLUMN = "lng";
   private static final String CELL_ID_COLUMN = "cell_id";
@@ -38,9 +41,11 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   private static final String[] LOCATION_COLUMNS =
       new String[] {ID_COLUMN, LAT_COLUMN, LNG_COLUMN, CELL_ID_COLUMN};
   private static final String[] AIRPORT_COLUMNS =
-      new String[] {ID_COLUMN, ICAO_COLUMN, NAME_COLUMN, TYPE_COLUMN, CITY_COLUMN};
+      new String[] {ID_COLUMN, ICAO_COLUMN, NAME_COLUMN, TYPE_COLUMN, CITY_COLUMN,
+                    IS_OPEN_COLUMN, IS_PUBLIC_COLUMN, IS_TOWERED_COLUMN};
   private static final String[] AIRPORT_LOCATION_COLUMNS =
       new String[] {ID_COLUMN, ICAO_COLUMN, NAME_COLUMN, TYPE_COLUMN, CITY_COLUMN,
+                    IS_OPEN_COLUMN, IS_PUBLIC_COLUMN, IS_TOWERED_COLUMN,
                     LAT_COLUMN, LNG_COLUMN};
   //   constants
   private static final String CONSTANTS_TABLE = "constants";
@@ -102,8 +107,8 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
 
   @Override
   public Airport getAirport(int id) {
-    String[] stringId = {Integer.toString(id)};
-    Cursor airports =
+    final String[] stringId = {Integer.toString(id)};
+    final Cursor airports =
         database.query(AIRPORTS_TABLE, AIRPORT_LOCATION_COLUMNS, ID_WHERE, stringId, null, null,
             null);
     try {
@@ -111,15 +116,21 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
         Log.e(TAG, "No airport for id =" + id);
         return null;
       }
-      String icao = airports.getString(airports.getColumnIndexOrThrow(ICAO_COLUMN));
-      String name = airports.getString(airports.getColumnIndexOrThrow(NAME_COLUMN));
-      int typeConstantId = airports.getInt(airports.getColumnIndexOrThrow(TYPE_COLUMN));
-      String city = airports.getString(airports.getColumnIndexOrThrow(CITY_COLUMN));
-      String type = getConstant(typeConstantId);
-      int latE6 = airports.getInt(airports.getColumnIndexOrThrow(LAT_COLUMN));
-      int lngE6 = airports.getInt(airports.getColumnIndexOrThrow(LNG_COLUMN));
+      final String icao = airports.getString(airports.getColumnIndexOrThrow(ICAO_COLUMN));
+      final String name = airports.getString(airports.getColumnIndexOrThrow(NAME_COLUMN));
+      final int typeConstantId = airports.getInt(airports.getColumnIndexOrThrow(TYPE_COLUMN));
+      final String city = airports.getString(airports.getColumnIndexOrThrow(CITY_COLUMN));
+      final String type = getConstant(typeConstantId);
+      final int latE6 = airports.getInt(airports.getColumnIndexOrThrow(LAT_COLUMN));
+      final int lngE6 = airports.getInt(airports.getColumnIndexOrThrow(LNG_COLUMN));
+      final boolean isOpen = airports.getInt(airports.getColumnIndexOrThrow(IS_OPEN_COLUMN)) == 1;
+      final boolean isPublic =
+          airports.getInt(airports.getColumnIndexOrThrow(IS_PUBLIC_COLUMN)) == 1;
+      final boolean isTowered =
+          airports.getInt(airports.getColumnIndexOrThrow(IS_TOWERED_COLUMN)) == 1;
 
-      return new Airport(id, icao, name, type, city, new LatLng(latE6, lngE6), getRunways(id));
+      return new Airport(id, icao, name, type, city, new LatLng(latE6, lngE6), isOpen, isPublic,
+                         isTowered, getRunways(id));
     } finally {
       airports.close();
     }
@@ -194,8 +205,8 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   }
 
   private Airport getAirport(int id, LatLng knownLocation) {
-    String[] stringId = {Integer.toString(id)};
-    Cursor airports =
+    final String[] stringId = {Integer.toString(id)};
+    final Cursor airports =
         database.query(AIRPORTS_TABLE, AIRPORT_COLUMNS, ID_WHERE, stringId, null, null,
             null);
     try {
@@ -203,13 +214,19 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
         Log.e(TAG, "No airport for id =" + id);
         return null;
       }
-      String icao = airports.getString(airports.getColumnIndexOrThrow(ICAO_COLUMN));
-      String name = airports.getString(airports.getColumnIndexOrThrow(NAME_COLUMN));
-      int typeConstantId = airports.getInt(airports.getColumnIndexOrThrow(TYPE_COLUMN));
-      String city = airports.getString(airports.getColumnIndexOrThrow(CITY_COLUMN));
-      String type = getConstant(typeConstantId);
+      final String icao = airports.getString(airports.getColumnIndexOrThrow(ICAO_COLUMN));
+      final String name = airports.getString(airports.getColumnIndexOrThrow(NAME_COLUMN));
+      final int typeConstantId = airports.getInt(airports.getColumnIndexOrThrow(TYPE_COLUMN));
+      final String city = airports.getString(airports.getColumnIndexOrThrow(CITY_COLUMN));
+      final String type = getConstant(typeConstantId);
+      final boolean isOpen = airports.getInt(airports.getColumnIndexOrThrow(IS_OPEN_COLUMN)) == 1;
+      final boolean isPublic =
+          airports.getInt(airports.getColumnIndexOrThrow(IS_PUBLIC_COLUMN)) == 1;
+      final boolean isTowered =
+          airports.getInt(airports.getColumnIndexOrThrow(IS_TOWERED_COLUMN)) == 1;
 
-      return new Airport(id, icao, name, type, city, knownLocation, getRunways(id));
+      return new Airport(id, icao, name, type, city, knownLocation, isOpen, isPublic, isTowered,
+                        getRunways(id));
     } finally {
       airports.close();
     }

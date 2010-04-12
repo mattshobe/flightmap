@@ -41,9 +41,10 @@ public class AviationMasterRecordParser {
   private final static String AIRPORT_FACILITY_NAME_HEADER = "FacilityName";
   private final static String AIRPORT_LONGITUDE_HEADER = "ARPLongitudeS";
   private final static String AIRPORT_LATITUDE_HEADER = "ARPLatitudeS";
+  private final static String AIRPORT_STATUS_HEADER = "AirportStatusCode"; // O, CP, CI
+  private final static String AIRPORT_CONTROL_TOWER_HEADER = "ATCT";
   // Airport property headers
   private final static String AIRPORT_ELEVATION_HEADER = "ARPElevation";
-  private final static String AIRPORT_CONTROL_TOWER_HEADER = "ATCT";
   private final static String AIRPORT_BEACON_COLOR_HEADER = "BeaconColor";
   private final static String AIRPORT_FUEL_TYPES_HEADER = "FuelTypes";
   private final static String AIRPORT_LANDING_FEE_HEADER = "NonCommercialLandingFee";
@@ -180,8 +181,9 @@ public class AviationMasterRecordParser {
     initAirportTables();
 
     PreparedStatement insertAirportStatement = dbConn.prepareStatement(
-        "INSERT INTO airports (icao, name, type, city, lat, lng, cell_id) " +
-        "VALUES (?, ?, ?, ?, ?, ?, ?);");
+        "INSERT INTO airports " +
+        "(icao, name, type, city, lat, lng, is_open, is_public, is_towered, cell_id) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
     PreparedStatement getAirportIdStatement = dbConn.prepareStatement(
         "SELECT _id FROM airports WHERE icao = ?");
 
@@ -189,35 +191,31 @@ public class AviationMasterRecordParser {
     while ((line = in.readLine()) != null) {
       final String[] airportFields = line.split("\\t");
 
-      final String airportUse = airportFields[headerPosition.get(AIRPORT_USE_HEADER)];
-
-      // Skip private airports.
-      /*
-      if ("PR".equals(airportUse)) {
-        continue;
-      } else if (! "PU".equals(airportUse)) {
-        throw new RuntimeException("Unknown airport use: " + airportUse);
-      }
-      */
-
       // Extract fields
-      // Basic fields: ID, type, name, location
+      int fieldCount = 0;
+      //   icao
       final String airportIataCode = airportFields[headerPosition.get(AIRPORT_LOCATION_ID_HEADER)];
-      final String airportName = airportFields[headerPosition.get(AIRPORT_FACILITY_NAME_HEADER)];
-      final String airportType = airportFields[headerPosition.get(AIRPORT_TYPE_HEADER)];
-      final String airportCity = airportFields[headerPosition.get(AIRPORT_CITY_HEADER)];
-      final String airportLatitudeS = airportFields[headerPosition.get(AIRPORT_LATITUDE_HEADER)];
-      final String airportLongitudeS = airportFields[headerPosition.get(AIRPORT_LONGITUDE_HEADER)];
-
-      // Fill prepared statement
       final String airportIcaoCode = getAirportIcaoCode(airportIataCode);
-      insertAirportStatement.setString(1, airportIcaoCode);
-      insertAirportStatement.setString(2, getAirportNameToDisplay(airportIcaoCode, airportName));
+      insertAirportStatement.setString(++fieldCount, airportIcaoCode);
+
+      //   name
+      final String airportName = airportFields[headerPosition.get(AIRPORT_FACILITY_NAME_HEADER)];
+      insertAirportStatement.setString(
+          ++fieldCount, getAirportNameToDisplay(airportIcaoCode, airportName));
+
+      //   type
+      final String airportType = airportFields[headerPosition.get(AIRPORT_TYPE_HEADER)];
       insertAirportStatement.setInt(
-          3, getConstantId(WordUtils.capitalize(airportType.toLowerCase())));
-      insertAirportStatement.setString(4, capitalize(airportCity));
+          ++fieldCount, getConstantId(capitalize(airportType.toLowerCase())));
 
+      //   city
+      final String airportCity = airportFields[headerPosition.get(AIRPORT_CITY_HEADER)];
+      insertAirportStatement.setString(++fieldCount, airportCity);
+/*      insertAirportStatement.setInt(
+          ++fieldCount, getConstantId(capitalize(airportCity.toLowerCase())));*/
 
+      //   lat
+      final String airportLatitudeS = airportFields[headerPosition.get(AIRPORT_LATITUDE_HEADER)];
       double latitudeSeconds =
           Double.parseDouble(airportLatitudeS.substring(0,airportLatitudeS.length()-1));
       final char northSouthIndicatorChar = airportLatitudeS.charAt(airportLatitudeS.length()-1);
@@ -226,8 +224,10 @@ public class AviationMasterRecordParser {
       else if (northSouthIndicatorChar != 'N')
         throw new RuntimeException("Unknown north/south indicator: " + northSouthIndicatorChar);
       final int airportLatE6 = (int)(latitudeSeconds/3600 * 1E6 + 0.5);
-      insertAirportStatement.setInt(5, airportLatE6);
+      insertAirportStatement.setInt(++fieldCount, airportLatE6);
 
+      //   lng
+      final String airportLongitudeS = airportFields[headerPosition.get(AIRPORT_LONGITUDE_HEADER)];
       double longitudeSeconds =
           Double.parseDouble(airportLongitudeS.substring(0,airportLongitudeS.length()-1));
       final char westEastIndicatorChar = airportLongitudeS.charAt(airportLongitudeS.length()-1);
@@ -236,11 +236,30 @@ public class AviationMasterRecordParser {
       else if (westEastIndicatorChar != 'E')
         throw new RuntimeException("Unknown west/east indicator: " + westEastIndicatorChar);
       final int airportLngE6 = (int)(longitudeSeconds/3600 * 1E6 + 0.5);
-      insertAirportStatement.setInt(6, airportLngE6);
+      insertAirportStatement.setInt(++fieldCount, airportLngE6);
 
+      //   is_open
+      final String airportStatus = airportFields[headerPosition.get(AIRPORT_STATUS_HEADER)];
+      final boolean isOpen = "O".equals(airportStatus);
+      insertAirportStatement.setBoolean(++fieldCount, isOpen);
+
+      //   is_public
+      final String airportUse = airportFields[headerPosition.get(AIRPORT_USE_HEADER)];
+      final boolean isPublic = "PU".equals(airportUse);
+      insertAirportStatement.setBoolean(++fieldCount, isPublic);
+
+      //   is_towered
+      final String airportControlTower =
+          airportFields[headerPosition.get(AIRPORT_CONTROL_TOWER_HEADER)];
+      final boolean isTowered = "Y".equals(airportControlTower);
+      insertAirportStatement.setBoolean(++fieldCount, isTowered);
+
+      //   cell_id
       int cellId = CustomGridUtil.GetCellId(airportLatE6, airportLngE6);
-      insertAirportStatement.setInt(7, cellId);
+      insertAirportStatement.setInt(++fieldCount, cellId);
 
+
+      // Insert in airport db
       insertAirportStatement.executeUpdate();
 
       // Retrieve db id of freshly added airport
@@ -261,13 +280,6 @@ public class AviationMasterRecordParser {
       final String airportElevation = airportFields[headerPosition.get(AIRPORT_ELEVATION_HEADER)];
       addAirportProperty(airportDbId, AIRPORT_ELEVATION_HEADER, airportElevation);
 
-      //   Control Tower
-      final String airportControlTower =
-          airportFields[headerPosition.get(AIRPORT_CONTROL_TOWER_HEADER)];
-      final String airportControlTowerProperty = parseBooleanProperty(airportControlTower);
-      if (airportControlTowerProperty != null) {
-        addAirportProperty(airportDbId, AIRPORT_CONTROL_TOWER_HEADER, airportControlTowerProperty);
-      }
 
       //   Beacon Color
       try {
@@ -631,6 +643,9 @@ public class AviationMasterRecordParser {
                          "city TEXT NOT NULL, " +
                          "lat INTEGER NOT NULL, " +
                          "lng INTEGER NOT NULL, " +
+                         "is_open BOOLEAN NOT NULL, " +
+                         "is_public BOOLEAN NOT NULL, " +
+                         "is_towered BOOLEAN NOT NULL, " +
                          "cell_id INTEGER NOT NULL);");
       stat.executeUpdate("CREATE INDEX airports_cell_id_index ON airports (cell_id)");
 
