@@ -385,26 +385,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
    * not.
    */
   private Paint getAirportPaint(Airport airport) {
-    // <rant>
-    // Note this method is called on each frame and the performance impact of
-    // creating a new HashMap each time getAirportProperties is called, then
-    // searching it makes me cry. Yes, I could cache the results, but then I
-    // have to have a scheme to clear the cache so we don't leak memory. This is
-    // awful code, and I hated writing it. Starting the timer before this code
-    // self-destructs now.
-    // </rant>
-    // TODO: Any airport property that needs to be accessed to draw the map
-    // needs to be a field in the Airport class: icao, towered, public, has
-    // fuel.
-    // <hack>
-    HashMap<String, String> airportProperties =
-        flightMap.aviationDbAdapter.getAirportProperties(airport.id);
-    String ct = airportProperties.get("Control tower");
-    if ("No".equals(ct)) {
-      return NON_TOWERED_PAINT;
-    }
-    return TOWERED_PAINT;
-    // </hack>
+    return airport.isTowered ? TOWERED_PAINT : NON_TOWERED_PAINT;
   }
 
   /**

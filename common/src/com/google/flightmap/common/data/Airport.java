@@ -55,24 +55,45 @@ public class Airport implements Comparable<Airport> {
    */
   public final LatLng location;
 
-  /** 
+  /**
+   * Airport status: true if open, false if closed (permanently or temporarily).
+   */
+  public final boolean isOpen;
+
+  /**
+   * Airport use: true if public, false if private (prior permission required)
+   */
+  public final boolean isPublic;
+
+  /**
+   * Control Tower: true if airport is towered, false otherwise.
+   */
+  public final boolean isTowered;
+
+  /**
    * Airport runways.  In decreasing order of length, then width.
    */
   public final SortedSet<Runway> runways;
 
-  public Airport(int id,
-                 String icao,
-                 String name,
-                 String type,
-                 String city,
-                 LatLng location,
-                 SortedSet<Runway> runways) {
+  public Airport(final int id,
+                 final String icao,
+                 final String name,
+                 final String type,
+                 final String city,
+                 final LatLng location,
+                 final boolean isOpen,
+                 final boolean isPublic,
+                 final boolean isTowered,
+                 final SortedSet<Runway> runways) {
     this.id = id;
     this.icao = icao;
     this.name = name;
     this.type = type;
     this.city = city;
     this.location = location;
+    this.isOpen = isOpen;
+    this.isPublic = isPublic;
+    this.isTowered = isTowered;
     this.runways = runways;
   }
 
