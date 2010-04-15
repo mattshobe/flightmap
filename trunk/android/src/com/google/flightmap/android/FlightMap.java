@@ -17,6 +17,7 @@ package com.google.flightmap.android;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
@@ -39,7 +40,7 @@ public class FlightMap extends Activity {
    * updates arrive is once per second.
    */
   private static final int UPDATE_RATE = 500;
-  private static final int MENU_NORTH_TOGGLE = 0;
+  private static final int MENU_SETTINGS = 0;
   private static final int MENU_EXIT = 1;
 
   // Saved instance state constants
@@ -50,12 +51,14 @@ public class FlightMap extends Activity {
   private UpdateHandler updater = new UpdateHandler();
   private LocationHandler locationHandler;
   private MapView mapView;
+  private UserPrefs userPrefs;
   AviationDbAdapter aviationDbAdapter;
   CustomGridAirportDirectory airportDirectory;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+
     locationHandler =
         new LocationHandler((LocationManager) getSystemService(Context.LOCATION_SERVICE));
     aviationDbAdapter = new AndroidAviationDbAdapter();
@@ -97,6 +100,7 @@ public class FlightMap extends Activity {
     }
   }
 
+  
   private void showDisclaimerView() {
     setContentView(R.layout.disclaimer);
 
@@ -115,25 +119,22 @@ public class FlightMap extends Activity {
     setContentView(getMapView());
   }
 
+  
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
     super.onCreateOptionsMenu(menu);
-    menu.add(0, MENU_NORTH_TOGGLE, 0, "Toggle North");
-    menu.add(0, MENU_EXIT, 0, "Exit Flight Map");
+    menu.add(0, MENU_SETTINGS, 0, "Settings");
     return super.onCreateOptionsMenu(menu);
   }
 
   @Override
   public boolean onOptionsItemSelected(MenuItem item) {
     super.onOptionsItemSelected(item);
-    Context mcontext = getApplicationContext();
     switch (item.getItemId()) {
-      case MENU_NORTH_TOGGLE:
-        Toast.makeText(mcontext, "Change North", Toast.LENGTH_LONG);
-        return true;
-      case MENU_EXIT:
-        // quit();
-        return true;
+      case MENU_SETTINGS:
+    	  Intent startIntent = new Intent(this, UserPrefs.class);
+    	  startActivity(startIntent);
+    	  return true;
     }
     return false;
   }

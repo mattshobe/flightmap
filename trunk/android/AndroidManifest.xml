@@ -11,6 +11,12 @@
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
     </activity>
+    <activity android:name="UserPrefs" android:label="@string/preferences_from_xml">
+    	<intent-filter>
+    		<action android:name="android.intent.action.MAIN" />
+    		<category android:name="android.intent.category.PREFERENCE" />
+    	</intent-filter>
+    </activity>
   </application>
   <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
   <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />

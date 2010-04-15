@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+  xmlns:android="http://schemas.android.com/apk/res/android">
+  
+  <PreferenceCategory android:title="Map Display Settings">
+	<CheckBoxPreference
+  		android:title="North Up"
+  		android:summary="Put North at the top"
+  		android:key="North_Up"
+  		android:defaultValue="true" />
+  		
+  	<ListPreference
+  		android:title="Update Interval"
+  		android:summary="Frequency to check for position updates"
+  		android:key="Update_Interval"
+  		android:defaultValue="1"
+  		android:entries="@array/intervals"
+  		android:entryValues="@array/intervals_values" />
+  	
+  	<ListPreference
+  		android:title="Distance Units"
+  		android:summary="Miles, KM, SM"
+  		android:key="Distance_Units"
+  		android:defaultValue="1"
+  		android:entries="@array/units"
+  		android:entryValues="@array/units_values" />
+  		
+  	<CheckBoxPreference
+  		android:title="Show Seaplane Bases"
+  		android:key="Show_Seaplane"
+  		android:defaultValue="true" />
+  		
+  	<CheckBoxPreference
+  		android:title="Show Military Bases"
+  		android:key="Show_Military"
+  		android:defaultValue="true" />
+  	
+  	<CheckBoxPreference
+  		android:title="Show Soft Fields"
+  		android:key="ShowSoft"
+  		android:defaultValue="true" />
+  	
+  	<CheckBoxPreference
+  		android:title="Show Private Airports"
+  		android:key="ShowPrivate"
+  		android:defaultValue="true" />
+  		
+	<ListPreference
+  		android:title="Minimum Runway Length"
+  		android:summary="Minimum Runway Length to show on map"
+  		android:key="Runway_Length"
+  		android:defaultValue="2"
+  		android:entries="@array/lengths"
+  		android:entryValues="@array/lengths_values" />
+  		 		 		
+  </PreferenceCategory>
+</PreferenceScreen>
