@@ -7,7 +7,7 @@
   		android:title="North Up"
   		android:summary="Put North at the top"
   		android:key="North_Up"
-  		android:defaultValue="true" />
+  		android:defaultValue="false" />
   		
   	<ListPreference
   		android:title="Update Interval"
@@ -37,12 +37,12 @@
   	
   	<CheckBoxPreference
   		android:title="Show Soft Fields"
-  		android:key="ShowSoft"
+  		android:key="Show_Soft"
   		android:defaultValue="true" />
   	
   	<CheckBoxPreference
   		android:title="Show Private Airports"
-  		android:key="ShowPrivate"
+  		android:key="Show_Private"
   		android:defaultValue="true" />
   		
 	<ListPreference
