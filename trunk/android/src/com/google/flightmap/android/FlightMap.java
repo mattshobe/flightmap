@@ -29,6 +29,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.Toast;
+import android.content.SharedPreferences;
 
 import com.google.flightmap.common.AviationDbAdapter;
 import com.google.flightmap.common.CustomGridAirportDirectory;
@@ -39,28 +40,31 @@ public class FlightMap extends Activity {
    * Milliseconds between screen updates. Note that the fastest I've seen GPS
    * updates arrive is once per second.
    */
-  private static final int UPDATE_RATE = 500;
+
   private static final int MENU_SETTINGS = 0;
-  private static final int MENU_EXIT = 1;
 
   // Saved instance state constants
   private static final String DISCLAIMER_ACCEPTED = "disclaimer-accepted";
+  private static long UPDATE_RATE = 0;
 
   private boolean disclaimerAccepted;
   private boolean isRunning;
   private UpdateHandler updater = new UpdateHandler();
   private LocationHandler locationHandler;
   private MapView mapView;
-  private UserPrefs userPrefs;
   AviationDbAdapter aviationDbAdapter;
   CustomGridAirportDirectory airportDirectory;
+  
+  public static boolean isNorthUp;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-
+    
     locationHandler =
         new LocationHandler((LocationManager) getSystemService(Context.LOCATION_SERVICE));
+    
+    
     aviationDbAdapter = new AndroidAviationDbAdapter();
     airportDirectory = new CustomGridAirportDirectory(aviationDbAdapter);
     airportDirectory.open();
@@ -80,6 +84,13 @@ public class FlightMap extends Activity {
     }
   }
 
+  public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+	  if (key.equals(UserPrefs.NORTH_UP))
+		  FlightMap.isNorthUp = sharedPreferences.getBoolean(UserPrefs.NORTH_UP, false);
+	  if (key.equals(UserPrefs.UPDATE_INTERVAL))
+		  FlightMap.UPDATE_RATE = sharedPreferences.getLong(UserPrefs.UPDATE_INTERVAL, 100);
+  }
+  
   @Override
   public void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
@@ -169,6 +180,7 @@ public class FlightMap extends Activity {
       return;
     }
     drawUi();
+    
     updater.scheduleUpdate(UPDATE_RATE);
   }
 

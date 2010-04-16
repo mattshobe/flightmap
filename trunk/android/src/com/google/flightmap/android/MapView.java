@@ -282,7 +282,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       return;
     }
 
-    final boolean isTrackUp = FakeUserPreferences.isTrackUp(); // copy for
+    final boolean isTrackUp = FlightMap.isNorthUp; // copy for
     // thread
     // safety.
 
