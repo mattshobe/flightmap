@@ -65,6 +65,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   private static final Paint ERROR_TEXT_PAINT = new Paint();
   private static final Paint TOWERED_PAINT = new Paint();
   private static final Paint NON_TOWERED_PAINT = new Paint();
+  private static final Paint AIRPORT_TEXT_PAINT = new Paint();
   private static final Paint AIRCRAFT_PAINT = new Paint();
   private static final Paint PANEL_BACKGROUND_PAINT = new Paint();
   private static final Paint PANEL_DIGITS_PAINT = new Paint();
@@ -78,7 +79,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   private float zoom = 10;
 
   // Top panel items.
-  static final float PANEL_HEIGHT = 75;
+  static final float PANEL_HEIGHT = 60;
   private static final float PANEL_TEXT_MARGIN = 10;
   private static final float PANEL_NOTCH_HEIGHT = 15;
   private static final float PANEL_NOTCH_WIDTH = 10;
@@ -116,14 +117,19 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     TOWERED_PAINT.setARGB(0xff, 0x0, 0xcc, 0xff);
     TOWERED_PAINT.setTextAlign(Align.CENTER);
     NON_TOWERED_PAINT.setAntiAlias(true);
-    NON_TOWERED_PAINT.setARGB(0xff, 0x99, 0x33, 0x66);
+    NON_TOWERED_PAINT.setARGB(0xff, 0xcc, 0x33, 0xcc);
     NON_TOWERED_PAINT.setTextAlign(Align.CENTER);
+    AIRPORT_TEXT_PAINT.setAntiAlias(true);
+    AIRPORT_TEXT_PAINT.setARGB(0xff, 0xff, 0xff, 0xff);
+    AIRPORT_TEXT_PAINT.setTypeface(Typeface.SANS_SERIF);    
+    AIRPORT_TEXT_PAINT.setTextAlign(Align.CENTER);
     AIRCRAFT_PAINT.setColor(Color.GREEN);
     AIRCRAFT_PAINT.setStrokeWidth(3);
-    PANEL_BACKGROUND_PAINT.setARGB(0x80, 0x66, 0x66, 0x66); // 0.5 alpha, #666
+    PANEL_BACKGROUND_PAINT.setARGB(0xee, 0x22, 0x22, 0x22); // 0.8 alpha, #333
     PANEL_DIGITS_PAINT.setAntiAlias(true);
     PANEL_DIGITS_PAINT.setColor(Color.WHITE);
     PANEL_DIGITS_PAINT.setTypeface(Typeface.SANS_SERIF);
+    PANEL_DIGITS_PAINT.setTypeface(Typeface.DEFAULT_BOLD);
     PANEL_UNITS_PAINT.setAntiAlias(true);
     PANEL_UNITS_PAINT.setARGB(0xff, 0x99, 0x99, 0x99);
     PANEL_UNITS_PAINT.setTypeface(Typeface.SANS_SERIF);
@@ -156,8 +162,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
    */
   private synchronized void setTextSizes() {
     ERROR_TEXT_PAINT.setTextSize(15 * density);
-    TOWERED_PAINT.setTextSize(15 * density);
-    NON_TOWERED_PAINT.setTextSize(15 * density);
+    AIRPORT_TEXT_PAINT.setTextSize(16 * density);
     PANEL_DIGITS_PAINT.setTextSize(26 * density);
     PANEL_UNITS_PAINT.setTextSize(18 * density);
   }
@@ -307,6 +312,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     // Need a new aviation db interface that takes a lat/lng bounding box.
     for (AirportDistance airportDistance : nearbyAirports) {
       final Paint airportPaint = getAirportPaint(airportDistance.airport);
+      final Paint airportTextPaint = AIRPORT_TEXT_PAINT;
       Point airportPoint = MercatorProjection.toPoint(zoomCopy, airportDistance.airport.location);
       c.drawCircle(airportPoint.x, airportPoint.y, 15, airportPaint);
       // Undo, then redo the track-up rotation so the labels are always at the
@@ -314,7 +320,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       if (isTrackUp) {
         c.rotate(location.getBearing(), airportPoint.x, airportPoint.y);
       }
-      c.drawText(airportDistance.airport.icao, airportPoint.x, airportPoint.y - 20, airportPaint);
+      c.drawText(airportDistance.airport.icao, airportPoint.x, airportPoint.y - 20, airportTextPaint);
       if (isTrackUp) {
         c.rotate(360 - location.getBearing(), airportPoint.x, airportPoint.y);
       }
@@ -341,9 +347,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     // Polygon for top params display.
     if (null != topPanel) {
       c.drawPath(topPanel, PANEL_BACKGROUND_PAINT);
-      String knots = "---";
-      String track = "---" + DEGREES_SYMBOL;
-      String altitude = "---";
+      String knots = "-";
+      String track = "-" + DEGREES_SYMBOL;
+      String altitude = "-";
       if (location.hasSpeed()) {
         knots = String.format("%.0f", location.getSpeed() * NavigationUtil.METERS_PER_SEC_TO_KNOTS);
       }
