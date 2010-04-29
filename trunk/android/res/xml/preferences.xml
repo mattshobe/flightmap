@@ -21,7 +21,7 @@
   		android:title="Distance Units"
   		android:summary="Miles, KM, NM"
   		android:key="Distance_Units"
-  		android:defaultValue="1"
+  		android:defaultValue="3"
   		android:entries="@array/units"
   		android:entryValues="@array/units_values" />
   		
