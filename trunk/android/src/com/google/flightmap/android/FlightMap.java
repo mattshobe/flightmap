@@ -63,6 +63,7 @@ public class FlightMap extends Activity {
   public static boolean showMilitary;
   public static boolean showSoft;
   public static boolean showPrivate;
+  public static boolean showHeli;
   public static int runwayLength;
 
   @Override
@@ -76,6 +77,8 @@ public class FlightMap extends Activity {
     airportDirectory = new CustomGridAirportDirectory(aviationDbAdapter);
     airportDirectory.open();
 
+    getPreferences(this);
+    
     if (null == getMapView()) {
       setMapView(new MapView(FlightMap.this));
     }
@@ -131,6 +134,18 @@ public class FlightMap extends Activity {
     setContentView(getMapView());
   }
 
+  private void getPreferences(Context context) {
+  	SharedPreferences sharedPreferences = this.getPreferences(0);
+	isNorthUp = sharedPreferences.getBoolean(UserPrefs.NORTH_UP, false);
+	updateInterval = sharedPreferences.getLong(UserPrefs.UPDATE_INTERVAL, 100);
+	units = sharedPreferences.getString(UserPrefs.DISTANCE_UNITS, "Nautical Miles");
+	showSeaplane = sharedPreferences.getBoolean(UserPrefs.SHOW_SEAPLANE, false);
+	showMilitary = sharedPreferences.getBoolean(UserPrefs.SHOW_MILITARY, true);
+	showSoft = sharedPreferences.getBoolean(UserPrefs.SHOW_SOFT, true);
+	showPrivate = sharedPreferences.getBoolean(UserPrefs.SHOW_PRIVATE, true);
+	showHeli = sharedPreferences.getBoolean(UserPrefs.SHOW_HELI, false);
+	runwayLength = sharedPreferences.getInt(UserPrefs.RUNWAY_LENGTH, 2000);
+  }
   
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {

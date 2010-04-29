@@ -2,15 +2,15 @@
 <PreferenceScreen
   xmlns:android="http://schemas.android.com/apk/res/android">
   
-  <PreferenceCategory android:title="Map Display Settings">
+  <PreferenceCategory android:title="Display Settings">
 	<CheckBoxPreference
   		android:title="North Up"
-  		android:summary="Put North at the top"
+  		android:summary="Put North at the top instead of heading"
   		android:key="North_Up"
   		android:defaultValue="false" />
   		
   	<ListPreference
-  		android:title="Update Interval"
+  		android:title="GPS Update Interval"
   		android:summary="Frequency to check for position updates"
   		android:key="Update_Interval"
   		android:defaultValue="1"
@@ -28,7 +28,7 @@
   	<CheckBoxPreference
   		android:title="Show Seaplane Bases"
   		android:key="Show_Seaplane"
-  		android:defaultValue="true" />
+  		android:defaultValue="false" />
   		
   	<CheckBoxPreference
   		android:title="Show Military Bases"
@@ -44,7 +44,12 @@
   		android:title="Show Private Airports"
   		android:key="Show_Private"
   		android:defaultValue="true" />
-  		
+
+  	<CheckBoxPreference
+  		android:title="Show Heliports"
+  		android:key="Show_Heli"
+  		android:defaultValue="false" />
+
 	<ListPreference
   		android:title="Minimum Runway Length"
   		android:summary="Minimum Runway Length to show on map"
