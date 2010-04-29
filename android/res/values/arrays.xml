@@ -28,7 +28,7 @@
 	</string-array>
 
 	<string-array name="lengths">
-		<item>1000ft</item>
+		<item>None</item>
 		<item>2000ft</item>
 		<item>4000ft</item>
 	</string-array>
