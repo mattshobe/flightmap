@@ -47,13 +47,6 @@ import java.util.SortedSet;
 public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   private static final String TAG = MapView.class.getSimpleName();
 
-  // TODO(Bonnie): remove this fake UserPreferences class and call the real class when
-  // it's ready.
-  private static final class FakeUserPreferences {
-    private static boolean isTrackUp() {
-      return true;
-    }
-  }
 
   // Saved instance state constants.
   private static final String ZOOM_LEVEL = "zoom-level";
@@ -197,7 +190,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
    */
   @Override
   public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-    if (FakeUserPreferences.isTrackUp()) {
+    if(!FlightMap.isNorthUp) {
       // Center the aircraft horizontally, and 3/4 of the way down vertically.
       aircraftX = width / 2;
       aircraftY = height - (height / 4);
@@ -287,7 +280,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       return;
     }
 
-    final boolean isTrackUp = FlightMap.isNorthUp; // copy for
+    final boolean isTrackUp = !FlightMap.isNorthUp; // copy for
     // thread
     // safety.
 
@@ -308,21 +301,24 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     // Draw airports.
     SortedSet<AirportDistance> nearbyAirports =
         flightMap.airportDirectory.getAirportsWithinRadius(locationLatLng, 20);
-    // TODO: 20nm hardcoded, should get airports within bounding box of screen.
+    // TODO: remove airports based on settings.
+    // TODO: 20nm hardcoded, should get airports within bounding box of screen.    
     // Need a new aviation db interface that takes a lat/lng bounding box.
     for (AirportDistance airportDistance : nearbyAirports) {
-      final Paint airportPaint = getAirportPaint(airportDistance.airport);
-      final Paint airportTextPaint = AIRPORT_TEXT_PAINT;
-      Point airportPoint = MercatorProjection.toPoint(zoomCopy, airportDistance.airport.location);
-      c.drawCircle(airportPoint.x, airportPoint.y, 15, airportPaint);
-      // Undo, then redo the track-up rotation so the labels are always at the
-      // top for track up.
-      if (isTrackUp) {
-        c.rotate(location.getBearing(), airportPoint.x, airportPoint.y);
-      }
-      c.drawText(airportDistance.airport.icao, airportPoint.x, airportPoint.y - 20, airportTextPaint);
-      if (isTrackUp) {
-        c.rotate(360 - location.getBearing(), airportPoint.x, airportPoint.y);
+      if (airportDistance.airport.isPublic || 
+          (!airportDistance.airport.isPublic && flightMap.showPrivate)){
+        final Paint airportPaint = getAirportPaint(airportDistance.airport);
+        Point airportPoint = MercatorProjection.toPoint(zoomCopy, airportDistance.airport.location);
+        c.drawCircle(airportPoint.x, airportPoint.y, 15, airportPaint);
+        // Undo, then redo the track-up rotation so the labels are always at the
+        // top for track up.
+        if (isTrackUp) {
+          c.rotate(location.getBearing(), airportPoint.x, airportPoint.y);
+        }
+        c.drawText(airportDistance.airport.icao, airportPoint.x, airportPoint.y - 20, airportPaint);
+        if (isTrackUp) {
+          c.rotate(360 - location.getBearing(), airportPoint.x, airportPoint.y);
+        }
       }
     }
 

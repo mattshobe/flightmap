@@ -23,6 +23,7 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.preference.PreferenceManager;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -45,7 +46,6 @@ public class FlightMap extends Activity {
 
   // Saved instance state constants
   private static final String DISCLAIMER_ACCEPTED = "disclaimer-accepted";
-  private static long UPDATE_RATE = 0;
 
   private boolean disclaimerAccepted;
   private boolean isRunning;
@@ -55,7 +55,15 @@ public class FlightMap extends Activity {
   AviationDbAdapter aviationDbAdapter;
   CustomGridAirportDirectory airportDirectory;
   
+  private static long UPDATE_RATE = 0;
+  public static long updateInterval;
   public static boolean isNorthUp;
+  public static String units;
+  public static boolean showSeaplane;
+  public static boolean showMilitary;
+  public static boolean showSoft;
+  public static boolean showPrivate;
+  public static int runwayLength;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -63,7 +71,6 @@ public class FlightMap extends Activity {
     
     locationHandler =
         new LocationHandler((LocationManager) getSystemService(Context.LOCATION_SERVICE));
-    
     
     aviationDbAdapter = new AndroidAviationDbAdapter();
     airportDirectory = new CustomGridAirportDirectory(aviationDbAdapter);
@@ -84,12 +91,6 @@ public class FlightMap extends Activity {
     }
   }
 
-  public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-	  if (key.equals(UserPrefs.NORTH_UP))
-		  FlightMap.isNorthUp = sharedPreferences.getBoolean(UserPrefs.NORTH_UP, false);
-	  if (key.equals(UserPrefs.UPDATE_INTERVAL))
-		  FlightMap.UPDATE_RATE = sharedPreferences.getLong(UserPrefs.UPDATE_INTERVAL, 100);
-  }
   
   @Override
   public void onSaveInstanceState(Bundle outState) {

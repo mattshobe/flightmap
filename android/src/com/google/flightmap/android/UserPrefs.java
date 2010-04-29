@@ -1,11 +1,12 @@
 package com.google.flightmap.android;
 
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 
-public class UserPrefs extends PreferenceActivity {
+public class UserPrefs extends PreferenceActivity implements OnSharedPreferenceChangeListener{
 	
     public static final String PREFS_NAME = "FlightMapPrefs";
     
@@ -28,9 +29,40 @@ public class UserPrefs extends PreferenceActivity {
 		PreferenceManager preferenceManager = getPreferenceManager();
 		preferenceManager.setSharedPreferencesName(PREFS_NAME);
 		preferenceManager.setSharedPreferencesMode(0);
-		addPreferencesFromResource(R.xml.preferences);
-		
-		
+		addPreferencesFromResource(R.xml.preferences);		
+    }
+    
+    public void onResume() {
+    	super.onResume();
+    	SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+    	FlightMap.isNorthUp = sharedPreferences.getBoolean(UserPrefs.NORTH_UP, false);
+		FlightMap.updateInterval = sharedPreferences.getLong(UserPrefs.UPDATE_INTERVAL, 100);
+		FlightMap.units = sharedPreferences.getString(UserPrefs.DISTANCE_UNITS, "Miles");
+		FlightMap.showSeaplane = sharedPreferences.getBoolean(UserPrefs.SHOW_SEAPLANE, true);
+		FlightMap.showMilitary = sharedPreferences.getBoolean(UserPrefs.SHOW_MILITARY, true);
+		FlightMap.showSoft = sharedPreferences.getBoolean(UserPrefs.SHOW_SOFT, true);
+		FlightMap.showPrivate = sharedPreferences.getBoolean(UserPrefs.SHOW_PRIVATE, true);
+		FlightMap.runwayLength = sharedPreferences.getInt(UserPrefs.RUNWAY_LENGTH, 2000);
+	}
+
+	@Override
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+		if (key.equals(UserPrefs.NORTH_UP))
+			FlightMap.isNorthUp = sharedPreferences.getBoolean(UserPrefs.NORTH_UP, false);
+		if (key.equals(UserPrefs.UPDATE_INTERVAL))
+			FlightMap.updateInterval = sharedPreferences.getLong(UserPrefs.UPDATE_INTERVAL, 100);
+		if (key.equals(UserPrefs.DISTANCE_UNITS))
+		 FlightMap.units = sharedPreferences.getString(UserPrefs.DISTANCE_UNITS, "Miles");
+		if (key.equals(UserPrefs.SHOW_SEAPLANE))
+			FlightMap.showSeaplane = sharedPreferences.getBoolean(UserPrefs.SHOW_SEAPLANE, true);
+		if (key.equals(UserPrefs.SHOW_MILITARY))
+			FlightMap.showMilitary = sharedPreferences.getBoolean(UserPrefs.SHOW_MILITARY, true);
+		if (key.equals(UserPrefs.SHOW_SOFT))
+			FlightMap.showSoft = sharedPreferences.getBoolean(UserPrefs.SHOW_SOFT, true);
+		if (key.equals(UserPrefs.SHOW_PRIVATE))
+			FlightMap.showPrivate = sharedPreferences.getBoolean(UserPrefs.SHOW_PRIVATE, true);
+		if (key.equals(UserPrefs.RUNWAY_LENGTH))
+			  FlightMap.runwayLength = sharedPreferences.getInt(UserPrefs.RUNWAY_LENGTH, 2000);
 	}
 	 
 }
