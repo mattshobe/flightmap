@@ -41,6 +41,7 @@ public class FlightMap extends Activity {
    * Milliseconds between screen updates. Note that the fastest I've seen GPS
    * updates arrive is once per second.
    */
+  private static long UPDATE_RATE = 100;
 
   private static final int MENU_SETTINGS = 0;
 
@@ -55,7 +56,6 @@ public class FlightMap extends Activity {
   AviationDbAdapter aviationDbAdapter;
   CustomGridAirportDirectory airportDirectory;
   
-  private static long UPDATE_RATE = 0;
   public static long updateInterval;
   public static boolean isNorthUp;
   public static String units;
