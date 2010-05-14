@@ -68,8 +68,8 @@ public class MercatorProjection {
   /**
    * Returns the number of meters per pixel at {@code location}.
    * <p>
-   * <b>Important:</b> the screen density is not accounted for by this method, so you
-   * may need to multiply the result by the screen density.
+   * <b>Important:</b> the screen density is not accounted for by this method,
+   * so you may need to multiply the result by the screen density.
    */
   public static double getMetersPerPixel(double zoom, LatLng location) {
     // Get the pixel coordinates of location, then make a pixel that's offset to
