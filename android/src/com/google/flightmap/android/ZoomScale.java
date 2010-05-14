@@ -18,10 +18,13 @@ package com.google.flightmap.android;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.graphics.Paint.Align;
 import android.graphics.Paint.Style;
 import android.location.Location;
+import android.util.Log;
+
+import com.google.flightmap.common.NavigationUtil;
+import com.google.flightmap.common.data.LatLng;
 
 /**
  * Draws the graphical zoom scale. The size of the scale bar changes slightly to
@@ -29,33 +32,49 @@ import android.location.Location;
  * followed by all zeros.
  */
 public class ZoomScale {
-  /** Ideally how wide the scale bar should be in absolute pixels. */
-  private static final int PREFERRED_WIDTH = 50;
-  /** Height of the lines on the ends */
-  private static final int HEIGHT = 15;
-  /** Number of pixels down from the top of the screen to draw the scale. */
-  private static final int TOP_OFFSET = (int) (50 + MapView.PANEL_HEIGHT);
-  /** Number of pixels left from the right of the screen to draw the right edge. */
-  private static final int RIGHT_OFFSET = 50;
+  private static final String TAG = ZoomScale.class.getSimpleName();
 
-  // Used to draw scale graphic.
-  private static final Path SCALE_PATH = new Path();
+  /** Ideally how wide the scale bar should be in absolute pixels. */
+  private static final int PREFERRED_WIDTH = 75;
+  /** Height of the lines on the ends */
+  private static final int HEIGHT = 25;
+  /** Number of pixels down from the top of the screen to draw the scale. */
+  private static final int TOP_OFFSET = (int) (20 + MapView.PANEL_HEIGHT);
+  /** Number of pixels left from the right of the screen to draw the right edge. */
+  private static final int RIGHT_OFFSET = 10;
+  /** Meters to travel between updating the zoom scale. */
+  private static final int ZOOM_UPDATE_DISTANCE = 20000;
 
   // Paints.
   private static final Paint LINE_PAINT = new Paint();
   private static final Paint TEXT_PAINT = new Paint();
 
+  // Screen density.
+  private final float density;
+
+  // Used to cache scale text.
+  private Location previousLocation;
+  private double previousZoom;
+  private String previousScaleText;
+
   static {
     LINE_PAINT.setAntiAlias(true);
-    LINE_PAINT.setColor(Color.WHITE);
+    LINE_PAINT.setColor(Color.rgb(0xcc, 0xcc, 0xcc));
     LINE_PAINT.setStyle(Style.STROKE);
     TEXT_PAINT.setAntiAlias(true);
-    TEXT_PAINT.setColor(Color.WHITE);
+    TEXT_PAINT.setColor(LINE_PAINT.getColor());
     TEXT_PAINT.setTextAlign(Align.CENTER);
   }
 
-  private ZoomScale() {
-    // Utility class.
+  /**
+   * Creates a ZoomScale.
+   * 
+   * @param density screen density.
+   */
+  public ZoomScale(float density) {
+    this.density = density;
+    TEXT_PAINT.setTextSize(15 * density);
+    LINE_PAINT.setStrokeWidth(2.5f * density);
   }
 
   /**
@@ -65,22 +84,52 @@ public class ZoomScale {
    * @param l current location.
    * @param density screen density.
    */
-  public static void drawScale(Canvas c, Location l, float density) {
-    TEXT_PAINT.setTextSize(15 * density);
-    LINE_PAINT.setStrokeWidth(2.5f * density);
-    final int width = c.getWidth();
-    final float rightX = width - RIGHT_OFFSET;
-    final float leftX = width - RIGHT_OFFSET - PREFERRED_WIDTH * density;
-    final float centerX = (leftX + rightX) / 2.0f;
+  public synchronized void drawScale(Canvas c, Location l, double zoom) {
+    final int canvasWidth = c.getWidth();
+    final float rightX = canvasWidth - RIGHT_OFFSET * density;
+    final float scaleWidth = PREFERRED_WIDTH;
+    final float leftX = rightX - scaleWidth * density;
     final float topY = TOP_OFFSET;
     final float bottomY = topY + HEIGHT;
+    final float centerX = (leftX + rightX) / 2.0f;
+    final float centerY = (topY + bottomY) / 2.0f;
 
-    SCALE_PATH.rewind();
-    SCALE_PATH.moveTo(leftX, bottomY);
-    SCALE_PATH.lineTo(leftX, topY);
-    SCALE_PATH.lineTo(rightX, topY);
-    SCALE_PATH.lineTo(rightX, bottomY);
-    c.drawPath(SCALE_PATH, LINE_PAINT);
-    c.drawText("42 nm", centerX, topY - 5, TEXT_PAINT);
+    c.drawLine(leftX, topY, leftX, bottomY, LINE_PAINT);
+    c.drawLine(leftX, centerY, rightX, centerY, LINE_PAINT);
+    c.drawLine(rightX, topY, rightX, bottomY, LINE_PAINT);
+    c.drawText(getScaleText(l, zoom), centerX, centerY - 5, TEXT_PAINT);
+  }
+
+  /**
+   * Returns the text to display above the zoom scale bar.
+   * 
+   * @param location current location.
+   * @param zoom zoom level.
+   */
+  private synchronized String getScaleText(Location location, double zoom) {
+    if (null != previousLocation && null != previousScaleText && zoom == previousZoom) {
+      // Return cached result if the location hasn't changed much.
+      if (previousLocation.distanceTo(location) < ZOOM_UPDATE_DISTANCE) {
+        return previousScaleText;
+      }
+    }
+    double mpp = MercatorProjection.getMetersPerPixel(zoom, //
+        LatLng.fromDouble(location.getLatitude(), location.getLongitude()));
+    double scaleInMeters = Math.round(mpp * PREFERRED_WIDTH * density);
+    // TODO - read user prefs to determine units to show.
+    double scaleInNm = scaleInMeters / NavigationUtil.METERS_PER_NM;
+    String result = null;
+    if (scaleInNm > 0.1) {
+      result = String.format("%.1f %s", scaleInNm, "nm");
+    } else {
+      // Show scale in feet when nm is less useful.
+      double scaleInFeet = scaleInMeters / NavigationUtil.METERS_PER_FOOT;
+      result = String.format("%.0f %s", scaleInFeet, "ft");
+    }
+    previousLocation = location;
+    previousZoom = zoom;
+    previousScaleText = result;
+    Log.i(TAG, "New scale: " + result);
+    return result;
   }
 }

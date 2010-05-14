@@ -15,6 +15,8 @@
  */
 package com.google.flightmap.android;
 
+import java.util.SortedSet;
+
 import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -38,15 +40,11 @@ import com.google.flightmap.common.data.Airport;
 import com.google.flightmap.common.data.AirportDistance;
 import com.google.flightmap.common.data.LatLng;
 
-import java.util.HashMap;
-import java.util.SortedSet;
-
 /**
  * View for the moving map.
  */
 public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   private static final String TAG = MapView.class.getSimpleName();
-
 
   // Saved instance state constants.
   private static final String ZOOM_LEVEL = "zoom-level";
@@ -65,8 +63,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   private static final Paint PANEL_UNITS_PAINT = new Paint();
 
   // Zoom items.
-  private static final int MIN_ZOOM = 0;
-  private static final int MAX_ZOOM = 30;
+  private static final int MIN_ZOOM = 4;
+  private static final int MAX_ZOOM = 17;
   private static final float ZOOM_STEP = 0.5f;
   private ZoomButtonsController zoomController;
   private float zoom = 10;
@@ -100,6 +98,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   // Screen density.
   private final float density;
 
+  // Graphical zoom scale.
+  private final ZoomScale zoomScale;
+
   // Static initialization.
   static {
     // Do not put any calls to setTextSize here. Put them in #setTextSizes().
@@ -114,7 +115,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     NON_TOWERED_PAINT.setTextAlign(Align.CENTER);
     AIRPORT_TEXT_PAINT.setAntiAlias(true);
     AIRPORT_TEXT_PAINT.setARGB(0xff, 0xff, 0xff, 0xff);
-    AIRPORT_TEXT_PAINT.setTypeface(Typeface.SANS_SERIF);    
+    AIRPORT_TEXT_PAINT.setTypeface(Typeface.SANS_SERIF);
     AIRPORT_TEXT_PAINT.setTextAlign(Align.CENTER);
     AIRCRAFT_PAINT.setColor(Color.GREEN);
     AIRCRAFT_PAINT.setStrokeWidth(3);
@@ -132,6 +133,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     super(flightMap);
     this.flightMap = flightMap;
     this.density = flightMap.getResources().getDisplayMetrics().density;
+    zoomScale = new ZoomScale(density);
     getHolder().addCallback(this);
     setFocusable(true); // make sure we get key events
     setKeepScreenOn(true);
@@ -190,7 +192,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
    */
   @Override
   public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-    if(!FlightMap.isNorthUp) {
+    if (!FlightMap.isNorthUp) {
       // Center the aircraft horizontally, and 3/4 of the way down vertically.
       aircraftX = width / 2;
       aircraftY = height - (height / 4);
@@ -302,11 +304,11 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     SortedSet<AirportDistance> nearbyAirports =
         flightMap.airportDirectory.getAirportsWithinRadius(locationLatLng, 20);
     // TODO: remove airports based on settings.
-    // TODO: 20nm hardcoded, should get airports within bounding box of screen.    
+    // TODO: 20nm hardcoded, should get airports within bounding box of screen.
     // Need a new aviation db interface that takes a lat/lng bounding box.
     for (AirportDistance airportDistance : nearbyAirports) {
-      if (airportDistance.airport.isPublic || 
-          (!airportDistance.airport.isPublic && flightMap.showPrivate)){
+      if (airportDistance.airport.isPublic
+          || (!airportDistance.airport.isPublic && flightMap.showPrivate)) {
         final Paint airportPaint = getAirportPaint(airportDistance.airport);
         Point airportPoint = MercatorProjection.toPoint(zoomCopy, airportDistance.airport.location);
         c.drawCircle(airportPoint.x, airportPoint.y, 15, airportPaint);
@@ -315,7 +317,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
         if (isTrackUp) {
           c.rotate(location.getBearing(), airportPoint.x, airportPoint.y);
         }
-        c.drawText(airportDistance.airport.icao, airportPoint.x, airportPoint.y - 20, airportPaint);
+        c.drawText(airportDistance.airport.icao, airportPoint.x, airportPoint.y - 20,
+            AIRPORT_TEXT_PAINT);
         if (isTrackUp) {
           c.rotate(360 - location.getBearing(), airportPoint.x, airportPoint.y);
         }
@@ -338,14 +341,15 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     // Draw items that are in fixed locations. Set origin to top-left corner.
     c.translate(-aircraftX, -aircraftY);
 
-    ZoomScale.drawScale(c, location, density);
-    
+    zoomScale.drawScale(c, location, zoomCopy);
+
     // Polygon for top params display.
     if (null != topPanel) {
       c.drawPath(topPanel, PANEL_BACKGROUND_PAINT);
       String knots = "-";
       String track = "-" + DEGREES_SYMBOL;
       String altitude = "-";
+
       if (location.hasSpeed()) {
         knots = String.format("%.0f", location.getSpeed() * NavigationUtil.METERS_PER_SEC_TO_KNOTS);
       }
