@@ -15,9 +15,10 @@
  */
 package com.google.flightmap.android;
 
-import com.google.flightmap.common.data.LatLng;
-
 import android.graphics.Point;
+import android.location.Location;
+
+import com.google.flightmap.common.data.LatLng;
 
 /**
  * Converts between latitude,longitude and x,y locations. See
@@ -59,9 +60,31 @@ public class MercatorProjection {
     double equatorPixels = ZOOM_0_EQUATOR_PIXELS * Math.pow(2, zoom);
     double centerPixel = equatorPixels / 2;
     double lng = 360 * (point.x - centerPixel) / equatorPixels;
-    double lat =
-        2 * Math.atan(Math.exp(2 * Math.PI * (centerPixel - point.y) / equatorPixels))
-            - (Math.PI / 2);
+    double lat = Math.toDegrees(2 * Math.atan( //
+        Math.exp(2 * Math.PI * (centerPixel - point.y) / equatorPixels)) - (Math.PI / 2));
     return LatLng.fromDouble(lat, lng);
+  }
+
+  /**
+   * Returns the number of meters per pixel at {@code location}.
+   * <p>
+   * <b>Important:</b> the screen density is not accounted for by this method, so you
+   * may need to multiply the result by the screen density.
+   */
+  public static double getMetersPerPixel(double zoom, LatLng location) {
+    // Get the pixel coordinates of location, then make a pixel that's offset to
+    // the east.
+    Point pixel = toPoint(zoom, location);
+    final int pixelOffset = 100;
+    Point eastPixel = new Point(pixel.x + pixelOffset, pixel.y);
+
+    // Get the LatLng for eastPixel, then measure the distance.
+    LatLng eastLocation = fromPoint(zoom, eastPixel);
+
+    float[] results = new float[1];
+    Location.distanceBetween(location.latDeg(), location.lngDeg(), eastLocation.latDeg(),
+        eastLocation.lngDeg(), results);
+    float result = results[0] / pixelOffset;
+    return result;
   }
 }

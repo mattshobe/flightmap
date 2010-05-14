@@ -22,9 +22,10 @@ import com.google.flightmap.common.data.LatLng;
  * Utility class for navigation calculations such as distance, bearing, etc.
  */
 public class NavigationUtil {
-  public static final double EARTH_RADIUS = 6371.009 / 1.852; // KM to NM
+  public static final double METERS_PER_NM = 1852;
   public static final double METERS_PER_FOOT = 3.2808399;
   public static final double METERS_PER_SEC_TO_KNOTS = 1.94384449;
+  public static final double EARTH_RADIUS = 6371009 / METERS_PER_NM;
 
   /**
    * Returns the distance in nautical miles between point1 and point2.
