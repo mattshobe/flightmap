@@ -37,11 +37,13 @@ public class ZoomScale {
   /** Ideally how wide the scale bar should be in absolute pixels. */
   private static final int PREFERRED_WIDTH = 75;
   /** Height of the lines on the ends */
-  private static final int HEIGHT = 25;
-  /** Number of pixels down from the top of the screen to draw the scale. */
-  private static final int TOP_OFFSET = (int) (20 + MapView.PANEL_HEIGHT);
+  private static final int HEIGHT = 8;
+  
+  /** Number of pixels up from the bottom of the screen to draw the scale. */
+  private static final int BOTTOM_OFFSET = 20 + HEIGHT;
+  
   /** Number of pixels left from the right of the screen to draw the right edge. */
-  private static final int RIGHT_OFFSET = 10;
+  private static final int RIGHT_OFFSET = 30;
   /** Meters to travel between updating the zoom scale. */
   private static final int ZOOM_UPDATE_DISTANCE = 20000;
 
@@ -74,7 +76,7 @@ public class ZoomScale {
   public ZoomScale(float density) {
     this.density = density;
     TEXT_PAINT.setTextSize(15 * density);
-    LINE_PAINT.setStrokeWidth(2.5f * density);
+    LINE_PAINT.setStrokeWidth(1.0f * density);
   }
 
   /**
@@ -86,10 +88,11 @@ public class ZoomScale {
    */
   public synchronized void drawScale(Canvas c, Location l, double zoom) {
     final int canvasWidth = c.getWidth();
+    final int canvasHeight = c.getHeight();
     final float rightX = canvasWidth - RIGHT_OFFSET * density;
     final float scaleWidth = PREFERRED_WIDTH;
     final float leftX = rightX - scaleWidth * density;
-    final float topY = TOP_OFFSET;
+    final float topY = canvasHeight - BOTTOM_OFFSET;
     final float bottomY = topY + HEIGHT;
     final float centerX = (leftX + rightX) / 2.0f;
     final float centerY = (topY + bottomY) / 2.0f;
