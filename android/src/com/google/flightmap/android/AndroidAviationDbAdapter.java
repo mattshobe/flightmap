@@ -32,6 +32,7 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   private static final String IS_OPEN_COLUMN = "is_open";
   private static final String IS_PUBLIC_COLUMN = "is_public";
   private static final String IS_TOWERED_COLUMN = "is_towered";
+  private static final String IS_MILITARY_COLUMN = "is_military";
   private static final String LAT_COLUMN = "lat";
   private static final String LNG_COLUMN = "lng";
   private static final String CELL_ID_COLUMN = "cell_id";
@@ -42,10 +43,10 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
       new String[] {ID_COLUMN, LAT_COLUMN, LNG_COLUMN, CELL_ID_COLUMN};
   private static final String[] AIRPORT_COLUMNS =
       new String[] {ID_COLUMN, ICAO_COLUMN, NAME_COLUMN, TYPE_COLUMN, CITY_COLUMN,
-                    IS_OPEN_COLUMN, IS_PUBLIC_COLUMN, IS_TOWERED_COLUMN};
+                    IS_OPEN_COLUMN, IS_PUBLIC_COLUMN, IS_TOWERED_COLUMN, IS_MILITARY_COLUMN};
   private static final String[] AIRPORT_LOCATION_COLUMNS =
       new String[] {ID_COLUMN, ICAO_COLUMN, NAME_COLUMN, TYPE_COLUMN, CITY_COLUMN,
-                    IS_OPEN_COLUMN, IS_PUBLIC_COLUMN, IS_TOWERED_COLUMN,
+                    IS_OPEN_COLUMN, IS_PUBLIC_COLUMN, IS_TOWERED_COLUMN, IS_MILITARY_COLUMN,
                     LAT_COLUMN, LNG_COLUMN};
   //   constants
   private static final String CONSTANTS_TABLE = "constants";
@@ -128,9 +129,11 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
           airports.getInt(airports.getColumnIndexOrThrow(IS_PUBLIC_COLUMN)) == 1;
       final boolean isTowered =
           airports.getInt(airports.getColumnIndexOrThrow(IS_TOWERED_COLUMN)) == 1;
+      final boolean isMilitary =
+          airports.getInt(airports.getColumnIndexOrThrow(IS_MILITARY_COLUMN)) == 1;
 
       return new Airport(id, icao, name, type, city, new LatLng(latE6, lngE6), isOpen, isPublic,
-                         isTowered, getRunways(id));
+                         isTowered, isMilitary, getRunways(id));
     } finally {
       airports.close();
     }
@@ -224,9 +227,11 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
           airports.getInt(airports.getColumnIndexOrThrow(IS_PUBLIC_COLUMN)) == 1;
       final boolean isTowered =
           airports.getInt(airports.getColumnIndexOrThrow(IS_TOWERED_COLUMN)) == 1;
+      final boolean isMilitary =
+          airports.getInt(airports.getColumnIndexOrThrow(IS_MILITARY_COLUMN)) == 1;
 
       return new Airport(id, icao, name, type, city, knownLocation, isOpen, isPublic, isTowered,
-                        getRunways(id));
+                         isMilitary, getRunways(id));
     } finally {
       airports.close();
     }

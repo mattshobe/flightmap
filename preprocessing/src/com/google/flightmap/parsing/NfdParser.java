@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.flightmap.parser;
+package com.google.flightmap.parsing;
 
 import com.google.flightmap.common.CustomGridUtil;
 
@@ -43,10 +43,10 @@ public class NfdParser {
       System.exit(1);
     }
 
-    (new NfdParser(args[0])).run();
+    (new NfdParser(args[0])).execute();
   }
 
-  private void run() {
+  private void execute() {
     try {
       addAirportDataToDb();
     } catch (Exception ex) {

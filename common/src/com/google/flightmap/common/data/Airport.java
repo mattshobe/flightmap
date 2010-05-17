@@ -61,7 +61,7 @@ public class Airport implements Comparable<Airport> {
   public final boolean isOpen;
 
   /**
-   * Airport use: true if public, false if private (prior permission required)
+   * Airport use: true if public, false if private (prior permission required.)
    */
   public final boolean isPublic;
 
@@ -69,6 +69,11 @@ public class Airport implements Comparable<Airport> {
    * Control Tower: true if airport is towered, false otherwise.
    */
   public final boolean isTowered;
+
+  /**
+   * Military airpot: true if owner is military, false otherwise.
+   */
+  public final boolean isMilitary;
 
   /**
    * Airport runways.  In decreasing order of length, then width.
@@ -84,6 +89,7 @@ public class Airport implements Comparable<Airport> {
                  final boolean isOpen,
                  final boolean isPublic,
                  final boolean isTowered,
+                 final boolean isMilitary,
                  final SortedSet<Runway> runways) {
     this.id = id;
     this.icao = icao;
@@ -94,6 +100,7 @@ public class Airport implements Comparable<Airport> {
     this.isOpen = isOpen;
     this.isPublic = isPublic;
     this.isTowered = isTowered;
+    this.isMilitary = isMilitary;
     this.runways = runways;
   }
 
