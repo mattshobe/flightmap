@@ -17,6 +17,10 @@ import java.util.TreeSet;
 public class CustomGridAirportDirectory implements AirportDirectory {
   private final AviationDbAdapter adapter;
 
+  // Caching
+  private TreeSet<AirportDistance> previousResult;
+  private LatLng previousPosition;
+
   public CustomGridAirportDirectory(AviationDbAdapter adapter) {
     this.adapter = adapter;
   }
@@ -36,6 +40,11 @@ public class CustomGridAirportDirectory implements AirportDirectory {
   }
 
   public TreeSet<AirportDistance> getAirportsWithinRadius(final LatLng position, final double radius) {
+    // TODO - Cache should be cleared when preferences change.
+    if (previousResult != null && NavigationUtil.computeDistance(position, previousPosition) < 0.1) {
+      return previousResult;
+    }
+
     double earthRadiusAtLat =
         NavigationUtil.EARTH_RADIUS * Math.sin(Math.PI / 2 - position.latRad());
     double longRadius = radius / (2 * Math.PI * earthRadiusAtLat) * 360;
@@ -56,6 +65,8 @@ public class CustomGridAirportDirectory implements AirportDirectory {
       }
     }
 
+    previousPosition = position;
+    previousResult = airportsInRange;
     return airportsInRange;
   }
 }
