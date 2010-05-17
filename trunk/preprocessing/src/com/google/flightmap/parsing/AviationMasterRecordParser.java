@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.flightmap.parser;
+package com.google.flightmap.parsing;
 
 import com.google.flightmap.common.CustomGridUtil;
 import org.apache.commons.lang.WordUtils;
@@ -29,11 +29,12 @@ import java.util.regex.*;
  * Parses airports from FAA Airport Master Record file and adds them to a SQLite database
  *
  * http://www.faa.gov/airports/airport_safety/airportdata_5010/
- * 
+ *
  */
 public class AviationMasterRecordParser {
   // Airport data headers
   private final static String AIRPORT_USE_HEADER = "Use";  // PU, PR
+  private final static String AIRPORT_OWNERSHIP_HEADER = "Ownership";  // PU, PR, MA, MN, MR
   private final static String AIRPORT_SITE_NUMBER_HEADER = "SiteNumber";
   private final static String AIRPORT_LOCATION_ID_HEADER = "LocationID";
   private final static String AIRPORT_TYPE_HEADER = "Type";  // AIRPORT, HELIPORT, ...
@@ -182,8 +183,9 @@ public class AviationMasterRecordParser {
 
     PreparedStatement insertAirportStatement = dbConn.prepareStatement(
         "INSERT INTO airports " +
-        "(icao, name, type, city, lat, lng, is_open, is_public, is_towered, cell_id) " +
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
+        "(icao, name, type, city, lat, lng, is_open, is_public, is_towered, " +
+        "is_military, cell_id) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
     PreparedStatement getAirportIdStatement = dbConn.prepareStatement(
         "SELECT _id FROM airports WHERE icao = ?");
 
@@ -211,8 +213,6 @@ public class AviationMasterRecordParser {
       //   city
       final String airportCity = airportFields[headerPosition.get(AIRPORT_CITY_HEADER)];
       insertAirportStatement.setString(++fieldCount, airportCity);
-/*      insertAirportStatement.setInt(
-          ++fieldCount, getConstantId(capitalize(airportCity.toLowerCase())));*/
 
       //   lat
       final String airportLatitudeS = airportFields[headerPosition.get(AIRPORT_LATITUDE_HEADER)];
@@ -253,6 +253,12 @@ public class AviationMasterRecordParser {
           airportFields[headerPosition.get(AIRPORT_CONTROL_TOWER_HEADER)];
       final boolean isTowered = "Y".equals(airportControlTower);
       insertAirportStatement.setBoolean(++fieldCount, isTowered);
+
+      //   is_military
+      final String airportOwnership =
+          airportFields[headerPosition.get(AIRPORT_OWNERSHIP_HEADER)];
+      final boolean isMilitary =  airportOwnership.startsWith("M");
+      insertAirportStatement.setBoolean(++fieldCount, isMilitary);
 
       //   cell_id
       int cellId = CustomGridUtil.GetCellId(airportLatE6, airportLngE6);
@@ -350,6 +356,12 @@ public class AviationMasterRecordParser {
     getAirportIdStatement.close();
   }
 
+  /**
+   * Adds a property to an airport.
+   *
+   * Both key and value strings are converted to constants.
+   * If the value string can be parsed as an integer, it is not converted.
+   */
   private void addAirportProperty(final int airportDbId, final String key, final String value)
       throws SQLException {
     if (insertAirportPropertyStatement == null) {
@@ -646,6 +658,7 @@ public class AviationMasterRecordParser {
                          "is_open BOOLEAN NOT NULL, " +
                          "is_public BOOLEAN NOT NULL, " +
                          "is_towered BOOLEAN NOT NULL, " +
+                         "is_military BOOLEAN NOT NULL, " +
                          "cell_id INTEGER NOT NULL);");
       stat.executeUpdate("CREATE INDEX airports_cell_id_index ON airports (cell_id)");
 
@@ -694,6 +707,9 @@ public class AviationMasterRecordParser {
     }
   }
 
+  /**
+   * Gets a connection to the database.
+   */
   private Connection initDB() throws ClassNotFoundException, SQLException {
     Class.forName("org.sqlite.JDBC");
     return DriverManager.getConnection("jdbc:sqlite:" + targetFile);
@@ -743,7 +759,7 @@ public class AviationMasterRecordParser {
     }
   }
 
-  private void run() {
+  private void execute() {
     try {
       dbConn = initDB();
       initAndroidMetadataTable();
@@ -937,7 +953,7 @@ public class AviationMasterRecordParser {
       System.exit(1);
     }
 
-    (new AviationMasterRecordParser(args[0], args[1], args[2], args[3])).run();
+    (new AviationMasterRecordParser(args[0], args[1], args[2], args[3])).execute();
   }
 
 }
