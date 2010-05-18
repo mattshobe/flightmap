@@ -106,6 +106,26 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
     database.close();
   }
 
+  /**
+   * Return Airport.Type enum value corresponding to the given string.
+   */
+  private static Airport.Type getAirportType(final String typeString) {
+    if ("Airport".equals(typeString)) {
+      return Airport.Type.AIRPORT;
+    } else if ("Seaplane Base".equals(typeString)) {
+      return Airport.Type.SEAPLANE_BASE;
+    } else if ("Heliport".equals(typeString)) {
+      return Airport.Type.HELIPORT;
+    } else if ("Ultralight".equals(typeString)) {
+      return Airport.Type.ULTRALIGHT;
+    } else if ("Gliderport".equals(typeString)) {
+      return Airport.Type.GLIDERPORT;
+    } else if ("Balloonport".equals(typeString)) {
+      return Airport.Type.BALLOONPORT;
+    } else {
+      return Airport.Type.OTHER;
+    }
+  }
 
   @Override
   public Airport getAirport(int id) {
@@ -122,7 +142,8 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
       final String name = airports.getString(airports.getColumnIndexOrThrow(NAME_COLUMN));
       final int typeConstantId = airports.getInt(airports.getColumnIndexOrThrow(TYPE_COLUMN));
       final String city = airports.getString(airports.getColumnIndexOrThrow(CITY_COLUMN));
-      final String type = getConstant(typeConstantId);
+      final String typeString = getConstant(typeConstantId);
+      final Airport.Type type = getAirportType(typeString);
       final int latE6 = airports.getInt(airports.getColumnIndexOrThrow(LAT_COLUMN));
       final int lngE6 = airports.getInt(airports.getColumnIndexOrThrow(LNG_COLUMN));
       final boolean isOpen = airports.getInt(airports.getColumnIndexOrThrow(IS_OPEN_COLUMN)) == 1;
@@ -222,7 +243,8 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
       final String name = airports.getString(airports.getColumnIndexOrThrow(NAME_COLUMN));
       final int typeConstantId = airports.getInt(airports.getColumnIndexOrThrow(TYPE_COLUMN));
       final String city = airports.getString(airports.getColumnIndexOrThrow(CITY_COLUMN));
-      final String type = getConstant(typeConstantId);
+      final String typeString = getConstant(typeConstantId);
+      final Airport.Type type = getAirportType(typeString);
       final boolean isOpen = airports.getInt(airports.getColumnIndexOrThrow(IS_OPEN_COLUMN)) == 1;
       final boolean isPublic =
           airports.getInt(airports.getColumnIndexOrThrow(IS_PUBLIC_COLUMN)) == 1;
