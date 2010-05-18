@@ -23,6 +23,11 @@ import java.util.SortedSet;
  */
 public class Airport implements Comparable<Airport> {
   /**
+   * Facility types.
+   */
+  public enum Type { AIRPORT, SEAPLANE_BASE, HELIPORT, ULTRALIGHT, GLIDERPORT, BALLOONPORT, OTHER }
+
+  /**
    * Application-specific identifier.  An integer uniquely identifying the
    * airport for the application.
    */
@@ -43,7 +48,7 @@ public class Airport implements Comparable<Airport> {
   /**
    * Airport type (land airport, seaplane base, heliport)
    */
-  public final String type;
+  public final Type type;
 
   /**
    * Airport city.  Not unique.
@@ -83,7 +88,7 @@ public class Airport implements Comparable<Airport> {
   public Airport(final int id,
                  final String icao,
                  final String name,
-                 final String type,
+                 final Type type,
                  final String city,
                  final LatLng location,
                  final boolean isOpen,
