@@ -54,7 +54,6 @@ public class CustomGridAirportDirectory implements AirportDirectory {
     LinkedList<int[]> cellRanges = CustomGridUtil.GetCellsInRadius(position, radiusE6);
     TreeSet<AirportDistance> airportsInRange = new TreeSet<AirportDistance>();
 
-
     for (int[] range : cellRanges) {
       LinkedList<Airport> airportsInCells = adapter.getAirportsInCells(range[0], range[1]);
       for (Airport airport : airportsInCells) {
