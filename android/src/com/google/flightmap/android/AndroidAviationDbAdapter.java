@@ -23,7 +23,7 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   // database
   private static final String DATABASE_PATH = "/sdcard/com.google.flightmap/aviation.db";
 
-  //   airports
+  // airports
   private static final String AIRPORTS_TABLE = "airports";
   private static final String ID_COLUMN = "_id";
   private static final String ICAO_COLUMN = "icao";
@@ -43,17 +43,16 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   private static final String[] LOCATION_COLUMNS =
       new String[] {ID_COLUMN, LAT_COLUMN, LNG_COLUMN, CELL_ID_COLUMN};
   private static final String[] AIRPORT_COLUMNS =
-      new String[] {ID_COLUMN, ICAO_COLUMN, NAME_COLUMN, TYPE_COLUMN, CITY_COLUMN,
-                    IS_OPEN_COLUMN, IS_PUBLIC_COLUMN, IS_TOWERED_COLUMN, IS_MILITARY_COLUMN};
+      new String[] {ID_COLUMN, ICAO_COLUMN, NAME_COLUMN, TYPE_COLUMN, CITY_COLUMN, IS_OPEN_COLUMN,
+          IS_PUBLIC_COLUMN, IS_TOWERED_COLUMN, IS_MILITARY_COLUMN};
   private static final String[] AIRPORT_LOCATION_COLUMNS =
-      new String[] {ID_COLUMN, ICAO_COLUMN, NAME_COLUMN, TYPE_COLUMN, CITY_COLUMN,
-                    IS_OPEN_COLUMN, IS_PUBLIC_COLUMN, IS_TOWERED_COLUMN, IS_MILITARY_COLUMN,
-                    LAT_COLUMN, LNG_COLUMN};
-  //   constants
+      new String[] {ID_COLUMN, ICAO_COLUMN, NAME_COLUMN, TYPE_COLUMN, CITY_COLUMN, IS_OPEN_COLUMN,
+          IS_PUBLIC_COLUMN, IS_TOWERED_COLUMN, IS_MILITARY_COLUMN, LAT_COLUMN, LNG_COLUMN};
+  // constants
   private static final String CONSTANTS_TABLE = "constants";
   private static final String CONSTANT_COLUMN = "constant";
   private static final String[] CONSTANT_COLUMNS = new String[] {CONSTANT_COLUMN};
-  //   airport_properties
+  // airport_properties
   private static final String AIRPORT_PROPERTIES_TABLE = "airport_properties";
   private static final String AIRPORT_ID_COLUMN = "airport_id";
   private static final String KEY_COLUMN = "key";
@@ -61,23 +60,23 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   private static final String AIRPORT_ID_WHERE = AIRPORT_ID_COLUMN + " = ?";
   private static final String[] PROPERTY_COLUMNS = new String[] {KEY_COLUMN, VALUE_COLUMN};
   private static final HashSet<String> INTEGER_AIRPORT_PROPERTIES;
-  //   runways
+  // runways
   private static final String RUNWAYS_TABLE = "runways";
   private static final String RUNWAY_LETTERS_COLUMN = "letters";
   private static final String RUNWAY_LENGTH_COLUMN = "length";
   private static final String RUNWAY_WIDTH_COLUMN = "width";
   private static final String RUNWAY_SURFACE_COLUMN = "surface";
   private static final String[] RUNWAY_COLUMNS =
-      new String[] {ID_COLUMN, RUNWAY_LETTERS_COLUMN, RUNWAY_LENGTH_COLUMN,
-                    RUNWAY_WIDTH_COLUMN, RUNWAY_SURFACE_COLUMN};
-  //  runway_ends
+      new String[] {ID_COLUMN, RUNWAY_LETTERS_COLUMN, RUNWAY_LENGTH_COLUMN, RUNWAY_WIDTH_COLUMN,
+          RUNWAY_SURFACE_COLUMN};
+  // runway_ends
   private static final String RUNWAY_ENDS_TABLE = "runway_ends";
   private static final String RUNWAY_ID_COLUMN = "runway_id";
   private static final String RUNWAY_END_LETTERS_COLUMN = "letters";
   private static final String RUNWAY_ID_WHERE = RUNWAY_ID_COLUMN + " = ?";
   private static final String[] RUNWAY_END_COLUMNS =
       new String[] {ID_COLUMN, RUNWAY_END_LETTERS_COLUMN};
-  //  runway_end_properties
+  // runway_end_properties
   private static final String RUNWAY_END_PROPERTIES_TABLE = "runway_end_properties";
   private static final String RUNWAY_END_ID_COLUMN = "runway_end_id";
   private static final HashSet<String> INTEGER_RUNWAY_END_PROPERTIES;
@@ -95,7 +94,7 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
 
   /**
    * Opens the airport database.
-   *
+   * 
    * @throws SQLException on database error.
    */
   public synchronized void open() {
@@ -155,7 +154,7 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
           airports.getInt(airports.getColumnIndexOrThrow(IS_MILITARY_COLUMN)) == 1;
 
       return new Airport(id, icao, name, type, city, new LatLng(latE6, lngE6), isOpen, isPublic,
-                         isTowered, isMilitary, getRunways(id));
+          isTowered, isMilitary, getRunways(id));
     } finally {
       airports.close();
     }
@@ -181,12 +180,31 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
         int lat = locations.getInt(latColumn);
         int lng = locations.getInt(lngColumn);
         LatLng location = new LatLng(lat, lng);
-        result.add(getAirport(id, location));
+        Airport airport = getAirport(id, location);
+        if (shouldInclude(airport)) {
+          result.add(airport);
+        }
       } while (locations.moveToNext());
     } finally {
       locations.close();
     }
     return result;
+  }
+
+  /**
+   * Returns true if the airport should be included in database results. User
+   * preferences are applied here to filter the database results.
+   */
+  private boolean shouldInclude(Airport airport) {
+    // TODO: apply user preferences here. The code below gives a sketch of how
+    // I'd test against preferences.
+    if (!airport.type.equals(Airport.Type.AIRPORT)) {
+      return false;
+    }
+    if (!airport.isPublic) {
+      return false;
+    }
+    return true;
   }
 
   /**
@@ -196,11 +214,8 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   public HashMap<String, String> getAirportProperties(int airportId) {
     String[] stringAirportId = {Integer.toString(airportId)};
     Cursor airportPropertiesCursor =
-        database.query(AIRPORT_PROPERTIES_TABLE,
-                       PROPERTY_COLUMNS,
-                       AIRPORT_ID_WHERE,
-                       stringAirportId, null, null,
-            null);
+        database.query(AIRPORT_PROPERTIES_TABLE, PROPERTY_COLUMNS, AIRPORT_ID_WHERE,
+            stringAirportId, null, null, null);
     try {
       if (!airportPropertiesCursor.moveToFirst()) {
         Log.e(TAG, "No airport properties for id =" + airportId);
@@ -209,11 +224,13 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
       final HashMap<String, String> airportProperties = new HashMap<String, String>();
 
       do {
-        final int keyConstantId = airportPropertiesCursor.getInt(
-            airportPropertiesCursor.getColumnIndexOrThrow(KEY_COLUMN));
+        final int keyConstantId =
+            airportPropertiesCursor.getInt(airportPropertiesCursor
+                .getColumnIndexOrThrow(KEY_COLUMN));
         final String key = getConstant(keyConstantId);
-        final int valueConstantId = airportPropertiesCursor.getInt(
-            airportPropertiesCursor.getColumnIndexOrThrow(VALUE_COLUMN));
+        final int valueConstantId =
+            airportPropertiesCursor.getInt(airportPropertiesCursor
+                .getColumnIndexOrThrow(VALUE_COLUMN));
         String value;
         if (INTEGER_AIRPORT_PROPERTIES.contains(key)) {
           value = Integer.toString(valueConstantId);
@@ -232,8 +249,7 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   private Airport getAirport(int id, LatLng knownLocation) {
     final String[] stringId = {Integer.toString(id)};
     final Cursor airports =
-        database.query(AIRPORTS_TABLE, AIRPORT_COLUMNS, ID_WHERE, stringId, null, null,
-            null);
+        database.query(AIRPORTS_TABLE, AIRPORT_COLUMNS, ID_WHERE, stringId, null, null, null);
     try {
       if (!airports.moveToFirst()) {
         Log.e(TAG, "No airport for id =" + id);
@@ -254,7 +270,7 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
           airports.getInt(airports.getColumnIndexOrThrow(IS_MILITARY_COLUMN)) == 1;
 
       return new Airport(id, icao, name, type, city, knownLocation, isOpen, isPublic, isTowered,
-                         isMilitary, getRunways(id));
+          isMilitary, getRunways(id));
     } finally {
       airports.close();
     }
@@ -280,11 +296,8 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   private SortedSet<Runway> getRunways(final int airportId) {
     String[] stringAirportId = {Integer.toString(airportId)};
     Cursor runwayCursor =
-        database.query(RUNWAYS_TABLE,
-                       RUNWAY_COLUMNS,
-                       AIRPORT_ID_WHERE,
-                       stringAirportId, null, null,
-            null);
+        database.query(RUNWAYS_TABLE, RUNWAY_COLUMNS, AIRPORT_ID_WHERE, stringAirportId, null,
+            null, null);
     try {
       if (!runwayCursor.moveToFirst()) {
         Log.e(TAG, "No runway for airport id =" + airportId);
@@ -293,22 +306,21 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
       final TreeSet<Runway> runways = new TreeSet<Runway>(Collections.reverseOrder());
 
       do {
-        final int runwayId = runwayCursor.getInt(
-                    runwayCursor.getColumnIndexOrThrow(ID_COLUMN));
-        final String runwayLetters = runwayCursor.getString(
-            runwayCursor.getColumnIndexOrThrow(RUNWAY_LETTERS_COLUMN));
-        final int runwayLength = runwayCursor.getInt(
-                    runwayCursor.getColumnIndexOrThrow(RUNWAY_LENGTH_COLUMN));
-        final int runwayWidth = runwayCursor.getInt(
-                    runwayCursor.getColumnIndexOrThrow(RUNWAY_WIDTH_COLUMN));
-        final String runwaySurface= getConstant(runwayCursor.getInt(
-            runwayCursor.getColumnIndexOrThrow(RUNWAY_SURFACE_COLUMN)));
+        final int runwayId = runwayCursor.getInt(runwayCursor.getColumnIndexOrThrow(ID_COLUMN));
+        final String runwayLetters =
+            runwayCursor.getString(runwayCursor.getColumnIndexOrThrow(RUNWAY_LETTERS_COLUMN));
+        final int runwayLength =
+            runwayCursor.getInt(runwayCursor.getColumnIndexOrThrow(RUNWAY_LENGTH_COLUMN));
+        final int runwayWidth =
+            runwayCursor.getInt(runwayCursor.getColumnIndexOrThrow(RUNWAY_WIDTH_COLUMN));
+        final String runwaySurface =
+            getConstant(runwayCursor.getInt(runwayCursor
+                .getColumnIndexOrThrow(RUNWAY_SURFACE_COLUMN)));
 
         final SortedSet<RunwayEnd> runwayEnds = getRunwayEnds(runwayId);
 
-        runways.add(
-            new Runway(airportId, runwayLetters, runwayLength, runwayWidth,  runwaySurface,
-                       runwayEnds));
+        runways.add(new Runway(airportId, runwayLetters, runwayLength, runwayWidth, runwaySurface,
+            runwayEnds));
       } while (runwayCursor.moveToNext());
 
       // Return runways in descending order of length
@@ -321,11 +333,8 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   private SortedSet<RunwayEnd> getRunwayEnds(final int runwayId) {
     String[] stringRunwayId = {Integer.toString(runwayId)};
     Cursor runwayEndCursor =
-        database.query(RUNWAY_ENDS_TABLE,
-                       RUNWAY_END_COLUMNS,
-                       RUNWAY_ID_WHERE,
-                       stringRunwayId, null, null,
-            null);
+        database.query(RUNWAY_ENDS_TABLE, RUNWAY_END_COLUMNS, RUNWAY_ID_WHERE, stringRunwayId,
+            null, null, null);
     try {
       if (!runwayEndCursor.moveToFirst()) {
         Log.e(TAG, "No runway end for runway = " + runwayId);
@@ -335,10 +344,11 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
       final TreeSet<RunwayEnd> runwayEnds = new TreeSet<RunwayEnd>();
 
       do {
-        final int runwayEndId = runwayEndCursor.getInt(
-            runwayEndCursor.getColumnIndexOrThrow(ID_COLUMN));
-        final String runwayEndLetters = runwayEndCursor.getString(
-            runwayEndCursor.getColumnIndexOrThrow(RUNWAY_END_LETTERS_COLUMN));
+        final int runwayEndId =
+            runwayEndCursor.getInt(runwayEndCursor.getColumnIndexOrThrow(ID_COLUMN));
+        final String runwayEndLetters =
+            runwayEndCursor.getString(runwayEndCursor
+                .getColumnIndexOrThrow(RUNWAY_END_LETTERS_COLUMN));
 
         runwayEnds.add(new RunwayEnd(runwayEndId, runwayEndLetters));
       } while (runwayEndCursor.moveToNext());
@@ -360,11 +370,8 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   public HashMap<String, String> getRunwayEndProperties(int runwayEndId) {
     String[] stringRunwayEndId = {Integer.toString(runwayEndId)};
     Cursor runwayEndPropertiesCursor =
-        database.query(RUNWAY_END_PROPERTIES_TABLE,
-                       PROPERTY_COLUMNS,
-                       RUNWAY_END_ID_WHERE,
-                       stringRunwayEndId, null, null,
-            null);
+        database.query(RUNWAY_END_PROPERTIES_TABLE, PROPERTY_COLUMNS, RUNWAY_END_ID_WHERE,
+            stringRunwayEndId, null, null, null);
     try {
       if (!runwayEndPropertiesCursor.moveToFirst()) {
         Log.e(TAG, "No runway end properties for id =" + runwayEndId);
@@ -373,11 +380,13 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
       final HashMap<String, String> runwayEndProperties = new HashMap<String, String>();
 
       do {
-        final int keyConstantId = runwayEndPropertiesCursor.getInt(
-            runwayEndPropertiesCursor.getColumnIndexOrThrow(KEY_COLUMN));
+        final int keyConstantId =
+            runwayEndPropertiesCursor.getInt(runwayEndPropertiesCursor
+                .getColumnIndexOrThrow(KEY_COLUMN));
         final String key = getConstant(keyConstantId);
-        final int valueConstantId = runwayEndPropertiesCursor.getInt(
-            runwayEndPropertiesCursor.getColumnIndexOrThrow(VALUE_COLUMN));
+        final int valueConstantId =
+            runwayEndPropertiesCursor.getInt(runwayEndPropertiesCursor
+                .getColumnIndexOrThrow(VALUE_COLUMN));
         String value;
         if (INTEGER_RUNWAY_END_PROPERTIES.contains(key)) {
           value = Integer.toString(valueConstantId);
