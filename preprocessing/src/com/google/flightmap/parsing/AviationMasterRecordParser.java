@@ -44,6 +44,10 @@ public class AviationMasterRecordParser {
   private final static String AIRPORT_LATITUDE_HEADER = "ARPLatitudeS";
   private final static String AIRPORT_STATUS_HEADER = "AirportStatusCode"; // O, CP, CI
   private final static String AIRPORT_CONTROL_TOWER_HEADER = "ATCT";
+  // Airport operations headers
+  private final static String[] AIRPORT_OPS_HEADERS = {
+      "OperationsCommercial", "OperationsCommuter", "OperationsAirTaxi", "OperationsGALocal",
+      "OperationsGAItin", "OperationsMilitary" };
   // Airport property headers
   private final static String AIRPORT_ELEVATION_HEADER = "ARPElevation";
   private final static String AIRPORT_BEACON_COLOR_HEADER = "BeaconColor";
@@ -184,8 +188,8 @@ public class AviationMasterRecordParser {
     PreparedStatement insertAirportStatement = dbConn.prepareStatement(
         "INSERT INTO airports " +
         "(icao, name, type, city, lat, lng, is_open, is_public, is_towered, " +
-        "is_military, cell_id) " +
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
+        "is_military, cell_id, rank) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
     PreparedStatement getAirportIdStatement = dbConn.prepareStatement(
         "SELECT _id FROM airports WHERE icao = ?");
 
@@ -264,6 +268,23 @@ public class AviationMasterRecordParser {
       int cellId = CustomGridUtil.GetCellId(airportLatE6, airportLngE6);
       insertAirportStatement.setInt(++fieldCount, cellId);
 
+      //   rank
+      //   TODO: Use ranking algorithm instead of daily ops.
+      int totalOps = 0;
+      for (String AIRPORT_OP_HEADER: AIRPORT_OPS_HEADERS) {
+        final int currentOpPosition = headerPosition.get(AIRPORT_OP_HEADER);
+        if (airportFields.length <= currentOpPosition) {
+          continue;
+        }
+
+        final String currentOpsString = airportFields[currentOpPosition];
+        if ("".equals(currentOpsString)) {
+          continue;
+        }
+
+        totalOps += Integer.parseInt(currentOpsString);
+      }
+      insertAirportStatement.setInt(++fieldCount, totalOps);
 
       // Insert in airport db
       insertAirportStatement.executeUpdate();
@@ -659,6 +680,7 @@ public class AviationMasterRecordParser {
                          "is_public BOOLEAN NOT NULL, " +
                          "is_towered BOOLEAN NOT NULL, " +
                          "is_military BOOLEAN NOT NULL, " +
+                         "rank INTEGER NOT NULL, " +
                          "cell_id INTEGER NOT NULL);");
       stat.executeUpdate("CREATE INDEX airports_cell_id_index ON airports (cell_id)");
 
