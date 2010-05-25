@@ -16,12 +16,40 @@
 
 package com.google.flightmap.common.data;
 
+import java.util.Comparator;
 import java.util.SortedSet;
 
 /**
  * Airport data structure.
  */
 public class Airport implements Comparable<Airport> {
+
+  /**
+   * Compare airports by rank.
+   */
+  private static class RankComparator implements Comparator<Airport> {
+    @Override
+    /**
+     * Compare two airports by rank.
+     *
+     * Airports with identical ranks are ordered according to their natural order (ICAO)
+     * in order to stay consistent with equals.
+     */
+    public int compare(final Airport o1, final Airport o2) {
+      int rankDiff = o1.rank - o2.rank;
+      if (rankDiff != 0) {
+        return rankDiff;
+      } else {
+        return o1.compareTo(o2);  // Stay consistent with equals()
+      }
+    }
+  }
+
+  /**
+   * Airport comparator instance that imposes an ordering based on rank.  Instance is thread-safe.
+   */
+  public final static Comparator<Airport> RANK_COMPARATOR = new RankComparator();
+
   /**
    * Facility types.
    */
@@ -43,7 +71,6 @@ public class Airport implements Comparable<Airport> {
    * Airport common name. Not necessarily unique.
    */
   public final String name;
-
 
   /**
    * Airport type (land airport, seaplane base, heliport)
@@ -85,6 +112,11 @@ public class Airport implements Comparable<Airport> {
    */
   public final SortedSet<Runway> runways;
 
+  /**
+   * Airport ranking, for display prioritization.
+   */
+  public final int rank;
+
   public Airport(final int id,
                  final String icao,
                  final String name,
@@ -95,7 +127,8 @@ public class Airport implements Comparable<Airport> {
                  final boolean isPublic,
                  final boolean isTowered,
                  final boolean isMilitary,
-                 final SortedSet<Runway> runways) {
+                 final SortedSet<Runway> runways,
+                 final int rank) {
     this.id = id;
     this.icao = icao;
     this.name = name;
@@ -107,6 +140,7 @@ public class Airport implements Comparable<Airport> {
     this.isTowered = isTowered;
     this.isMilitary = isMilitary;
     this.runways = runways;
+    this.rank = rank;
   }
 
   @Override
