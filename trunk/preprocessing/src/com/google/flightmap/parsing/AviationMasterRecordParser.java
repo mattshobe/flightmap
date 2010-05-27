@@ -284,7 +284,22 @@ public class AviationMasterRecordParser {
 
         totalOps += Integer.parseInt(currentOpsString);
       }
-      insertAirportStatement.setInt(++fieldCount, totalOps);
+
+      int rank;
+      if (totalOps < 1) {
+        rank = 0;
+      } else if (totalOps < 16300) {
+        rank = 1;
+      } else if (totalOps < 64200) {
+        rank = 2;
+      } else if (totalOps < 145000) {
+        rank = 3;
+      } else if (totalOps < 270000) {
+        rank = 4;
+      } else {
+        rank = 5;
+      }
+      insertAirportStatement.setInt(++fieldCount, rank);
 
       // Insert in airport db
       insertAirportStatement.executeUpdate();
