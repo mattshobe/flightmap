@@ -101,6 +101,10 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   // Graphical zoom scale.
   private final ZoomScale zoomScale;
 
+  // Caching.
+  private Location previousLocation;
+  private float previousZoom;
+
   // Static initialization.
   static {
     // Do not put any calls to setTextSize here. Put them in #setTextSizes().
@@ -255,6 +259,15 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       if (null == holder) {
         return;
       }
+      synchronized (this) {
+        // Do nothing if position and zoom are unchanged.
+        // TODO: Also check for display preferences change here.
+        if (!hasMoved(location) && zoom == previousZoom) {
+          return;
+        }
+        previousLocation = location;
+        previousZoom = zoom;
+      }
       c = holder.lockCanvas(null);
       synchronized (holder) {
         drawMapOnCanvas(c, location);
@@ -304,23 +317,21 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
         flightMap.airportDirectory.getAirportsWithinRadius(locationLatLng, screenRadius,
             getMinimumAirportRank(zoomCopy));
     for (AirportDistance airportDistance : nearbyAirports) {
-      if (airportDistance.airport.isPublic
-          || (!airportDistance.airport.isPublic && flightMap.showPrivate)) {
-        final Paint airportPaint = getAirportPaint(airportDistance.airport);
-        Point airportPoint = MercatorProjection.toPoint(zoomCopy, airportDistance.airport.location);
-        c.drawCircle(airportPoint.x, airportPoint.y, 15, airportPaint);
-        // Undo, then redo the track-up rotation so the labels are always at the
-        // top for track up.
-        if (isTrackUp) {
-          c.rotate(location.getBearing(), airportPoint.x, airportPoint.y);
-        }
-        c.drawText(airportDistance.airport.icao, airportPoint.x, airportPoint.y - 20,
-            AIRPORT_TEXT_PAINT);
-        if (isTrackUp) {
-          c.rotate(360 - location.getBearing(), airportPoint.x, airportPoint.y);
-        }
+      final Paint airportPaint = getAirportPaint(airportDistance.airport);
+      Point airportPoint = MercatorProjection.toPoint(zoomCopy, airportDistance.airport.location);
+      c.drawCircle(airportPoint.x, airportPoint.y, 15, airportPaint);
+      // Undo, then redo the track-up rotation so the labels are always at the
+      // top for track up.
+      if (isTrackUp) {
+        c.rotate(location.getBearing(), airportPoint.x, airportPoint.y);
+      }
+      c.drawText(airportDistance.airport.icao, airportPoint.x, airportPoint.y - 20,
+          AIRPORT_TEXT_PAINT);
+      if (isTrackUp) {
+        c.rotate(360 - location.getBearing(), airportPoint.x, airportPoint.y);
       }
     }
+
 
     // Draw airplane.
     c.translate(locationPoint.x, locationPoint.y);
@@ -381,6 +392,19 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       c.drawText(altitude, width - textWidth - PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE,
           PANEL_DIGITS_PAINT);
     }
+  }
+
+  /**
+   * Returns true if location is different than {@link #previousLocation}
+   * (ignoring fields that don't affect the rendering).
+   */
+  private synchronized boolean hasMoved(Location location) {
+    if (null == previousLocation || location.getBearing() != previousLocation.getBearing()
+        || location.getAltitude() != previousLocation.getAltitude()
+        || location.getSpeed() != previousLocation.getSpeed()) {
+      return true;
+    }
+    return false;
   }
 
   /**
