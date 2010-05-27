@@ -64,7 +64,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
 
   // Zoom items.
   private static final int MIN_ZOOM = 4;
-  private static final int MAX_ZOOM = 17;
+  private static final int MAX_ZOOM = 15;
   private static final float ZOOM_STEP = 0.5f;
   private ZoomButtonsController zoomController;
   private float zoom = 10;
@@ -133,7 +133,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     super(flightMap);
     this.flightMap = flightMap;
     this.density = flightMap.getResources().getDisplayMetrics().density;
-    zoomScale = new ZoomScale(density);
+    this.zoomScale = new ZoomScale(density);
     getHolder().addCallback(this);
     setFocusable(true); // make sure we get key events
     setKeepScreenOn(true);
@@ -282,9 +282,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       return;
     }
 
-    final boolean isTrackUp = !FlightMap.isNorthUp; // copy for
-    // thread
-    // safety.
+    final boolean isTrackUp = !FlightMap.isNorthUp; // copy for thread safety.
 
     // Draw everything relative to the aircraft.
     c.translate(aircraftX, aircraftY);
@@ -301,11 +299,10 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     c.translate(-locationPoint.x, -locationPoint.y);
 
     // Draw airports.
+    double screenRadius = getScreenRadius(zoomCopy, locationLatLng, locationPoint);
     SortedSet<AirportDistance> nearbyAirports =
-        flightMap.airportDirectory.getAirportsWithinRadius(locationLatLng, 20);
-    // TODO: remove airports based on settings.
-    // TODO: 20nm hardcoded, should get airports within bounding box of screen.
-    // Need a new aviation db interface that takes a lat/lng bounding box.
+        flightMap.airportDirectory.getAirportsWithinRadius(locationLatLng, screenRadius,
+            getMinimumAirportRank(zoomCopy));
     for (AirportDistance airportDistance : nearbyAirports) {
       if (airportDistance.airport.isPublic
           || (!airportDistance.airport.isPublic && flightMap.showPrivate)) {
@@ -387,6 +384,26 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   }
 
   /**
+   * Returns the minimum airport rank for the given zoom level. Ranks are in the
+   * range 0-5 (5 being most important).
+   */
+  private int getMinimumAirportRank(float zoom) {
+    if (zoom <= 6) {
+      return 5;
+    }
+    if (zoom < 8) {
+      return 4;
+    }
+    if (zoom < 9) {
+      return 3;
+    }
+    if (zoom < 11) {
+      return 1;
+    }
+    return 0;
+  }
+
+  /**
    * Return the appropriate paint based on whether the airport is towered or
    * not.
    */
@@ -403,12 +420,23 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   }
 
   /**
-   * On return MIN_ZOOM <= zoom <= MAX_ZOOM
+   * On return MIN_ZOOM <= zoom <= MAX_ZOOM.
    */
   public synchronized void setZoom(float zoom) {
     zoom = Math.max(zoom, MIN_ZOOM);
     zoom = Math.min(zoom, MAX_ZOOM);
     this.zoom = zoom;
+  }
+
+  /**
+   * Returns the distance in meters from the aircraft screen location to the
+   * furthest screen edge.
+   */
+  private synchronized double getScreenRadius(float zoom, LatLng location, Point locationPoint) {
+    // Pixel coordinates of the top-left screen corner.
+    Point topLeftCorner = new Point(locationPoint.x - aircraftX, locationPoint.y - aircraftY);
+    LatLng topLeftLocation = MercatorProjection.fromPoint(zoom, topLeftCorner);
+    return NavigationUtil.computeDistance(location, topLeftLocation);
   }
 
   public synchronized float getZoom() {

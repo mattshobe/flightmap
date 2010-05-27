@@ -25,10 +25,10 @@ public class NavigationUtil {
   public static final double METERS_PER_NM = 1852;
   public static final double METERS_PER_FOOT = 3.2808399;
   public static final double METERS_PER_SEC_TO_KNOTS = 1.94384449;
-  public static final double EARTH_RADIUS = 6371009 / METERS_PER_NM;
+  public static final double EARTH_RADIUS = 6371009;
 
   /**
-   * Returns the distance in nautical miles between point1 and point2.
+   * Returns the distance in meters between point1 and point2.
    * Calculation is done by the Haversine Formula.
    */
   public static double computeDistance(LatLng point1, LatLng point2) {

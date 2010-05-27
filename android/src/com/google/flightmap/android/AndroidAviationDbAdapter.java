@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -13,6 +14,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 import com.google.flightmap.common.AviationDbAdapter;
+import com.google.flightmap.common.LruCache;
 import com.google.flightmap.common.data.Airport;
 import com.google.flightmap.common.data.LatLng;
 import com.google.flightmap.common.data.Runway;
@@ -20,6 +22,12 @@ import com.google.flightmap.common.data.RunwayEnd;
 
 public class AndroidAviationDbAdapter implements AviationDbAdapter {
   private static final String TAG = AndroidAviationDbAdapter.class.getSimpleName();
+  // LRU cache
+  private static Map<Integer, Airport> AIRPORT_CACHE =
+      Collections.synchronizedMap(new LruCache<Integer, Airport>(50));
+  private static int cacheMiss;
+  private static int cacheHit;
+
   // database
   private static final String DATABASE_PATH = "/sdcard/com.google.flightmap/aviation.db";
 
@@ -30,6 +38,7 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   private static final String NAME_COLUMN = "name";
   private static final String TYPE_COLUMN = "type";
   private static final String CITY_COLUMN = "city";
+  private static final String RANK_COLUMN = "rank";
   private static final String IS_OPEN_COLUMN = "is_open";
   private static final String IS_PUBLIC_COLUMN = "is_public";
   private static final String IS_TOWERED_COLUMN = "is_towered";
@@ -38,16 +47,17 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   private static final String LNG_COLUMN = "lng";
   private static final String CELL_ID_COLUMN = "cell_id";
   private static final String CELL_ID_WHERE =
-      String.format("%s >= ? and %s < ?", CELL_ID_COLUMN, CELL_ID_COLUMN);
+      String.format("%s >= ? and %s < ? and %s >= ?", CELL_ID_COLUMN, CELL_ID_COLUMN, RANK_COLUMN);
   private static final String ID_WHERE = ID_COLUMN + " = ?";
   private static final String[] LOCATION_COLUMNS =
-      new String[] {ID_COLUMN, LAT_COLUMN, LNG_COLUMN, CELL_ID_COLUMN};
+      new String[] {ID_COLUMN, LAT_COLUMN, LNG_COLUMN, CELL_ID_COLUMN, RANK_COLUMN};
   private static final String[] AIRPORT_COLUMNS =
-      new String[] {ID_COLUMN, ICAO_COLUMN, NAME_COLUMN, TYPE_COLUMN, CITY_COLUMN, IS_OPEN_COLUMN,
-          IS_PUBLIC_COLUMN, IS_TOWERED_COLUMN, IS_MILITARY_COLUMN};
+      new String[] {ID_COLUMN, ICAO_COLUMN, NAME_COLUMN, TYPE_COLUMN, CITY_COLUMN, RANK_COLUMN,
+          IS_OPEN_COLUMN, IS_PUBLIC_COLUMN, IS_TOWERED_COLUMN, IS_MILITARY_COLUMN};
   private static final String[] AIRPORT_LOCATION_COLUMNS =
-      new String[] {ID_COLUMN, ICAO_COLUMN, NAME_COLUMN, TYPE_COLUMN, CITY_COLUMN, IS_OPEN_COLUMN,
-          IS_PUBLIC_COLUMN, IS_TOWERED_COLUMN, IS_MILITARY_COLUMN, LAT_COLUMN, LNG_COLUMN};
+      new String[] {ID_COLUMN, ICAO_COLUMN, NAME_COLUMN, TYPE_COLUMN, CITY_COLUMN, RANK_COLUMN,
+          IS_OPEN_COLUMN, IS_PUBLIC_COLUMN, IS_TOWERED_COLUMN, IS_MILITARY_COLUMN, LAT_COLUMN,
+          LNG_COLUMN};
   // constants
   private static final String CONSTANTS_TABLE = "constants";
   private static final String CONSTANT_COLUMN = "constant";
@@ -128,6 +138,12 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
 
   @Override
   public Airport getAirport(int id) {
+    Airport cachedAirport = AIRPORT_CACHE.get(id);
+    if (null != cachedAirport) {
+      cacheHit();
+      return cachedAirport;
+    }
+    cacheMiss();
     final String[] stringId = {Integer.toString(id)};
     final Cursor airports =
         database.query(AIRPORTS_TABLE, AIRPORT_LOCATION_COLUMNS, ID_WHERE, stringId, null, null,
@@ -141,6 +157,8 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
       final String name = airports.getString(airports.getColumnIndexOrThrow(NAME_COLUMN));
       final int typeConstantId = airports.getInt(airports.getColumnIndexOrThrow(TYPE_COLUMN));
       final String city = airports.getString(airports.getColumnIndexOrThrow(CITY_COLUMN));
+      final int rank = airports.getInt(airports.getColumnIndexOrThrow(RANK_COLUMN));
+
       final String typeString = getConstant(typeConstantId);
       final Airport.Type type = getAirportType(typeString);
       final int latE6 = airports.getInt(airports.getColumnIndexOrThrow(LAT_COLUMN));
@@ -153,16 +171,37 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
       final boolean isMilitary =
           airports.getInt(airports.getColumnIndexOrThrow(IS_MILITARY_COLUMN)) == 1;
 
-      return new Airport(id, icao, name, type, city, new LatLng(latE6, lngE6), isOpen, isPublic,
-          isTowered, isMilitary, getRunways(id));
+      Airport airport =
+          new Airport(id, icao, name, type, city, new LatLng(latE6, lngE6), isOpen, isPublic,
+              isTowered, isMilitary, getRunways(id), rank);
+      AIRPORT_CACHE.put(id, airport);
+      return airport;
     } finally {
       airports.close();
     }
   }
 
+  private static synchronized void cacheMiss() {
+    cacheMiss++;
+    float totalQueries = cacheHit + cacheMiss;
+    float hitRate = cacheHit / totalQueries * 100;
+    System.out.println(String.format("Airport cache miss. Hit rate: %.0f%% Cache size: %d",
+        hitRate, AIRPORT_CACHE.size()));
+  }
+
+  private static synchronized void cacheHit() {
+    cacheHit++;
+  }
+
   @Override
   public LinkedList<Airport> getAirportsInCells(int startCell, int endCell) {
-    String[] stringRange = {Integer.toString(startCell), Integer.toString(endCell)};
+    return getAirportsInCells(startCell, endCell, 0);
+  }
+
+  @Override
+  public LinkedList<Airport> getAirportsInCells(int startCell, int endCell, int minRank) {
+    String[] stringRange =
+        {Integer.toString(startCell), Integer.toString(endCell), Integer.toString(minRank)};
     Cursor locations =
         database.query(AIRPORTS_TABLE, LOCATION_COLUMNS, CELL_ID_WHERE, stringRange, null, null,
             null);
@@ -201,7 +240,7 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
     if (!airport.type.equals(Airport.Type.AIRPORT)) {
       return false;
     }
-    if (!airport.isPublic) {
+    if (!airport.isPublic && !airport.isTowered) {
       return false;
     }
     return true;
@@ -247,6 +286,12 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   }
 
   private Airport getAirport(int id, LatLng knownLocation) {
+    Airport cachedAirport = AIRPORT_CACHE.get(id);
+    if (null != cachedAirport) {
+      cacheHit();
+      return cachedAirport;
+    }
+    cacheMiss();
     final String[] stringId = {Integer.toString(id)};
     final Cursor airports =
         database.query(AIRPORTS_TABLE, AIRPORT_COLUMNS, ID_WHERE, stringId, null, null, null);
@@ -259,6 +304,7 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
       final String name = airports.getString(airports.getColumnIndexOrThrow(NAME_COLUMN));
       final int typeConstantId = airports.getInt(airports.getColumnIndexOrThrow(TYPE_COLUMN));
       final String city = airports.getString(airports.getColumnIndexOrThrow(CITY_COLUMN));
+      final int rank = airports.getInt(airports.getColumnIndexOrThrow(RANK_COLUMN));
       final String typeString = getConstant(typeConstantId);
       final Airport.Type type = getAirportType(typeString);
       final boolean isOpen = airports.getInt(airports.getColumnIndexOrThrow(IS_OPEN_COLUMN)) == 1;
@@ -269,8 +315,11 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
       final boolean isMilitary =
           airports.getInt(airports.getColumnIndexOrThrow(IS_MILITARY_COLUMN)) == 1;
 
-      return new Airport(id, icao, name, type, city, knownLocation, isOpen, isPublic, isTowered,
-          isMilitary, getRunways(id));
+      Airport airport =
+          new Airport(id, icao, name, type, city, knownLocation, isOpen, isPublic, isTowered,
+              isMilitary, getRunways(id), rank);
+      AIRPORT_CACHE.put(id, airport);
+      return airport;
     } finally {
       airports.close();
     }
