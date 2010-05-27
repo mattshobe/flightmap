@@ -26,10 +26,15 @@ public interface AirportDirectory {
   public TreeSet<AirportDistance> getNearestAirports(final LatLng position, final int numAirports)
       throws SQLException;
 
-  public TreeSet<AirportDistance> getAirportsWithinRadius(final LatLng position, final double radius)
-      throws SQLException;
-  
+  /**
+   * Returns airports within {@code radius} meters of {@code position}.
+   * The airport rank will be at least {@code minRank}. Results will be sorted
+   * in order of increasing distance from {@code position}.
+   */
+  public TreeSet<AirportDistance> getAirportsWithinRadius(final LatLng position,
+      final double radius, final int minRank) throws SQLException;
+
   public void open();
-  
+
   public void close();
 }

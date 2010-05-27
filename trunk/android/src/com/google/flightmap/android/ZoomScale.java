@@ -132,7 +132,7 @@ public class ZoomScale {
     previousLocation = location;
     previousZoom = zoom;
     previousScaleText = result;
-    Log.i(TAG, "New scale: " + result);
+    Log.i(TAG, String.format("Zoom: %.1f New scale: %s", zoom, result));
     return result;
   }
 }

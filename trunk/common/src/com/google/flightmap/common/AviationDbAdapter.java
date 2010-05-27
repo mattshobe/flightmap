@@ -33,6 +33,11 @@ public interface AviationDbAdapter {
 
   public LinkedList<Airport> getAirportsInCells(int startCell, int endCell);
 
+  /**
+   * Returns a lits of airports in the given cells with rank >= {@code minRank}.
+   */
+  public LinkedList<Airport> getAirportsInCells(int startCell, int endCell, int minRank);
+
   public HashMap<String, String> getAirportProperties(int airportId);
 
   public HashMap<String, String> getRunwayEndProperties(int runwayEndId);

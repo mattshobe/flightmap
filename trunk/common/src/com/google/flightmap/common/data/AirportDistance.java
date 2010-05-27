@@ -8,7 +8,7 @@ package com.google.flightmap.common.data;
  */
 public class AirportDistance implements Comparable<AirportDistance> {
   public final Airport airport;
-  /** Distance to {@link #airport} in nautical miles. */
+  /** Distance to {@link #airport} in meters. */
   public final double distance;
 
   private Integer hashCode = null;

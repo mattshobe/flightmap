@@ -53,10 +53,12 @@ public class Airport implements Comparable<Airport> {
   /**
    * Facility types.
    */
-  public enum Type { AIRPORT, SEAPLANE_BASE, HELIPORT, ULTRALIGHT, GLIDERPORT, BALLOONPORT, OTHER }
+  public enum Type {
+    AIRPORT, SEAPLANE_BASE, HELIPORT, ULTRALIGHT, GLIDERPORT, BALLOONPORT, OTHER
+  }
 
   /**
-   * Application-specific identifier.  An integer uniquely identifying the
+   * Application-specific identifier. An integer uniquely identifying the
    * airport for the application.
    */
   public final int id;
@@ -78,7 +80,7 @@ public class Airport implements Comparable<Airport> {
   public final Type type;
 
   /**
-   * Airport city.  Not unique.
+   * Airport city. Not unique.
    */
   public final String city;
 
@@ -108,7 +110,7 @@ public class Airport implements Comparable<Airport> {
   public final boolean isMilitary;
 
   /**
-   * Airport runways.  In decreasing order of length, then width.
+   * Airport runways. In decreasing order of length, then width.
    */
   public final SortedSet<Runway> runways;
 
@@ -156,9 +158,9 @@ public class Airport implements Comparable<Airport> {
   @Override
   public boolean equals(Object obj) {
     if (obj == this) return true;
-    if ( !(obj instanceof Airport)) return false;
+    if (!(obj instanceof Airport)) return false;
 
-    Airport other = (Airport)obj;
+    Airport other = (Airport) obj;
     return this.compareTo(other) == 0;
   }
 
