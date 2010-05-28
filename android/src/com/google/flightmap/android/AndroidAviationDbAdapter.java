@@ -183,6 +183,10 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
 
   private static synchronized void cacheMiss() {
     cacheMiss++;
+    if (cacheMiss % 20 != 0) {
+      return;
+    }
+
     float totalQueries = cacheHit + cacheMiss;
     float hitRate = cacheHit / totalQueries * 100;
     System.out.println(String.format("Airport cache miss. Hit rate: %.0f%% Cache size: %d",
