@@ -101,7 +101,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   // Graphical zoom scale.
   private final ZoomScale zoomScale;
 
-  // Caching.
+  // Caching. Values from the last time the map was drawn.
   private Location previousLocation;
   private float previousZoom;
 
@@ -222,8 +222,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   }
 
   @Override
-  public void surfaceCreated(SurfaceHolder holder) {
+  public synchronized void surfaceCreated(SurfaceHolder holder) {
     this.holder = holder;
+    previousLocation = null;
   }
 
   @Override
