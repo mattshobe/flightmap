@@ -23,10 +23,8 @@ package com.google.flightmap.common.data;
  * <p>
  * <b>Beware of integer under/overflows</b> when working with those values
  * (using a {@code long} buffer might be necessary)
- * 
- * @author aristidis@google.com (Aristidis Papaioannou)
  */
-public class LatLng {
+public class LatLng implements Comparable<LatLng> {
   /**
    * Latitude, in E6 format
    */
@@ -40,7 +38,7 @@ public class LatLng {
   /**
    * Create LatLng from E6 coordinates.
    */
-  public LatLng(int lat, int lng) {
+  public LatLng(final int lat, final int lng) {
     this.lat = lat;
     this.lng = lng;
   }
@@ -49,7 +47,7 @@ public class LatLng {
    * Factory method to avoid confusion with primary constructor that takes E6
    * format.
    */
-  public static LatLng fromDouble(double lat, double lng) {
+  public static LatLng fromDouble(final double lat, final double lng) {
     return new LatLng((int) Math.round(lat * 1E6), (int) Math.round(lng * 1E6));
   }
 
@@ -81,5 +79,33 @@ public class LatLng {
    */
   public double lngDeg() {
     return lng * 1E-6;
+  }
+
+  /*
+   * LatLng are ordered by increasing latitude, then longitude
+   */
+  @Override
+  public int compareTo(final LatLng o) {
+    final int latDiff = lat - o.lat;
+    if (latDiff != 0) {
+      return latDiff;
+    }
+
+    final int lngDiff = lng - o.lng;
+    return lngDiff;
+  }
+
+  @Override
+  public boolean equals(final Object obj) {
+    if (obj == this) return true;
+    if ( !(obj instanceof LatLng)) return false;
+
+    final LatLng other = (LatLng)obj;
+    return this.compareTo(other) == 0;
+  }
+
+  @Override
+  public int hashCode() {
+    return (lat * 127)  ^ lng;
   }
 }
