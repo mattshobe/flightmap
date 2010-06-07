@@ -17,7 +17,10 @@
 package com.google.flightmap.parsing;
 
 import com.google.flightmap.common.CustomGridUtil;
+import com.google.flightmap.common.data.Airport;
 import com.google.flightmap.common.data.LatLng;
+import com.google.flightmap.common.data.Runway;
+import com.google.flightmap.db.JdbcAviationDbAdapter;
 
 import org.apache.commons.lang.WordUtils;
 
@@ -209,6 +212,65 @@ public class AviationMasterRecordParser {
     return longitudeSeconds/3600.0;
   }
 
+  private void rankAirportsInDb() throws SQLException {
+    final JdbcAviationDbAdapter dbAdapter = new JdbcAviationDbAdapter(dbConn);
+    final Statement getAllAirportIdsStatement = dbConn.createStatement();
+    final PreparedStatement updateAirportRankStatement =
+        dbConn.prepareStatement("UPDATE airports SET rank = ? WHERE _id = ?");
+    final ResultSet allAirportIds =
+        getAllAirportIdsStatement.executeQuery("SELECT _id FROM airports");
+
+    try {
+      while (allAirportIds.next()) {
+        final int airportId = allAirportIds.getInt("_id");
+        final Airport airport = dbAdapter.getAirport(airportId);
+        final int rank = getAirportRank(airport);
+        updateAirportRankStatement.setInt(1, rank);
+        updateAirportRankStatement.setInt(2, airportId);
+        if (updateAirportRankStatement.executeUpdate() != 1) {
+          throw new RuntimeException("Could not update rank for airport id: " + airportId);
+        }
+      }
+    } finally {
+      getAllAirportIdsStatement.close();
+      updateAirportRankStatement.close();
+    }
+  }
+
+
+  /**
+   * Returns the rank of an airport on a 0 (minor airport) - 5 (major airport)
+   * scale. Major factors affecting rank include type, runway length, and
+   * surface.
+   *
+   * @return  Airport rank, 0 (minor airport) - 5 (major airport)
+   */
+  private int getAirportRank(final Airport airport) {
+    int rank = 0;
+    if (airport.isPublic) {
+      ++rank;
+    }
+    if (airport.isTowered) {
+      ++rank;
+    }
+    if (airport.runways != null) {
+      final int numRunways = airport.runways.size();
+      if (numRunways > 2) {
+        ++rank;
+      }
+      final Runway longestRunway = airport.runways.first();
+      final int longestRunwayLength = longestRunway.length;
+      if (longestRunwayLength > 5000) {
+        ++rank;
+        if (longestRunwayLength > 8000) {
+          ++rank;
+        }
+      }
+    }
+    return Math.min(rank, 5);
+  }
+
+
   /**
    * Parse file and add airport data to the database.
    */
@@ -302,37 +364,8 @@ public class AviationMasterRecordParser {
       int cellId = CustomGridUtil.GetCellId(airportPosition);
       insertAirportStatement.setInt(++fieldCount, cellId);
 
-      //   rank
-      //   TODO: Use ranking algorithm instead of daily ops.
-      int totalOps = 0;
-      for (String AIRPORT_OP_HEADER: AIRPORT_OPS_HEADERS) {
-        final int currentOpPosition = headerPosition.get(AIRPORT_OP_HEADER);
-        if (airportFields.length <= currentOpPosition) {
-          continue;
-        }
-
-        final String currentOpsString = airportFields[currentOpPosition];
-        if ("".equals(currentOpsString)) {
-          continue;
-        }
-
-        totalOps += Integer.parseInt(currentOpsString);
-      }
-
-      int rank;
-      if (totalOps < 1) {
-        rank = 0;
-      } else if (totalOps < 16300) {
-        rank = 1;
-      } else if (totalOps < 64200) {
-        rank = 2;
-      } else if (totalOps < 145000) {
-        rank = 3;
-      } else if (totalOps < 270000) {
-        rank = 4;
-      } else {
-        rank = 5;
-      }
+      //   rank: Insert bogus value, will be replaced in second run
+      final int rank = -1;
       insertAirportStatement.setInt(++fieldCount, rank);
 
       // Insert in airport db
@@ -837,6 +870,10 @@ public class AviationMasterRecordParser {
       initConstantsTable();
       addAirportDataToDb();
       addRunwayDataToDb();
+      dbConn.close();
+
+      dbConn = initDB();
+      rankAirportsInDb();
       dbConn.close();
     } catch (Exception ex) {
       ex.printStackTrace();
