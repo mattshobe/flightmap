@@ -39,9 +39,7 @@ import java.util.TreeSet;
  * aviation database.
  */
 public class JdbcAviationDbAdapter implements AviationDbAdapter {
-  private final String dbUrl;
-  private final String dbDriver;
-  private Connection dbConn;
+  private final Connection dbConn;
 
   private PreparedStatement getAirportDataFromIdStmt;
   private PreparedStatement getAirportIdsInCellsStmt;
@@ -62,36 +60,18 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
     INTEGER_RUNWAY_END_PROPERTIES.add("True Alignment");
   }
 
-  public JdbcAviationDbAdapter(final String dbUrl, final String dbDriver) {
-    this.dbUrl = dbUrl;
-    this.dbDriver = dbDriver;
+  public JdbcAviationDbAdapter(final Connection dbConn) {
+    this.dbConn = dbConn;
   }
 
   public synchronized void open() {
-    if (dbConn != null) {
-      throw new IllegalStateException("Open called on already-opened db adapter.");
-    }
-    try {
-      Class.forName(dbDriver);
-      dbConn = DriverManager.getConnection(dbUrl);
-    } catch (ClassNotFoundException cnfEx) {
-      throw new RuntimeException(cnfEx);  // Wrapping exceptions to comply with interface.
-    } catch (SQLException sqlEx) {
-      throw new RuntimeException(sqlEx);
-    }
+    throw new RuntimeException(
+        "Invalid call: connection must be mangaged at caller.");
   }
 
   public synchronized void close() {
-    if (dbConn == null) {
-      throw new IllegalStateException("Close called on non-opened db adapter.");
-    }
-
-    try {
-      dbConn.close();
-      dbConn = null;
-    } catch (SQLException sqlEx) {
-      throw new RuntimeException(sqlEx);
-    }
+    throw new RuntimeException(
+        "Invalid call: connection must be mangaged at caller.");
   }
 
 
