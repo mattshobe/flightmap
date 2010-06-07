@@ -31,7 +31,7 @@ public class RunwayEnd implements Comparable<RunwayEnd> {
 
   @Override
   public String toString() {
-    return String.format("%s (%d)", letters);
+    return String.format("%s", letters);
   }
 
   @Override
