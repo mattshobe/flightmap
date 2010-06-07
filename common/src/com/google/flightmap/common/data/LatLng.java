@@ -91,8 +91,7 @@ public class LatLng implements Comparable<LatLng> {
       return latDiff;
     }
 
-    final int lngDiff = lng - o.lng;
-    return lngDiff;
+    return lng - o.lng;
   }
 
   @Override
