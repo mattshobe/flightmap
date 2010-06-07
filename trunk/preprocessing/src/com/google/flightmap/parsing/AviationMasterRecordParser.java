@@ -17,6 +17,8 @@
 package com.google.flightmap.parsing;
 
 import com.google.flightmap.common.CustomGridUtil;
+import com.google.flightmap.common.data.LatLng;
+
 import org.apache.commons.lang.WordUtils;
 
 import java.io.*;
@@ -158,6 +160,55 @@ public class AviationMasterRecordParser {
     }
   }
 
+  /*
+   * Parse latitude and longitude from fractional seconds.
+   *
+   * @param latitudeS   Latitude in fractional seconds ("136545.1250N")
+   * @param longitudeS  Longitude in fractional seconds ("326633.3600W")
+
+   * @return            Position corresponding to given strings
+   */
+  public static LatLng parseLatLng(final String latitudeS, final String longitudeS) {
+    final double latitude = parseLatitudeS(latitudeS);
+    final double longitude = parseLongitudeS(longitudeS);
+    final LatLng position = LatLng.fromDouble(latitude, longitude);
+    return position;
+  }
+
+  /**
+   * Parse latitude seconds.
+   *
+   * @param latitudeS  Latitude in fractional seconds ("136545.1250N")
+   * @return           Latitude in degrees (North positive, South negative)
+   */
+  private static double parseLatitudeS(final String latitudeS) {
+    double latitudeSeconds = Double.parseDouble(latitudeS.substring(0, latitudeS.length() - 1));
+    final char northSouthIndicatorChar = latitudeS.charAt(latitudeS.length() - 1);
+    if (northSouthIndicatorChar == 'S') {
+      latitudeSeconds *= -1;
+    } else if (northSouthIndicatorChar != 'N') {
+      throw new RuntimeException("Unknown north/south indicator: " + northSouthIndicatorChar);
+    }
+    return latitudeSeconds/3600.0;
+  }
+
+  /**
+   * Parse longitude seconds.
+   *
+   * @param longitudeS  Longitude in fractional seconds ("326633.3600W")
+   * @return            Longitude in degrees (East positive, West negative)
+   */
+  private static double parseLongitudeS(final String longitudeS) {
+    double longitudeSeconds = Double.parseDouble(longitudeS.substring(0, longitudeS.length() - 1));
+    final char westEastIndicatorChar = longitudeS.charAt(longitudeS.length() - 1);
+    if (westEastIndicatorChar == 'W') {
+      longitudeSeconds *= -1;
+    } else if (westEastIndicatorChar != 'E') {
+      throw new RuntimeException("Unknown west/east indicator: " + westEastIndicatorChar);
+    }
+    return longitudeSeconds/3600.0;
+  }
+
   /**
    * Parse file and add airport data to the database.
    */
@@ -218,29 +269,12 @@ public class AviationMasterRecordParser {
       final String airportCity = airportFields[headerPosition.get(AIRPORT_CITY_HEADER)];
       insertAirportStatement.setString(++fieldCount, airportCity);
 
-      //   lat
+      //   lat, lng
       final String airportLatitudeS = airportFields[headerPosition.get(AIRPORT_LATITUDE_HEADER)];
-      double latitudeSeconds =
-          Double.parseDouble(airportLatitudeS.substring(0,airportLatitudeS.length()-1));
-      final char northSouthIndicatorChar = airportLatitudeS.charAt(airportLatitudeS.length()-1);
-      if (northSouthIndicatorChar == 'S')
-        latitudeSeconds *= -1;
-      else if (northSouthIndicatorChar != 'N')
-        throw new RuntimeException("Unknown north/south indicator: " + northSouthIndicatorChar);
-      final int airportLatE6 = (int)(latitudeSeconds/3600 * 1E6 + 0.5);
-      insertAirportStatement.setInt(++fieldCount, airportLatE6);
-
-      //   lng
       final String airportLongitudeS = airportFields[headerPosition.get(AIRPORT_LONGITUDE_HEADER)];
-      double longitudeSeconds =
-          Double.parseDouble(airportLongitudeS.substring(0,airportLongitudeS.length()-1));
-      final char westEastIndicatorChar = airportLongitudeS.charAt(airportLongitudeS.length()-1);
-      if (westEastIndicatorChar == 'W')
-        longitudeSeconds *= -1;
-      else if (westEastIndicatorChar != 'E')
-        throw new RuntimeException("Unknown west/east indicator: " + westEastIndicatorChar);
-      final int airportLngE6 = (int)(longitudeSeconds/3600 * 1E6 + 0.5);
-      insertAirportStatement.setInt(++fieldCount, airportLngE6);
+      final LatLng airportPosition = parseLatLng(airportLatitudeS, airportLongitudeS);
+      insertAirportStatement.setInt(++fieldCount, airportPosition.lat);
+      insertAirportStatement.setInt(++fieldCount, airportPosition.lng);
 
       //   is_open
       final String airportStatus = airportFields[headerPosition.get(AIRPORT_STATUS_HEADER)];
@@ -265,7 +299,7 @@ public class AviationMasterRecordParser {
       insertAirportStatement.setBoolean(++fieldCount, isMilitary);
 
       //   cell_id
-      int cellId = CustomGridUtil.GetCellId(airportLatE6, airportLngE6);
+      int cellId = CustomGridUtil.GetCellId(airportPosition);
       insertAirportStatement.setInt(++fieldCount, cellId);
 
       //   rank
