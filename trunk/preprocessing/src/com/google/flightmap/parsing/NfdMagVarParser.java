@@ -16,77 +16,105 @@
 
 package com.google.flightmap.parsing;
 
-import com.google.flightmap.common.CustomGridUtil;
-
 import java.sql.*;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+import java.util.Vector;
 import java.util.regex.*;
 import java.io.*;
 
-/**
- * Extract magnetic variation data points from ARINC 424-18 file.
- *
+import com.google.flightmap.common.CustomGridUtil;
+import com.google.flightmap.parsing.data.MagVar;
+
+
+/*
+ * Magnetic variation matching object
  */
-public class NfdMagVarParser {
-  /**
-   * Precision for latitude and longitude.
-   */
-  private final static int LAT_LNG_PRECISION = 6;
+class NfdMagVarMatcher {
 
-  /**
-   * Absolute tolerance for magnetic variation equality.
-   */
-  private final static double EQUAL_MAG_VAR_EPSILON = 0.1;
+  private final String type;
+  private final Pattern pattern;
 
-  /**
-   * Regular expressions that contain magnetic variation data.
-   * Each regular expression must have at least three groups:
-   * 1. latitude
-   * 2. longitude
-   * 3. magnetic variation
-   */
-  private final static List<Pattern> patterns;
+  private final int identGroup;
+  private final int latGroup;
+  private final int lngGroup;
+  private final Integer elevationGroup;
+  private final int magVarGroup;
 
-  /**
-   * Path to source file in ARINC 424-18 format.
-   */
-  private String nfdFile;
-
-  static {
-    patterns = new LinkedList<Pattern>();
-    // NDB Navaid
-    patterns.add(Pattern.compile("^S...DB.{6} .{4}  .{13}(.{9})(.{10}) {23}(.{5}) {6}.{47}$"));
-    patterns.add(Pattern.compile("^S...PN.{6} .{4}  .{13}(.{9})(.{10}) {23}(.{5}) {6}.{47}$"));
-    // Waypoint
-    patterns.add(
-        Pattern.compile("^S...EA.{12} .{3} {4}.{5} (.{9})(.{10}) {23}(.{5}).{8} {8}.{37}$"));
-    patterns.add(
-        Pattern.compile("^S...PC.{12} .{3} {4}.{5} (.{9})(.{10}) {23}(.{5}).{8} {8}.{37}$"));
-    // Airport
-    patterns.add(Pattern.compile("^S...P .{6}A.{5}   .{11}(.{9})(.{10})(.{5}).{76}$"));
-    // Heliport
-    patterns.add(Pattern.compile("^S...H .{6}A.{18} (.{9})(.{10})(.{5}).{76}$"));
+  NfdMagVarMatcher(final String type,
+                   final String regex,
+                   final int identGroup,
+                   final int latGroup,
+                   final int lngGroup,
+                   final Integer elevationGroup,
+                   final int magVarGroup) {
+    this.type = type;
+    this.pattern = Pattern.compile(regex);
+    this.identGroup = identGroup;
+    this.latGroup = latGroup;
+    this.lngGroup = lngGroup;
+    this.elevationGroup = elevationGroup;
+    this.magVarGroup = magVarGroup;
   }
 
-  /**
-   * @param nfdFile  Source database in ARINC 424-18 format (eg NFD)
+  /*
+   * Try to parse data from line.
+   *
+   * @return Magnetic variation data, or null
    */
-  private NfdMagVarParser(String nfdFile) {
-    this.nfdFile = nfdFile;
-  }
-
-  public static void main(String args[]) {
-    if (args.length != 1) {
-      System.err.println("Usage: java NfdMagVarParser <NFD file>");
-      System.exit(1);
+  MagVar match(final String line) {
+    Matcher matcher = pattern.matcher(line);
+    if (!matcher.matches()) {
+      return null;
     }
 
-    (new NfdMagVarParser(args[0])).execute();
+    try {
+      return new MagVar(type,
+                        getIdent(matcher),
+                        getLat(matcher),
+                        getLng(matcher),
+                        getElevation(matcher),
+                        getMagVar(matcher),
+                        line);
+    } catch (RuntimeException ex) {
+      System.err.println("Error while processing line: " + line);
+      throw ex;
+    }
+  }
+
+  private String getIdent(Matcher matcher) {
+    return matcher.group(identGroup);
+  }
+
+  private double getLat(Matcher matcher) {
+    return parseLatitude(matcher.group(latGroup));
+  }
+
+  private double getLng(Matcher matcher) {
+    return parseLongitude(matcher.group(lngGroup));
+  }
+
+  private Integer getElevation(Matcher matcher) {
+    if (elevationGroup == null) {
+      return null;
+    }
+
+    final String elevationString = matcher.group(elevationGroup).trim();
+
+    if (elevationString.isEmpty()) {
+      return null;
+    }
+
+    return new Integer(elevationString);
+  }
+
+  private double getMagVar(Matcher matcher) {
+    return parseMagVar(matcher.group(magVarGroup));
   }
 
   /**
@@ -169,71 +197,141 @@ public class NfdMagVarParser {
     magVar *= Double.parseDouble(magneticVariation.substring(1));
     return magVar;
   }
+}
+
+
+/**
+ * Extract magnetic variation data points from ARINC 424-18 file.
+ */
+public class NfdMagVarParser {
+  /**
+   * Precision for latitude and longitude.
+   */
+  private final static int LAT_LNG_PRECISION = 6;
+
+  /**
+   * Absolute tolerance for magnetic variation equality.
+   */
+  private final static double EQUAL_MAG_VAR_EPSILON = 0.1;
+
+  /**
+   * Regular expressions that contain magnetic variation data.
+   * Each regular expression must have at least three groups:
+   * 1. latitude
+   * 2. longitude
+   * 3. magnetic variation
+   */
+  private final static List<NfdMagVarMatcher> matchers;
+
+  /**
+   * Path to source file in ARINC 424-18 format.
+   */
+  private String nfdFile;
+
+  static {
+    matchers = new LinkedList<NfdMagVarMatcher>();
+    matchers.add(new NfdMagVarMatcher(
+        "NDB Navaid",
+        "^S...DB.{6} (.{4})  .{13}(.{9})(.{10}) {23}(.{5}) {6}.{47}$",
+        1, 2, 3, null, 4));
+
+    matchers.add(new NfdMagVarMatcher(
+        "Terminal NDB",
+        "^S...PN.{6} (.{4})  .{13}(.{9})(.{10}) {23}(.{5}) {6}.{47}$",
+        1, 2, 3, null, 4));
+
+    matchers.add(new NfdMagVarMatcher(
+        "Waypoint",
+        "^S...EA.{7}(.{5}) .{3} {4}.{5} (.{9})(.{10}) {23}(.{5})(.{5}).{3} {8}.{37}$",
+        1, 2, 3, 5, 4));
+
+    matchers.add(new NfdMagVarMatcher(
+        "Terminal Waypoint",
+        "^S...PC.{7}(.{5}) .{3} {4}.{5} (.{9})(.{10}) {23}(.{5})(.{5}).{3} {8}.{37}$",
+        1, 2, 3, 5, 4));
+
+    matchers.add(new NfdMagVarMatcher(
+        "Airport",
+        "^S...P (.{4}).{2}A.{5}   .{11}(.{9})(.{10})(.{5})(.{5}).{71}$",
+        1, 2, 3, 5, 4));
+
+    matchers.add(new NfdMagVarMatcher(
+        "Helipad",
+        "^S...H (.{4}).{2}A.{18} (.{9})(.{10})(.{5})(.{5}).{71}$",
+        1, 2, 3, 5, 4));
+  }
+
+  /**
+   * @param nfdFile  Source database in ARINC 424-18 format (eg NFD)
+   */
+  private NfdMagVarParser(String nfdFile) {
+    this.nfdFile = nfdFile;
+  }
+
+  public static void main(String args[]) {
+    if (args.length != 1) {
+      System.err.println("Usage: java NfdMagVarParser <NFD file>");
+      System.exit(1);
+    }
+
+    (new NfdMagVarParser(args[0])).execute();
+  }
+
 
   /**
    * Parse source file.
    *
    * @return a map of degrees of magnetic variation by position (in string format)
    */
-  private Map<String, Double> parseNdfFile() throws IOException {
+  private Collection<MagVar> parseNdfFile() throws IOException {
     BufferedReader in = null;
     try {
       in = new BufferedReader(new FileReader(this.nfdFile));
 
-      final Map<String, Double> magVarByPosition = new HashMap<String, Double>();
+      final Map<String, MagVar> magVarByPosition = new HashMap<String, MagVar>();
       final Set<String> invalidPositions = new HashSet<String>();
 
       String line;
       while ((line = in.readLine()) != null) {
-        Matcher lineMatcher = null;
-        for (Pattern pattern: patterns) {
-          lineMatcher = pattern.matcher(line);
-          if (lineMatcher.matches()) {
+        MagVar data = null;
+        for (NfdMagVarMatcher matcher: matchers) {
+          data = matcher.match(line);
+          if (data != null) {
             break;
           }
         }
 
-        if (lineMatcher == null || !lineMatcher.matches()) {
+        if (data == null) {
           continue;
         }
 
-        final String latitudeStr = lineMatcher.group(1);
-        final String longitudeStr = lineMatcher.group(2);
-        final String magVarStr = lineMatcher.group(3);
+        final String position = data.getPosition(LAT_LNG_PRECISION);
 
-        try {
-          final double latitude = parseLatitude(latitudeStr);
-          final double longitude = parseLongitude(longitudeStr);
-          final double magVar = parseMagVar(magVarStr);
+        // Check if position is marked as invalid
+        if (invalidPositions.contains(position)) {
+          System.err.println("Skipping duplicate position: " + position);
+          continue;
+        }
 
-          final String position = String.format("%." + LAT_LNG_PRECISION + "f," +
-                                                "%." + LAT_LNG_PRECISION + "f",
-                                                latitude, longitude);
+        // Check if same position already exists.
+        if (magVarByPosition.containsKey(position)) {
+          final double magVar = data.magVar;
+          final double existingMagVar = magVarByPosition.get(position).magVar;
+          // If same position already exists, check if magVar is identical.
+          if (Math.abs(existingMagVar - magVar) > EQUAL_MAG_VAR_EPSILON) {
+            System.err.print("Found invalid duplicate mag var: ");
+            System.err.println(position + ": " + existingMagVar + " vs. " + magVar);
 
-          if (invalidPositions.contains(position)) {
-            System.err.println("Skipping duplicate position: " + position);
-            continue;
+            // If same position has different magVar, dismiss position as invalid.
+            invalidPositions.add(position);
+            magVarByPosition.remove(position);
           }
-
-          if (magVarByPosition.containsKey(position)) {
-            final double existingMagVar = magVarByPosition.get(position);
-            if (Math.abs(existingMagVar - magVar) > EQUAL_MAG_VAR_EPSILON) {
-              System.err.print("Found invalid duplicate mag var: ");
-              System.err.println(position + ": " + existingMagVar + " vs. " + magVar);
-
-              invalidPositions.add(position);
-              magVarByPosition.remove(position);
-            }
-          } else {
-            magVarByPosition.put(position, magVar);
-          }
-        } catch (IllegalArgumentException nfe) {
-          // Skip over errors
-          System.err.println("Error parsing: " + line);
+        } else {
+          magVarByPosition.put(position, data);
         }
       }
 
-      return magVarByPosition;
+      return new Vector<MagVar>(magVarByPosition.values());
     } finally {
       if (in != null) {
         in.close();
@@ -244,11 +342,10 @@ public class NfdMagVarParser {
   /**
    * Prints mag var data on standard output.
    */
-  private void dumpMagVarFile(final Map<String, Double> magVarByPosition) {
-    for (Map.Entry<String, Double> magVarPositionEntry: magVarByPosition.entrySet()) {
-      final String position = magVarPositionEntry.getKey();
-      final double magVar = magVarPositionEntry.getValue();
-      System.out.println(position + "," + magVar);
+  private void dumpMagVarFile(final Collection<MagVar> magVarCollection) {
+    System.out.println(MagVar.getHeaderString());
+    for (MagVar magVarData: magVarCollection) {
+      System.out.println(magVarData);
     }
   }
 
@@ -257,8 +354,8 @@ public class NfdMagVarParser {
    */
   private void execute() {
     try {
-      final Map<String, Double> magVarByPosition = parseNdfFile();
-      dumpMagVarFile(magVarByPosition);
+      final Collection<MagVar> magVarCollection = parseNdfFile();
+      dumpMagVarFile(magVarCollection);
     } catch (Exception ex) {
       ex.printStackTrace();
     }
