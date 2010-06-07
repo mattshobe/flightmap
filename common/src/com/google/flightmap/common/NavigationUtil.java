@@ -27,6 +27,8 @@ public class NavigationUtil {
   public static final double METERS_PER_SEC_TO_KNOTS = 1.94384449;
   public static final double EARTH_RADIUS = 6371009;
 
+  public static final long SESSION_TIME_MILLIS = System.currentTimeMillis();
+
   /**
    * Returns the distance in meters between point1 and point2.
    * Calculation is done by the Haversine Formula.
@@ -60,5 +62,22 @@ public class NavigationUtil {
         Math.pow(Math.sin(dLat / 2), 2) + Math.cos(lat1) * Math.cos(lat2)
             * Math.pow(Math.sin(dLng / 2), 2);
     return EARTH_RADIUS * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  /**
+   * Computes the magnetic variation at a given position.
+   *
+   * @param position  Latitude and longitude
+   * @param height    Height (meters)
+   *
+   * @return          Magnetic variation (degrees).  West positive, East negative.
+   */
+  public static double getMagneticVariation(final LatLng position, final double height) {
+    final double latRad = position.latRad();
+    final double lngRad = position.lngRad();
+    final double heightKm = height / 1000.0;
+
+    final double varRad = MagField.GetMagVar(latRad, lngRad, heightKm, SESSION_TIME_MILLIS, null);
+    return Math.toDegrees(varRad);
   }
 }
