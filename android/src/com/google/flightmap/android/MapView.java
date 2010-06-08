@@ -296,6 +296,15 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       return;
     }
 
+    LatLng locationLatLng = LatLng.fromDouble(location.getLatitude(), location.getLongitude());
+
+    // Convert bearing from true to magnetic.
+    if (location.hasBearing()) {
+      float magneticBearing = location.getBearing() // relative to true north.
+          + (float) NavigationUtil.getMagneticVariation(locationLatLng, location.getAltitude());
+      location.setBearing(magneticBearing);
+    }
+
     final boolean isTrackUp = !FlightMap.isNorthUp; // copy for thread safety.
 
     // Draw everything relative to the aircraft.
@@ -307,7 +316,6 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
 
     // Get location pixel coordinates. Then set translation so everything is
     // drawn relative to the current location.
-    LatLng locationLatLng = LatLng.fromDouble(location.getLatitude(), location.getLongitude());
     final float zoomCopy = getZoom(); // copy for thread safety.
     Point locationPoint = MercatorProjection.toPoint(zoomCopy, locationLatLng);
     c.translate(-locationPoint.x, -locationPoint.y);
