@@ -15,8 +15,6 @@
  */
 package com.google.flightmap.android;
 
-import java.util.SortedSet;
-
 import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -35,10 +33,13 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.ZoomButtonsController;
 
+import com.google.flightmap.common.CachedMagneticVariation;
 import com.google.flightmap.common.NavigationUtil;
 import com.google.flightmap.common.data.Airport;
 import com.google.flightmap.common.data.AirportDistance;
 import com.google.flightmap.common.data.LatLng;
+
+import java.util.SortedSet;
 
 /**
  * View for the moving map.
@@ -104,6 +105,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   // Caching. Values from the last time the map was drawn.
   private Location previousLocation;
   private float previousZoom;
+
+  // Magnetic variation w/ caching.
+  private final CachedMagneticVariation magneticVariation = new CachedMagneticVariation();
 
   // Static initialization.
   static {
@@ -299,11 +303,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     LatLng locationLatLng = LatLng.fromDouble(location.getLatitude(), location.getLongitude());
 
     // Convert bearing from true to magnetic.
-    if (location.hasBearing()) {
-      float magneticBearing = location.getBearing() // relative to true north.
-          + (float) NavigationUtil.getMagneticVariation(locationLatLng, location.getAltitude());
-      location.setBearing(magneticBearing);
-    }
+    location = convertToMagneticBearing(location, locationLatLng);
 
     final boolean isTrackUp = !FlightMap.isNorthUp; // copy for thread safety.
 
@@ -401,6 +401,23 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       c.drawText(altitude, width - textWidth - PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE,
           PANEL_DIGITS_PAINT);
     }
+  }
+
+  /**
+   * Returns {@code location} with the bearing converted from true to magnetic.
+   * Does not modify {@code location} if location.hasBearing() is false.
+   * 
+   * @param locationLatLng
+   */
+  private Location convertToMagneticBearing(Location location, LatLng locationLatLng) {
+    if (!location.hasBearing()) {
+      return location;
+    }
+
+    float magneticBearing = location.getBearing() // relative to true north.
+        + magneticVariation.getMagneticVariation(locationLatLng, (float) location.getAltitude());
+    location.setBearing(magneticBearing);
+    return location;
   }
 
   /**
