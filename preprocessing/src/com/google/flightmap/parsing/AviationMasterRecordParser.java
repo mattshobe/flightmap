@@ -881,8 +881,29 @@ public class AviationMasterRecordParser {
     }
   }
 
+  /**
+   * @return Nicely capitalized version of text.
+   */
   private static String capitalize(String text) {
-    return WordUtils.capitalize(text.toLowerCase());
+    final StringBuilder sb = new StringBuilder(WordUtils.capitalize(text.toLowerCase()));
+    boolean makeNextLetterUpper = false;
+    for (int i = 0; i < sb.length(); ++i) {
+      final char cur = sb.charAt(i);
+      if (Character.isWhitespace(cur)) {
+        continue;  // Skip whitespace
+      } else if (Character.isLetterOrDigit(cur)) {
+        if (makeNextLetterUpper) {
+          sb.setCharAt(i, Character.toUpperCase(cur));
+          makeNextLetterUpper = false;
+        } else {
+          continue;  // Skip character if no change is neded
+        }
+      } else {  // Not whitespace, letter or digit:  we assume punctuation.
+        makeNextLetterUpper = cur != '\'';  // Ignore single quote (John'S, Susie'S, ...)
+      }
+    }
+
+    return sb.toString();
   }
 
   private static String getAirportNameToDisplay(String airportID, String airportName) {
