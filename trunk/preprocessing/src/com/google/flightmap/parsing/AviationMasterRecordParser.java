@@ -882,7 +882,13 @@ public class AviationMasterRecordParser {
   }
 
   /**
-   * @return Nicely capitalized version of text.
+   * Returns mixed-case version of {@code text} (which is typically in ALL CAPS).
+   *
+   * The first letter of each word is capitalized, the rest are lower case.
+   * Words are delimited by spaces and special characters (except single-quote).
+   * "REID-HILLVIEW" becomes "Reid-Hillview".
+   *
+   * @return mixed-case version of {@code text} with each word capitalized
    */
   private static String capitalize(String text) {
     final StringBuilder sb = new StringBuilder(WordUtils.capitalize(text.toLowerCase()));
