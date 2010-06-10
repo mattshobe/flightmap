@@ -10,8 +10,6 @@ import com.google.flightmap.common.data.LatLng;
 import java.util.LinkedList;
 import java.util.TreeSet;
 
-import sun.net.www.MeteredStream;
-
 /**
  * 
  * @author aristidis@google.com (Aristidis Papaioannou)

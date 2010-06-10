@@ -48,6 +48,7 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
   private PreparedStatement getConstantStmt;
   private PreparedStatement getRunwaysStmt;
   private PreparedStatement getRunwayEndsStmt;
+  private PreparedStatement getAirportCommsStmt;
 
   // TODO(aristidis): Eliminate code duplication (see AndroidAviationDbAdapter)
   private static final HashSet<String> INTEGER_AIRPORT_PROPERTIES;
@@ -286,6 +287,26 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
       return Airport.Type.BALLOONPORT;
     } else {
       return Airport.Type.OTHER;
+    }
+  }
+
+  public LinkedList<String> getAirportComms(int airportId) {
+    try {
+      if (getAirportCommsStmt == null) {
+        getAirportCommsStmt = dbConn.prepareStatement(
+            "SELECT comm from airport_comm WHERE airport_id = ?");
+      }
+
+      getAirportCommsStmt.setInt(1, airportId);
+      ResultSet airportComms = getAirportCommsStmt.executeQuery();
+      final LinkedList<String> comms = new LinkedList<String>();
+      while (airportComms.next()) {
+        final String comm = airportComms.getString("comm");
+        comms.add(comm);
+      }
+      return comms;
+    } catch (SQLException sqlEx) {
+      throw new RuntimeException(sqlEx);
     }
   }
 
