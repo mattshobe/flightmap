@@ -70,6 +70,10 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   private static final String AIRPORT_ID_WHERE = AIRPORT_ID_COLUMN + " = ?";
   private static final String[] PROPERTY_COLUMNS = new String[] {KEY_COLUMN, VALUE_COLUMN};
   private static final HashSet<String> INTEGER_AIRPORT_PROPERTIES;
+  // airport_comm
+  private static final String AIRPORT_COMM_TABLE = "airport_comm";
+  private static final String COMM_COLUMN = "comm";
+  private static final String[] COMM_COLUMNS = new String[] {COMM_COLUMN};
   // runways
   private static final String RUNWAYS_TABLE = "runways";
   private static final String RUNWAY_LETTERS_COLUMN = "letters";
@@ -286,6 +290,34 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
       return airportProperties;
     } finally {
       airportPropertiesCursor.close();
+    }
+  }
+
+  /**
+   * @return List of communication frequencies with description at given airport
+   */
+  @Override
+  public LinkedList<String> getAirportComms(int airportId) {
+    String[] stringAirportId = {Integer.toString(airportId)};
+    Cursor airportCommsCursor =
+        database.query(AIRPORT_COMM_TABLE, COMM_COLUMNS, AIRPORT_ID_WHERE,
+            stringAirportId, null, null, null);
+    try {
+      if (!airportCommsCursor.moveToFirst()) {
+        Log.e(TAG, "No airport comms for id =" + airportId);
+        return null;
+      }
+      final LinkedList<String> airportComms = new LinkedList<String>();
+
+      do {
+        final String comm =
+            airportCommsCursor.getString(airportCommsCursor.getColumnIndexOrThrow(COMM_COLUMN));
+        airportComms.add(comm);
+      } while (airportCommsCursor.moveToNext());
+
+      return airportComms;
+    } finally {
+      airportCommsCursor.close();
     }
   }
 

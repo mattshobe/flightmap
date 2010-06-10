@@ -40,5 +40,7 @@ public interface AviationDbAdapter {
 
   public HashMap<String, String> getAirportProperties(int airportId);
 
+  public LinkedList<String> getAirportComms(int airportId);
+
   public HashMap<String, String> getRunwayEndProperties(int runwayEndId);
 }
