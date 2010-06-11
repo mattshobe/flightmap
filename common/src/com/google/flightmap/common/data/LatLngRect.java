@@ -20,9 +20,9 @@ package com.google.flightmap.common.data;
  */
 public class LatLngRect {
   /** Southwest corner of rectangle. */
-  public LatLng swCorner;
+  private LatLng swCorner;
   /** Northeast corner of rectangle. */
-  public LatLng neCorner;
+  private LatLng neCorner;
 
   /**
    * Creates an empty rectangle.
@@ -72,5 +72,13 @@ public class LatLngRect {
       return "Empty";
     }
     return swCorner + " - " + neCorner;
+  }
+
+  public synchronized LatLng getSwCorner() {
+    return swCorner;
+  }
+
+  public synchronized LatLng getNeCorner() {
+    return neCorner;
   }
 }
