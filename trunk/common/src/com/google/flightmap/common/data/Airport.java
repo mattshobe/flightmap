@@ -28,6 +28,15 @@ public class Airport implements Comparable<Airport> {
    * Compare airports by rank.
    */
   private static class RankComparator implements Comparator<Airport> {
+    private final boolean increasingOrder;
+
+    /**
+     * @param increasingOrder  If true, order is in increasing rank, otherwise decreasing.
+     */
+    private RankComparator(final boolean increasingOrder) {
+      this.increasingOrder = increasingOrder;
+    }
+
     @Override
     /**
      * Compare two airports by rank.
@@ -37,6 +46,9 @@ public class Airport implements Comparable<Airport> {
      */
     public int compare(final Airport o1, final Airport o2) {
       int rankDiff = o1.rank - o2.rank;
+      if (!increasingOrder) {
+        rankDiff *= -1;
+      }
       if (rankDiff != 0) {
         return rankDiff;
       } else {
@@ -46,9 +58,16 @@ public class Airport implements Comparable<Airport> {
   }
 
   /**
-   * Airport comparator instance that imposes an ordering based on rank.  Instance is thread-safe.
+   * Airport comparator instance that imposes an ordering based on increasing rank.
+   * Instance is thread-safe.
    */
-  public final static Comparator<Airport> RANK_COMPARATOR = new RankComparator();
+  public final static Comparator<Airport> INC_RANK_COMPARATOR = new RankComparator(true);
+
+  /**
+   * Airport comparator instance that imposes an ordering based on increasing rank.
+   * Instance is thread-safe.
+   */
+  public final static Comparator<Airport> DESC_RANK_COMPARATOR = new RankComparator(false);
 
   /**
    * Facility types.
