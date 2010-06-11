@@ -336,26 +336,10 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       }
       c.drawText(airportDistance.airport.icao, airportPoint.x, airportPoint.y - 20,
           AIRPORT_TEXT_PAINT);
-
-      
-      
-      
-      Log.i(TAG, String.format("%s (%d, %d) %.3f, %.3f", airportDistance.airport.icao,
-          airportPoint.x, airportPoint.y, (airportDistance.airport.location.lat / 1e6),
-          (airportDistance.airport.location.lng / 1e6)));
-      // TODO - double check here by converting x,y <-> lat,lng
-      
-
-      
-      
-      
       if (isTrackUp) {
         c.rotate(360 - location.getBearing(), airportPoint.x, airportPoint.y);
       }
     }
-    Log.i(TAG, String.format("airplane (%d, %d) %.3f, %.3f", locationPoint.x, locationPoint.y,
-        location.getLatitude(), location.getLongitude()));
-    Log.i(TAG, String.format("corner (%d, %d)", locationPoint.x - aircraftX, locationPoint.y - aircraftY));
 
 
     // Draw airplane.
