@@ -361,7 +361,7 @@ public class AviationMasterRecordParser {
       insertAirportStatement.setBoolean(++fieldCount, isMilitary);
 
       //   cell_id
-      int cellId = CustomGridUtil.GetCellId(airportPosition);
+      int cellId = CustomGridUtil.getCellId(airportPosition);
       insertAirportStatement.setInt(++fieldCount, cellId);
 
       //   rank: Insert bogus value, will be replaced in second run

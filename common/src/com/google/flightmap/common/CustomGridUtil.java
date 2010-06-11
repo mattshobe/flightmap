@@ -5,6 +5,7 @@ package com.google.flightmap.common;
 import java.util.LinkedList;
 
 import com.google.flightmap.common.data.LatLng;
+import com.google.flightmap.common.data.LatLngRect;
 
 
 public class CustomGridUtil {
@@ -34,7 +35,7 @@ public class CustomGridUtil {
     }
   }
 
-  static private long IntersectRange(long a, long b, long A, long B) {
+  static private long intersectRange(long a, long b, long A, long B) {
     if (a > b) {
       long temp = a;
       a = b;
@@ -53,11 +54,11 @@ public class CustomGridUtil {
     return Math.min(b,B) - Math.max(a,A);
   }
 
-  public static int GetCellId(final LatLng position) {
-    return GetCellId(position.lat, position.lng);
+  public static int getCellId(final LatLng position) {
+    return getCellId(position.lat, position.lng);
   }
 
-  public static int GetCellId(final int latE6, final int lngE6) {
+  public static int getCellId(final int latE6, final int lngE6) {
     int northLatE6 = (int)+90E6;
     int southLatE6 = (int)-90E6;
     int westLngE6 = (int)-180E6;
@@ -104,17 +105,35 @@ public class CustomGridUtil {
   }
 
   /**
-   * radius: in degrees (latitude and longitude) * 1E6
+   * Returns set of cells that cover at least the area within {@code radius} of {@code origin}.
+   *
+   * @param origin  Center of circle in Lat,Lng space
+   * @param radius  Radius of circle, in degrees * 1E6
+   * @return     List of cell intervals that cover the area.
+   * @see #getCellsInRectangle(LatLngRect)
    */
-  static LinkedList<int[]> GetCellsInRadius(LatLng origin, int radius) {
-    final double threshold = 0.5;
+  static LinkedList<int[]> getCellsInRadius(final LatLng origin, final int radius) {
+    return getCellsInRectangle(LatLngRect.getBoundingBox(origin, radius));
+  }
 
+  /**
+   * Returns set of cells that cover at least the given area.
+   *
+   * @param area Rectangular area in Lat,Lng space.
+   * @return     List of cell intervals that cover the area.
+   *             Each element of the list is an array of two integers: int[]{cellMin, cellMax}
+   *             The set of all cellIds such that cellMin <= cellId < cellMax covers area.
+   */
+  static LinkedList<int[]> getCellsInRectangle(final LatLngRect area) {
+    final double threshold = 0.7;
+
+    // Boundaries of next cell to inspect
     int northLatE6 = (int)+90E6;
     int southLatE6 = (int)-90E6;
     int westLngE6 = (int)-180E6;
     int eastLngE6 = (int)+180E6;
-    long heightE6 = northLatE6-southLatE6;
-    long widthE6 = eastLngE6-westLngE6;
+    long heightE6 = northLatE6 - southLatE6;
+    long widthE6 = eastLngE6 - westLngE6;
 
     PartialCell root = new PartialCell(0, 0, 0, 0, widthE6, heightE6);
     LinkedList<PartialCell> remainingCells = new LinkedList<PartialCell>();
@@ -122,10 +141,10 @@ public class CustomGridUtil {
 
     LinkedList<int[]> coveredCells = new LinkedList<int[]>();
 
-    final long areaTop = origin.lat + radius;
-    final long areaBottom = origin.lat - radius;
-    final long areaLeft = origin.lng - radius;
-    final long areaRight = origin.lng + radius;
+    final int areaTop = area.getNorth();
+    final int areaBottom = area.getSouth();
+    final int areaLeft = area.getWest();
+    final int areaRight = area.getEast();
 
     while (!remainingCells.isEmpty()) {
       PartialCell currentCell = remainingCells.remove();
@@ -137,8 +156,8 @@ public class CustomGridUtil {
       eastLngE6 = currentCell.centerLng + (int)(widthE6/2);
       westLngE6 = (int)(eastLngE6 - widthE6);
 
-      long latIntersect = IntersectRange(areaBottom, areaTop, southLatE6, northLatE6);
-      long lngIntersect = IntersectRange(areaLeft, areaRight, westLngE6, eastLngE6);
+      long latIntersect = intersectRange(areaBottom, areaTop, southLatE6, northLatE6);
+      long lngIntersect = intersectRange(areaLeft, areaRight, westLngE6, eastLngE6);
 
       double coverage = latIntersect * lngIntersect * 1.0/(heightE6*widthE6);
 

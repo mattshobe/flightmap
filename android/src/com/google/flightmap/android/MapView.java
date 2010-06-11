@@ -38,8 +38,9 @@ import com.google.flightmap.common.NavigationUtil;
 import com.google.flightmap.common.data.Airport;
 import com.google.flightmap.common.data.AirportDistance;
 import com.google.flightmap.common.data.LatLng;
+import com.google.flightmap.common.data.LatLngRect;
 
-import java.util.SortedSet;
+import java.util.LinkedList;
 
 /**
  * View for the moving map.
@@ -321,21 +322,23 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     c.translate(-locationPoint.x, -locationPoint.y);
 
     // Draw airports.
-    double screenRadius = getScreenRadius(zoomCopy, locationLatLng, locationPoint);
-    SortedSet<AirportDistance> nearbyAirports =
-        flightMap.airportDirectory.getAirportsWithinRadius(locationLatLng, screenRadius,
-            getMinimumAirportRank(zoomCopy));
-    for (AirportDistance airportDistance : nearbyAirports) {
-      final Paint airportPaint = getAirportPaint(airportDistance.airport);
-      Point airportPoint = MercatorProjection.toPoint(zoomCopy, airportDistance.airport.location);
+    final int width = c.getWidth();
+    final int height = c.getHeight();
+    final LatLngRect screenArea =
+        getScreenArea(zoomCopy, locationLatLng, locationPoint, width, height);
+    LinkedList<Airport> nearbyAirports = 
+        flightMap.airportDirectory.getAirportsInRectangle(screenArea,
+                                                          getMinimumAirportRank(zoomCopy));
+    for (Airport airport: nearbyAirports) {
+      final Paint airportPaint = getAirportPaint(airport);
+      Point airportPoint = MercatorProjection.toPoint(zoomCopy, airport.location);
       c.drawCircle(airportPoint.x, airportPoint.y, 15, airportPaint);
       // Undo, then redo the track-up rotation so the labels are always at the
       // top for track up.
       if (isTrackUp) {
         c.rotate(location.getBearing(), airportPoint.x, airportPoint.y);
       }
-      c.drawText(airportDistance.airport.icao, airportPoint.x, airportPoint.y - 20,
-          AIRPORT_TEXT_PAINT);
+      c.drawText(airport.icao, airportPoint.x, airportPoint.y - 20, AIRPORT_TEXT_PAINT);
       if (isTrackUp) {
         c.rotate(360 - location.getBearing(), airportPoint.x, airportPoint.y);
       }
@@ -388,7 +391,6 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       c.drawText(" kts", textWidth + PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_UNITS_PAINT);
 
       // Draw track.
-      final int width = c.getWidth();
       final float center = width / 2.0f;
       PANEL_DIGITS_PAINT.setTextAlign(Align.CENTER);
       c.drawText(track, center, PANEL_TEXT_BASELINE, PANEL_DIGITS_PAINT);
@@ -482,11 +484,17 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
    * Returns the distance in meters from the aircraft screen location to the
    * furthest screen edge.
    */
-  private synchronized double getScreenRadius(float zoom, LatLng location, Point locationPoint) {
+  private synchronized LatLngRect getScreenArea(final float zoom,
+                                                final LatLng location,
+                                                final Point locationPoint,
+                                                final int width,
+                                                final int height) {
     // Pixel coordinates of the top-left screen corner.
-    Point topLeftCorner = new Point(locationPoint.x - aircraftX, locationPoint.y - aircraftY);
-    LatLng topLeftLocation = MercatorProjection.fromPoint(zoom, topLeftCorner);
-    return NavigationUtil.computeDistance(location, topLeftLocation);
+    final Point topLeftCorner = new Point(locationPoint.x - aircraftX, locationPoint.y - aircraftY);
+    final Point bottomRightCorner = new Point(topLeftCorner.x + width, topLeftCorner.y + height);
+    final LatLng topLeftLocation = MercatorProjection.fromPoint(zoom, topLeftCorner);
+    final LatLng bottomRightLocation = MercatorProjection.fromPoint(zoom,  bottomRightCorner);
+    return new LatLngRect(topLeftLocation, bottomRightLocation);
   }
 
   public synchronized float getZoom() {
