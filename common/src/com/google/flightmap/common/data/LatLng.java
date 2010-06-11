@@ -107,4 +107,9 @@ public class LatLng implements Comparable<LatLng> {
   public int hashCode() {
     return (lat * 127)  ^ lng;
   }
+  
+  @Override
+  public String toString() {
+    return String.format("(%.5f, %.5f)", latDeg(), lngDeg());
+  }
 }
