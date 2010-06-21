@@ -266,11 +266,11 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
         return;
       }
       synchronized (this) {
-        // Do nothing if position and zoom are unchanged.
-        // TODO: Also check for display preferences change here.
-        if (!hasMoved(location) && zoom == previousZoom) {
+        // Do nothing if position, zoom and preferences are unchanged.
+        if (!hasMoved(location) && zoom == previousZoom && UserPrefs.PREFS_UPDATED == false) {
           return;
         }
+        UserPrefs.PREFS_UPDATED = false;
         previousLocation = location;
         previousZoom = zoom;
       }
@@ -366,12 +366,22 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     // Polygon for top params display.
     if (null != topPanel) {
       c.drawPath(topPanel, PANEL_BACKGROUND_PAINT);
-      String knots = "-";
+      String speed = "-";
       String track = "-" + DEGREES_SYMBOL;
       String altitude = "-";
+      String speed_units = " kts";
 
       if (location.hasSpeed()) {
-        knots = String.format("%.0f", location.getSpeed() * NavigationUtil.METERS_PER_SEC_TO_KNOTS);
+    	if(FlightMap.units.equals("3"))
+    		speed = String.format("%.0f", location.getSpeed() * NavigationUtil.METERS_PER_SEC_TO_KNOTS);
+    	else if(FlightMap.units.equals("1")) {
+    		speed = String.format("%.0f", location.getSpeed() * NavigationUtil.METERS_PER_SEC_TO_MPH);
+    		speed_units = " mph";
+    	}
+    	else { // (FlightMap.units.equals("2"))
+    		speed = String.format("%.0f", location.getSpeed() * NavigationUtil.METERS_PER_SEC_TO_KPH);
+    		speed_units = " kph";
+    	}
       }
       if (location.hasBearing()) {
         track = String.format(" %03.0f%s", location.getBearing(), DEGREES_SYMBOL);
@@ -385,10 +395,10 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
 
       // Draw speed.
       PANEL_DIGITS_PAINT.setTextAlign(Align.LEFT);
-      c.drawText(knots, PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_DIGITS_PAINT);
-      int textWidth = getTextWidth(knots, PANEL_DIGITS_PAINT);
+      c.drawText(speed, PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_DIGITS_PAINT);
+      int textWidth = getTextWidth(speed, PANEL_DIGITS_PAINT);
       PANEL_UNITS_PAINT.setTextAlign(Align.LEFT);
-      c.drawText(" kts", textWidth + PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_UNITS_PAINT);
+      c.drawText(speed_units, textWidth + PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_UNITS_PAINT);
 
       // Draw track.
       final float center = width / 2.0f;

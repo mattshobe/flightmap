@@ -2,24 +2,16 @@
 <PreferenceScreen
   xmlns:android="http://schemas.android.com/apk/res/android">
   
-  <PreferenceCategory android:title="Display Settings">
+  <PreferenceCategory android:title="Display Settings">   
 	<CheckBoxPreference
   		android:title="North Up"
   		android:summary="Put North at the top instead of heading"
   		android:key="North_Up"
   		android:defaultValue="false" />
-  		
-  	<ListPreference
-  		android:title="GPS Update Interval"
-  		android:summary="Frequency to check for position updates"
-  		android:key="Update_Interval"
-  		android:defaultValue="1"
-  		android:entries="@array/intervals"
-  		android:entryValues="@array/intervals_values" />
   	
   	<ListPreference
   		android:title="Distance Units"
-  		android:summary="Miles, KM, NM"
+  		android:summary="Choose Miles, KM, NM"
   		android:key="Distance_Units"
   		android:defaultValue="3"
   		android:entries="@array/units"

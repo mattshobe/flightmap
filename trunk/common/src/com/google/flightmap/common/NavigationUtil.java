@@ -23,8 +23,12 @@ import com.google.flightmap.common.data.LatLng;
  */
 public class NavigationUtil {
   public static final double METERS_PER_NM = 1852;
+  public static final double METERS_PER_MILES = 1609.344;
+  public static final double METERS_PER_KM = 1000;
   public static final double METERS_PER_FOOT = 3.2808399;
   public static final double METERS_PER_SEC_TO_KNOTS = 1.94384449;
+  public static final double METERS_PER_SEC_TO_MPH = 2.23693629;
+  public static final double METERS_PER_SEC_TO_KPH = 3.6;
   public static final double EARTH_RADIUS = 6371009;
 
   public static final long SESSION_TIME_MILLIS = System.currentTimeMillis();

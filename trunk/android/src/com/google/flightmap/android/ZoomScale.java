@@ -119,11 +119,25 @@ public class ZoomScale {
     double mpp = MercatorProjection.getMetersPerPixel(zoom, //
         LatLng.fromDouble(location.getLatitude(), location.getLongitude()));
     double scaleInMeters = Math.round(mpp * PREFERRED_WIDTH * density);
-    // TODO - read user prefs to determine units to show.
-    double scaleInNm = scaleInMeters / NavigationUtil.METERS_PER_NM;
+    double scaleInUnits = 0;
+    String units = "nm";
+    // Read user prefs to determine units to show.
+    if(FlightMap.units.equals("1")) {
+    	scaleInUnits = scaleInMeters / NavigationUtil.METERS_PER_MILES;
+    	units = "sm";
+    }
+    else if(FlightMap.units.equals("2")) {
+    	scaleInUnits = scaleInMeters / NavigationUtil.METERS_PER_KM;
+    	units = "km";
+    }    
+    else {
+
+    	scaleInUnits = scaleInMeters / NavigationUtil.METERS_PER_NM;
+    }
     String result = null;
-    if (scaleInNm > 0.1) {
-      result = String.format("%.1f %s", scaleInNm, "nm");
+    if (scaleInUnits > 0.1) {
+    	  result = String.format("%.1f %s", scaleInUnits, units);
+
     } else {
       // Show scale in feet when nm is less useful.
       double scaleInFeet = scaleInMeters / NavigationUtil.METERS_PER_FOOT;
