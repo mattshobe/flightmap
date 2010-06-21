@@ -62,7 +62,7 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   private static final String CONSTANTS_TABLE = "constants";
   private static final String CONSTANT_COLUMN = "constant";
   private static final String[] CONSTANT_COLUMNS = new String[] {CONSTANT_COLUMN};
-  // airport_properties
+   // airport_properties
   private static final String AIRPORT_PROPERTIES_TABLE = "airport_properties";
   private static final String AIRPORT_ID_COLUMN = "airport_id";
   private static final String KEY_COLUMN = "key";
@@ -243,15 +243,41 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
    * preferences are applied here to filter the database results.
    */
   private boolean shouldInclude(Airport airport) {
-    // TODO: apply user preferences here. The code below gives a sketch of how
-    // I'd test against preferences.
-    if (!airport.type.equals(Airport.Type.AIRPORT)) {
+    if(airport.type.equals(Airport.Type.HELIPORT) && !FlightMap.showHeli) {
+    	return false;
+    }
+    if(airport.type.equals(Airport.Type.SEAPLANE_BASE) && !FlightMap.showSeaplane) {
+    	return false;
+    }
+    if (airport.type.equals(Airport.Type.ULTRALIGHT) 
+    		|| airport.type.equals(Airport.Type.GLIDERPORT)
+    		|| airport.type.equals(Airport.Type.BALLOONPORT)) {
       return false;
     }
-    if (!airport.isPublic && !airport.isTowered) {
-      return false;
+    
+    if(airport.isMilitary && !FlightMap.showMilitary) {
+    	return false;
     }
-    return true;
+    if(!airport.isPublic && !FlightMap.showPrivate) {
+    	if(!(airport.isMilitary && FlightMap.showMilitary)) {    		
+    		return false;
+    	}
+    }
+    if(!FlightMap.showSoft && !airport.runways.first().surface.startsWith("ASPH")) {
+    	return false;
+    }
+    if(!FlightMap.runwayLength.equals("1")) {
+    	// Airport runways are sorted by descending length.
+    	// UserPref 1 is None. 2 is 2000 ft. 3 is 4000 ft.
+    	int length = airport.runways.first().length;
+    	String min = FlightMap.runwayLength;
+    	if((min == "2" && length < 2000)
+    			|| min == "3" && length < 4000) {
+    		return false;
+    	}
+    }
+	return true;
+ 
   }
 
   /**

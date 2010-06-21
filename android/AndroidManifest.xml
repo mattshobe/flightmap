@@ -24,4 +24,6 @@
   <!-- The WRITE_EXTERNAL_STORAGE permission is only needed for profiling.  -->
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
   <uses-sdk android:minSdkVersion="6" android:targetSdkVersion="6" />
+<uses-permission android:name="android.permission.ACCESS_MOCK_LOCATION"></uses-permission>
+
 </manifest> 
