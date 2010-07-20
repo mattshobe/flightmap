@@ -17,6 +17,8 @@ Flight Map developers will need the following things installed:
   * An SD card in your Android emulator or actual device.
 
 You must add the `tools` directory of the Android SDK to your PATH.
+= Get the Source =
+See the [http://code.google.com/p/flightmap/source/checkout Source] page for details on how to check out the code.
 = Build =
 == Android Code ==
 The code that is deployed to the phone is in the `android` directory. See ProjectDirectories for information on the directory structure.
@@ -75,7 +77,8 @@ If you don't see any devices listed, you didn't set it up right. Make sure you e
 Once your device is connected to your computer, go to the next section for how to copy the database over.
 
 == Copy Database ==
-Copy the navigation data to your SD card with these commands.
+Copy the navigation data to your emulator or actual device with the following commands. (Obviously, if you're copying to the emulator, it needs to be running. Use `emulator -avd droid &` to start it.)
+
 {{{
 $ adb push data/aviation.db /sdcard/com.google.flightmap/aviation.db
 238 KB/s (722944 bytes in 2.958s)
