@@ -53,8 +53,8 @@ Create a new Android Project:
   # *Create project from existing source*
   # Set Location to where you have the `android` directory checked out (e.g. `/src/flightmap/android`).
   # Build Target
-    * *Android 2.0.1 (API level 6)*
-  # Min SDK Version: *6*
+    * *Android 2.1 (API level 7)*
+  # Min SDK Version: *7*
   # Finish
 
 The project icon will have a little red X and lots of problems indicated. That's because the Android code has a dependency on the `common` code that you need to configure in the project properties.
