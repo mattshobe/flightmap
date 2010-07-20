@@ -32,9 +32,9 @@ Depending on what part of the project you are working on, you may not actually n
 
 == Important Note on changing Common Code ==
 
-You'll notice that the first two projects created depend on `common/release/flightmap-common-VERSION.jar`
+You'll notice that the first two projects created depend on the code in `flightmap/common`.
 
-If you make any changes to code in the *common* project, you'll need to re-generate the above jar file. Please use `ant` to do that as follows:
+If you make any changes to code in the *common* project, you'll need to re-generate the above `common/release/flightmap-common-VERSION.jar` file (which is checked in to subversion). Please use `ant` to do that as follows:
 {{{
   cd common
   ant release
