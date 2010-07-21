@@ -57,9 +57,11 @@ The preprocessing code is used to create the `data/aviation.db` SQLite database.
 
 = Copy Data =
 == Emulator Set Up ==
-Create an emulated device with an SD card that has at least 4 MB of storage space. When Phil did this, he found he had to create 16 MB of storage, due to some emulator errors with smaller sizes. Here's an example of how to create an emulated device with SD card storage.
+Create an emulated device with an SD card that has at least 16 MB of storage space and uses Android SDK level 7 (version 2.1).
+
+Here's an example of how to create an emulated device with SD card storage.
 {{{
-$ android create avd --name droid --target 3 --skin WVGA800 --sdcard 16M
+$ android create avd --name droid --target android-7 --skin WVGA800 --sdcard 16M
 }}}
 
 See the [GettingStarted#Copy_Database Copy Database] section for the next step.
