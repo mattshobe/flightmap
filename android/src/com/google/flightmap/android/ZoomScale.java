@@ -1,12 +1,12 @@
 /*
  * Copyright (C) 2010 Google Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -24,6 +24,7 @@ import android.location.Location;
 import android.util.Log;
 
 import com.google.flightmap.common.NavigationUtil;
+import com.google.flightmap.common.NavigationUtil.DistanceUnits;
 import com.google.flightmap.common.data.LatLng;
 
 /**
@@ -38,10 +39,10 @@ public class ZoomScale {
   private static final int PREFERRED_WIDTH = 75;
   /** Height of the lines on the ends */
   private static final int HEIGHT = 8;
-  
+
   /** Number of pixels up from the bottom of the screen to draw the scale. */
   private static final int BOTTOM_OFFSET = 20 + HEIGHT;
-  
+
   /** Number of pixels left from the right of the screen to draw the right edge. */
   private static final int RIGHT_OFFSET = 30;
   /** Meters to travel between updating the zoom scale. */
@@ -54,10 +55,13 @@ public class ZoomScale {
   // Screen density.
   private final float density;
 
+  private final UserPrefs userPrefs;
+
   // Used to cache scale text.
   private Location previousLocation;
   private double previousZoom;
   private String previousScaleText;
+  private DistanceUnits previousDistanceUnits;
 
   static {
     LINE_PAINT.setAntiAlias(true);
@@ -70,21 +74,22 @@ public class ZoomScale {
 
   /**
    * Creates a ZoomScale.
-   * 
+   *
    * @param density screen density.
    */
-  public ZoomScale(float density) {
+  public ZoomScale(float density, UserPrefs userPrefs) {
     this.density = density;
+    this.userPrefs = userPrefs;
     TEXT_PAINT.setTextSize(15 * density);
     LINE_PAINT.setStrokeWidth(1.0f * density);
   }
 
   /**
    * Draws zoom scale.
-   * 
+   *
    * @param c canvas to draw on.
    * @param l current location.
-   * @param density screen density.
+   * @param zoom zoom level.
    */
   public synchronized void drawScale(Canvas c, Location l, double zoom) {
     final int canvasWidth = c.getWidth();
@@ -105,47 +110,40 @@ public class ZoomScale {
 
   /**
    * Returns the text to display above the zoom scale bar.
-   * 
+   *
    * @param location current location.
    * @param zoom zoom level.
    */
   private synchronized String getScaleText(Location location, double zoom) {
-    if (null != previousLocation && null != previousScaleText && zoom == previousZoom) {
-      // Return cached result if the location hasn't changed much.
-      if (previousLocation.distanceTo(location) < ZOOM_UPDATE_DISTANCE) {
+    if (null != previousLocation && null != previousScaleText && null != previousDistanceUnits
+        && zoom == previousZoom) {
+      // Return cached result if the location hasn't changed much and units are
+      // unchanged.
+      if (previousDistanceUnits == userPrefs.getDistanceUnits()
+          && previousLocation.distanceTo(location) < ZOOM_UPDATE_DISTANCE) {
         return previousScaleText;
       }
     }
     double mpp = MercatorProjection.getMetersPerPixel(zoom, //
         LatLng.fromDouble(location.getLatitude(), location.getLongitude()));
     double scaleInMeters = Math.round(mpp * PREFERRED_WIDTH * density);
-    double scaleInUnits = 0;
-    String units = "nm";
-    // Read user prefs to determine units to show.
-    if(FlightMap.units.equals("1")) {
-    	scaleInUnits = scaleInMeters / NavigationUtil.METERS_PER_MILES;
-    	units = "sm";
-    }
-    else if(FlightMap.units.equals("2")) {
-    	scaleInUnits = scaleInMeters / NavigationUtil.METERS_PER_KM;
-    	units = "km";
-    }    
-    else {
 
-    	scaleInUnits = scaleInMeters / NavigationUtil.METERS_PER_NM;
-    }
+    // Use user prefs to determine units to show.
+    DistanceUnits distanceUnits = userPrefs.getDistanceUnits();
+    String units = distanceUnits.distanceAbbreviation;
+    double scaleInUnits = scaleInMeters / distanceUnits.distanceMultiplier;
     String result = null;
     if (scaleInUnits > 0.1) {
-    	  result = String.format("%.1f %s", scaleInUnits, units);
-
+      result = String.format("%.1f %s", scaleInUnits, units);
     } else {
       // Show scale in feet when nm is less useful.
-      double scaleInFeet = scaleInMeters / NavigationUtil.METERS_PER_FOOT;
+      double scaleInFeet = scaleInMeters / NavigationUtil.METERS_TO_FEET;
       result = String.format("%.0f %s", scaleInFeet, "ft");
     }
     previousLocation = location;
     previousZoom = zoom;
     previousScaleText = result;
+    previousDistanceUnits = distanceUnits;
     Log.i(TAG, String.format("Zoom: %.1f New scale: %s", zoom, result));
     return result;
   }

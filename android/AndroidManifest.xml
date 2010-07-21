@@ -11,7 +11,7 @@
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
     </activity>
-    <activity android:name="UserPrefs" android:label="@string/preferences_from_xml">
+    <activity android:name="UserPrefsActivity" android:label="@string/preferences_from_xml">
     	<intent-filter>
     		<action android:name="android.intent.action.MAIN" />
     		<category android:name="android.intent.category.PREFERENCE" />

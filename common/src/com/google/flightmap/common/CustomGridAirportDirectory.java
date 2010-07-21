@@ -38,11 +38,11 @@ public class CustomGridAirportDirectory implements AirportDirectory {
 
     // Translate radius in degrees at that latitude (and all longitudes):
     final double earthRadiusAtLat =
-        NavigationUtil.EARTH_RADIUS / NavigationUtil.METERS_PER_NM
+        NavigationUtil.EARTH_RADIUS / NavigationUtil.METERS_TO_NM
             * Math.sin(Math.PI / 2 - position.latRad());
     final double lngRadius =
-        radius / NavigationUtil.METERS_PER_NM / (2 * Math.PI * earthRadiusAtLat) * 360;
-    final double latRadius = radius / NavigationUtil.METERS_PER_NM / 60;
+        radius / NavigationUtil.METERS_TO_NM / (2 * Math.PI * earthRadiusAtLat) * 360;
+    final double latRadius = radius / NavigationUtil.METERS_TO_NM / 60;
     final int radiusE6 = (int) (Math.max(lngRadius, latRadius) * 1E6);
 
 

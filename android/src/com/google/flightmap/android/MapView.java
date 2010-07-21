@@ -1,12 +1,12 @@
 /*
  * Copyright (C) 2010 Google Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -15,15 +15,17 @@
  */
 package com.google.flightmap.android;
 
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Paint.Align;
 import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.Typeface;
-import android.graphics.Paint.Align;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Bundle;
@@ -35,8 +37,8 @@ import android.widget.ZoomButtonsController;
 
 import com.google.flightmap.common.CachedMagneticVariation;
 import com.google.flightmap.common.NavigationUtil;
+import com.google.flightmap.common.NavigationUtil.DistanceUnits;
 import com.google.flightmap.common.data.Airport;
-import com.google.flightmap.common.data.AirportDistance;
 import com.google.flightmap.common.data.LatLng;
 import com.google.flightmap.common.data.LatLngRect;
 
@@ -45,7 +47,8 @@ import java.util.LinkedList;
 /**
  * View for the moving map.
  */
-public class MapView extends SurfaceView implements SurfaceHolder.Callback {
+public class MapView extends SurfaceView
+    implements SurfaceHolder.Callback, OnSharedPreferenceChangeListener {
   private static final String TAG = MapView.class.getSimpleName();
 
   // Saved instance state constants.
@@ -106,6 +109,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   // Caching. Values from the last time the map was drawn.
   private Location previousLocation;
   private float previousZoom;
+  private boolean prefsChanged;
 
   // Magnetic variation w/ caching.
   private final CachedMagneticVariation magneticVariation = new CachedMagneticVariation();
@@ -142,7 +146,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     super(flightMap);
     this.flightMap = flightMap;
     this.density = flightMap.getResources().getDisplayMetrics().density;
-    this.zoomScale = new ZoomScale(density);
+    this.zoomScale = new ZoomScale(density, flightMap.userPrefs);
     getHolder().addCallback(this);
     setFocusable(true); // make sure we get key events
     setKeepScreenOn(true);
@@ -196,12 +200,26 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     }
   }
 
+  @Override
+  public synchronized void onSharedPreferenceChanged(
+      SharedPreferences sharedPreferences, String key) {
+    setPrefsChanged(true);
+  }
+
+  private synchronized boolean isPrefsChanged() {
+    return prefsChanged;
+  }
+
+  private synchronized void setPrefsChanged(boolean prefsChanged) {
+    this.prefsChanged = prefsChanged;
+  }
+
   /**
    * Surface dimensions changed.
    */
   @Override
   public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-    if (!FlightMap.isNorthUp) {
+    if (flightMap.userPrefs.isNorthUp()) {
       // Center the aircraft horizontally, and 3/4 of the way down vertically.
       aircraftX = width / 2;
       aircraftY = height - (height / 4);
@@ -230,11 +248,14 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   public synchronized void surfaceCreated(SurfaceHolder holder) {
     this.holder = holder;
     previousLocation = null;
+    // Set up listener to changes to SharedPreferences.
+    flightMap.userPrefs.registerOnSharedPreferenceChangeListener(this);
   }
 
   @Override
   public void surfaceDestroyed(SurfaceHolder holder) {
     this.holder = null;
+    flightMap.userPrefs.unregisterOnSharedPreferenceChangeListener(this);
   }
 
   private void createZoomController() {
@@ -266,11 +287,13 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
         return;
       }
       synchronized (this) {
-        // Do nothing if position, zoom and preferences are unchanged.
-        if (!hasMoved(location) && zoom == previousZoom && UserPrefs.PREFS_UPDATED == false) {
+        if (!hasMoved(location) && zoom == previousZoom && !isPrefsChanged()) {
           return;
         }
-        UserPrefs.PREFS_UPDATED = false;
+        if (isPrefsChanged()) {
+          // We're now redrawing to reflect new preferences.
+          setPrefsChanged(false);
+        }
         previousLocation = location;
         previousZoom = zoom;
       }
@@ -297,7 +320,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     // Display message about no current location and return.
     if (null == location || System.currentTimeMillis() - location.getTime() > MAX_LOCATION_AGE) {
       c.drawText(flightMap.getText(R.string.old_location).toString(), c.getWidth() / 2, //
-          c.getHeight() / 2, ERROR_TEXT_PAINT);
+      c.getHeight() / 2, ERROR_TEXT_PAINT);
       return;
     }
 
@@ -306,7 +329,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     // Convert bearing from true to magnetic.
     location = convertToMagneticBearing(location, locationLatLng);
 
-    final boolean isTrackUp = !FlightMap.isNorthUp; // copy for thread safety.
+    // Copy for thread safety.
+    final boolean isTrackUp = !flightMap.userPrefs.isNorthUp();
 
     // Draw everything relative to the aircraft.
     c.translate(aircraftX, aircraftY);
@@ -326,10 +350,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     final int height = c.getHeight();
     final LatLngRect screenArea =
         getScreenArea(zoomCopy, locationLatLng, locationPoint, width, height);
-    LinkedList<Airport> nearbyAirports = 
-        flightMap.airportDirectory.getAirportsInRectangle(screenArea,
-                                                          getMinimumAirportRank(zoomCopy));
-    for (Airport airport: nearbyAirports) {
+    LinkedList<Airport> nearbyAirports = flightMap.airportDirectory.getAirportsInRectangle(
+        screenArea, getMinimumAirportRank(zoomCopy));
+    for (Airport airport : nearbyAirports) {
       final Paint airportPaint = getAirportPaint(airport);
       Point airportPoint = MercatorProjection.toPoint(zoomCopy, airport.location);
       c.drawCircle(airportPoint.x, airportPoint.y, 15, airportPaint);
@@ -369,19 +392,11 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       String speed = "-";
       String track = "-" + DEGREES_SYMBOL;
       String altitude = "-";
-      String speed_units = " kts";
+      DistanceUnits distanceUnits = flightMap.userPrefs.getDistanceUnits();
+      String speedUnits = " " + distanceUnits.speedAbbreviation;
 
       if (location.hasSpeed()) {
-    	if(FlightMap.units.equals("3"))
-    		speed = String.format("%.0f", location.getSpeed() * NavigationUtil.METERS_PER_SEC_TO_KNOTS);
-    	else if(FlightMap.units.equals("1")) {
-    		speed = String.format("%.0f", location.getSpeed() * NavigationUtil.METERS_PER_SEC_TO_MPH);
-    		speed_units = " mph";
-    	}
-    	else { // (FlightMap.units.equals("2"))
-    		speed = String.format("%.0f", location.getSpeed() * NavigationUtil.METERS_PER_SEC_TO_KPH);
-    		speed_units = " kph";
-    	}
+        speed = String.format("%.0f", location.getSpeed() * distanceUnits.speedMultiplier);
       }
       if (location.hasBearing()) {
         track = String.format(" %03.0f%s", location.getBearing(), DEGREES_SYMBOL);
@@ -389,7 +404,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       if (location.hasAltitude()) {
         // Round altitude to nearest 10 foot increment to avoid jitter.
         int altitudeNearestTen =
-            (int) (Math.round(location.getAltitude() * NavigationUtil.METERS_PER_FOOT / 10.0) * 10);
+            (int) (Math.round(location.getAltitude() * NavigationUtil.METERS_TO_FEET / 10.0) * 10);
         altitude = String.format("%,5d", altitudeNearestTen);
       }
 
@@ -398,7 +413,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       c.drawText(speed, PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_DIGITS_PAINT);
       int textWidth = getTextWidth(speed, PANEL_DIGITS_PAINT);
       PANEL_UNITS_PAINT.setTextAlign(Align.LEFT);
-      c.drawText(speed_units, textWidth + PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_UNITS_PAINT);
+      c.drawText(speedUnits, textWidth + PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_UNITS_PAINT);
 
       // Draw track.
       final float center = width / 2.0f;
@@ -410,15 +425,15 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       c.drawText(" ft", width - PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_UNITS_PAINT);
       textWidth = getTextWidth(" ft", PANEL_UNITS_PAINT);
       PANEL_DIGITS_PAINT.setTextAlign(Align.RIGHT);
-      c.drawText(altitude, width - textWidth - PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE,
-          PANEL_DIGITS_PAINT);
+      c.drawText(
+          altitude, width - textWidth - PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_DIGITS_PAINT);
     }
   }
 
   /**
    * Returns {@code location} with the bearing converted from true to magnetic.
    * Does not modify {@code location} if location.hasBearing() is false.
-   * 
+   *
    * @param locationLatLng
    */
   private Location convertToMagneticBearing(Location location, LatLng locationLatLng) {
@@ -439,7 +454,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   private synchronized boolean hasMoved(Location location) {
     if (null == previousLocation || location.getBearing() != previousLocation.getBearing()
         || location.getAltitude() != previousLocation.getAltitude()
-        || location.getSpeed() != previousLocation.getSpeed()) {
+        || location.getSpeed() != previousLocation.getSpeed()
+        || location.distanceTo(previousLocation) > 5) {
       return true;
     }
     return false;
@@ -494,16 +510,13 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
    * Returns the distance in meters from the aircraft screen location to the
    * furthest screen edge.
    */
-  private synchronized LatLngRect getScreenArea(final float zoom,
-                                                final LatLng location,
-                                                final Point locationPoint,
-                                                final int width,
-                                                final int height) {
+  private synchronized LatLngRect getScreenArea(final float zoom, final LatLng location,
+      final Point locationPoint, final int width, final int height) {
     // Pixel coordinates of the top-left screen corner.
     final Point topLeftCorner = new Point(locationPoint.x - aircraftX, locationPoint.y - aircraftY);
     final Point bottomRightCorner = new Point(topLeftCorner.x + width, topLeftCorner.y + height);
     final LatLng topLeftLocation = MercatorProjection.fromPoint(zoom, topLeftCorner);
-    final LatLng bottomRightLocation = MercatorProjection.fromPoint(zoom,  bottomRightCorner);
+    final LatLng bottomRightLocation = MercatorProjection.fromPoint(zoom, bottomRightCorner);
     return new LatLngRect(topLeftLocation, bottomRightLocation);
   }
 
