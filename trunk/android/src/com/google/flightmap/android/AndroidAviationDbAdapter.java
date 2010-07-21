@@ -1,13 +1,5 @@
 package com.google.flightmap.android;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
@@ -19,6 +11,14 @@ import com.google.flightmap.common.data.Airport;
 import com.google.flightmap.common.data.LatLng;
 import com.google.flightmap.common.data.Runway;
 import com.google.flightmap.common.data.RunwayEnd;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 public class AndroidAviationDbAdapter implements AviationDbAdapter {
   private static final String TAG = AndroidAviationDbAdapter.class.getSimpleName();
@@ -62,7 +62,7 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   private static final String CONSTANTS_TABLE = "constants";
   private static final String CONSTANT_COLUMN = "constant";
   private static final String[] CONSTANT_COLUMNS = new String[] {CONSTANT_COLUMN};
-   // airport_properties
+  // airport_properties
   private static final String AIRPORT_PROPERTIES_TABLE = "airport_properties";
   private static final String AIRPORT_ID_COLUMN = "airport_id";
   private static final String KEY_COLUMN = "key";
@@ -105,10 +105,15 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   }
 
   private SQLiteDatabase database;
+  private final UserPrefs userPrefs;
+
+  public AndroidAviationDbAdapter(UserPrefs userPrefs) {
+    this.userPrefs = userPrefs;
+  }
 
   /**
    * Opens the airport database.
-   * 
+   *
    * @throws SQLException on database error.
    */
   public synchronized void open() {
@@ -149,9 +154,8 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
     }
     cacheMiss();
     final String[] stringId = {Integer.toString(id)};
-    final Cursor airports =
-        database.query(AIRPORTS_TABLE, AIRPORT_LOCATION_COLUMNS, ID_WHERE, stringId, null, null,
-            null);
+    final Cursor airports = database.query(
+        AIRPORTS_TABLE, AIRPORT_LOCATION_COLUMNS, ID_WHERE, stringId, null, null, null);
     try {
       if (!airports.moveToFirst()) {
         Log.e(TAG, "No airport for id =" + id);
@@ -193,8 +197,8 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
 
     float totalQueries = cacheHit + cacheMiss;
     float hitRate = cacheHit / totalQueries * 100;
-    System.out.println(String.format("Airport cache miss. Hit rate: %.0f%% Cache size: %d",
-        hitRate, AIRPORT_CACHE.size()));
+    System.out.println(String.format(
+        "Airport cache miss. Hit rate: %.0f%% Cache size: %d", hitRate, AIRPORT_CACHE.size()));
   }
 
   private static synchronized void cacheHit() {
@@ -210,9 +214,8 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   public LinkedList<Airport> getAirportsInCells(int startCell, int endCell, int minRank) {
     String[] stringRange =
         {Integer.toString(startCell), Integer.toString(endCell), Integer.toString(minRank)};
-    Cursor locations =
-        database.query(AIRPORTS_TABLE, LOCATION_COLUMNS, CELL_ID_WHERE, stringRange, null, null,
-            null);
+    Cursor locations = database.query(
+        AIRPORTS_TABLE, LOCATION_COLUMNS, CELL_ID_WHERE, stringRange, null, null, null);
     LinkedList<Airport> result = new LinkedList<Airport>();
     try {
       if (!locations.moveToFirst()) { // No airports in cell_id range.
@@ -243,41 +246,37 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
    * preferences are applied here to filter the database results.
    */
   private boolean shouldInclude(Airport airport) {
-    if(airport.type.equals(Airport.Type.HELIPORT) && !FlightMap.showHeli) {
-    	return false;
-    }
-    if(airport.type.equals(Airport.Type.SEAPLANE_BASE) && !FlightMap.showSeaplane) {
-    	return false;
-    }
-    if (airport.type.equals(Airport.Type.ULTRALIGHT) 
-    		|| airport.type.equals(Airport.Type.GLIDERPORT)
-    		|| airport.type.equals(Airport.Type.BALLOONPORT)) {
+    if (airport.type.equals(Airport.Type.HELIPORT) && !userPrefs.showHeliport()) {
       return false;
     }
-    
-    if(airport.isMilitary && !FlightMap.showMilitary) {
-    	return false;
+    if (airport.type.equals(Airport.Type.SEAPLANE_BASE) && !userPrefs.showSeaplane()) {
+      return false;
     }
-    if(!airport.isPublic && !FlightMap.showPrivate) {
-    	if(!(airport.isMilitary && FlightMap.showMilitary)) {    		
-    		return false;
-    	}
+    // No user prefs to control these. Always hide.
+    if (airport.type.equals(Airport.Type.ULTRALIGHT) || airport.type.equals(Airport.Type.GLIDERPORT)
+        || airport.type.equals(Airport.Type.BALLOONPORT)) {
+      return false;
     }
-    if(!FlightMap.showSoft && !airport.runways.first().surface.startsWith("ASPH")) {
-    	return false;
+
+    if (airport.isMilitary && !userPrefs.showMilitary()) {
+      return false;
     }
-    if(!FlightMap.runwayLength.equals("1")) {
-    	// Airport runways are sorted by descending length.
-    	// UserPref 1 is None. 2 is 2000 ft. 3 is 4000 ft.
-    	int length = airport.runways.first().length;
-    	String min = FlightMap.runwayLength;
-    	if((min == "2" && length < 2000)
-    			|| min == "3" && length < 4000) {
-    		return false;
-    	}
+    if (!airport.isPublic && !userPrefs.showPrivate()) {
+      if (!(airport.isMilitary && userPrefs.showMilitary())) {
+        return false;
+      }
     }
-	return true;
- 
+    if (!userPrefs.showSoft() && !airport.runways.first().surface.startsWith("ASPH")) {
+      return false;
+    }
+    int minRunwayLength = userPrefs.getMinRunwayLength();
+    if (minRunwayLength > 0) {
+      int length = airport.runways.first().length;
+      if (length < minRunwayLength) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /**
@@ -297,13 +296,11 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
       final HashMap<String, String> airportProperties = new HashMap<String, String>();
 
       do {
-        final int keyConstantId =
-            airportPropertiesCursor.getInt(airportPropertiesCursor
-                .getColumnIndexOrThrow(KEY_COLUMN));
+        final int keyConstantId = airportPropertiesCursor.getInt(
+            airportPropertiesCursor.getColumnIndexOrThrow(KEY_COLUMN));
         final String key = getConstant(keyConstantId);
-        final int valueConstantId =
-            airportPropertiesCursor.getInt(airportPropertiesCursor
-                .getColumnIndexOrThrow(VALUE_COLUMN));
+        final int valueConstantId = airportPropertiesCursor.getInt(
+            airportPropertiesCursor.getColumnIndexOrThrow(VALUE_COLUMN));
         String value;
         if (INTEGER_AIRPORT_PROPERTIES.contains(key)) {
           value = Integer.toString(valueConstantId);
@@ -325,9 +322,8 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   @Override
   public LinkedList<String> getAirportComms(int airportId) {
     String[] stringAirportId = {Integer.toString(airportId)};
-    Cursor airportCommsCursor =
-        database.query(AIRPORT_COMM_TABLE, COMM_COLUMNS, AIRPORT_ID_WHERE,
-            stringAirportId, null, null, null);
+    Cursor airportCommsCursor = database.query(
+        AIRPORT_COMM_TABLE, COMM_COLUMNS, AIRPORT_ID_WHERE, stringAirportId, null, null, null);
     try {
       if (!airportCommsCursor.moveToFirst()) {
         Log.e(TAG, "No airport comms for id =" + airportId);
@@ -389,9 +385,8 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
 
   private String getConstant(int constantId) {
     String[] stringConstantId = {Integer.toString(constantId)};
-    Cursor constant =
-        database.query(CONSTANTS_TABLE, CONSTANT_COLUMNS, ID_WHERE, stringConstantId, null, null,
-            null);
+    Cursor constant = database.query(
+        CONSTANTS_TABLE, CONSTANT_COLUMNS, ID_WHERE, stringConstantId, null, null, null);
     try {
       if (!constant.moveToFirst()) {
         Log.e(TAG, "No constant for id =" + constantId);
@@ -406,9 +401,8 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
 
   private SortedSet<Runway> getRunways(final int airportId) {
     String[] stringAirportId = {Integer.toString(airportId)};
-    Cursor runwayCursor =
-        database.query(RUNWAYS_TABLE, RUNWAY_COLUMNS, AIRPORT_ID_WHERE, stringAirportId, null,
-            null, null);
+    Cursor runwayCursor = database.query(
+        RUNWAYS_TABLE, RUNWAY_COLUMNS, AIRPORT_ID_WHERE, stringAirportId, null, null, null);
     try {
       if (!runwayCursor.moveToFirst()) {
         Log.e(TAG, "No runway for airport id =" + airportId);
@@ -424,14 +418,13 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
             runwayCursor.getInt(runwayCursor.getColumnIndexOrThrow(RUNWAY_LENGTH_COLUMN));
         final int runwayWidth =
             runwayCursor.getInt(runwayCursor.getColumnIndexOrThrow(RUNWAY_WIDTH_COLUMN));
-        final String runwaySurface =
-            getConstant(runwayCursor.getInt(runwayCursor
-                .getColumnIndexOrThrow(RUNWAY_SURFACE_COLUMN)));
+        final String runwaySurface = getConstant(
+            runwayCursor.getInt(runwayCursor.getColumnIndexOrThrow(RUNWAY_SURFACE_COLUMN)));
 
         final SortedSet<RunwayEnd> runwayEnds = getRunwayEnds(runwayId);
 
-        runways.add(new Runway(airportId, runwayLetters, runwayLength, runwayWidth, runwaySurface,
-            runwayEnds));
+        runways.add(new Runway(
+            airportId, runwayLetters, runwayLength, runwayWidth, runwaySurface, runwayEnds));
       } while (runwayCursor.moveToNext());
 
       // Return runways in descending order of length
@@ -443,9 +436,8 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
 
   private SortedSet<RunwayEnd> getRunwayEnds(final int runwayId) {
     String[] stringRunwayId = {Integer.toString(runwayId)};
-    Cursor runwayEndCursor =
-        database.query(RUNWAY_ENDS_TABLE, RUNWAY_END_COLUMNS, RUNWAY_ID_WHERE, stringRunwayId,
-            null, null, null);
+    Cursor runwayEndCursor = database.query(
+        RUNWAY_ENDS_TABLE, RUNWAY_END_COLUMNS, RUNWAY_ID_WHERE, stringRunwayId, null, null, null);
     try {
       if (!runwayEndCursor.moveToFirst()) {
         Log.e(TAG, "No runway end for runway = " + runwayId);
@@ -457,9 +449,8 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
       do {
         final int runwayEndId =
             runwayEndCursor.getInt(runwayEndCursor.getColumnIndexOrThrow(ID_COLUMN));
-        final String runwayEndLetters =
-            runwayEndCursor.getString(runwayEndCursor
-                .getColumnIndexOrThrow(RUNWAY_END_LETTERS_COLUMN));
+        final String runwayEndLetters = runwayEndCursor.getString(
+            runwayEndCursor.getColumnIndexOrThrow(RUNWAY_END_LETTERS_COLUMN));
 
         runwayEnds.add(new RunwayEnd(runwayEndId, runwayEndLetters));
       } while (runwayEndCursor.moveToNext());
@@ -491,13 +482,11 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
       final HashMap<String, String> runwayEndProperties = new HashMap<String, String>();
 
       do {
-        final int keyConstantId =
-            runwayEndPropertiesCursor.getInt(runwayEndPropertiesCursor
-                .getColumnIndexOrThrow(KEY_COLUMN));
+        final int keyConstantId = runwayEndPropertiesCursor.getInt(
+            runwayEndPropertiesCursor.getColumnIndexOrThrow(KEY_COLUMN));
         final String key = getConstant(keyConstantId);
-        final int valueConstantId =
-            runwayEndPropertiesCursor.getInt(runwayEndPropertiesCursor
-                .getColumnIndexOrThrow(VALUE_COLUMN));
+        final int valueConstantId = runwayEndPropertiesCursor.getInt(
+            runwayEndPropertiesCursor.getColumnIndexOrThrow(VALUE_COLUMN));
         String value;
         if (INTEGER_RUNWAY_END_PROPERTIES.contains(key)) {
           value = Integer.toString(valueConstantId);

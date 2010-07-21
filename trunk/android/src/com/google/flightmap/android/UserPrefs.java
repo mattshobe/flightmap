@@ -1,12 +1,12 @@
 /*
  * Copyright (C) 2010 Google Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -15,93 +15,122 @@
  */
 package com.google.flightmap.android;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
-import android.os.Bundle;
-import android.preference.PreferenceActivity;
-import android.preference.PreferenceManager;
 
-public class UserPrefs extends PreferenceActivity implements OnSharedPreferenceChangeListener{
-	
-    public static final String PREFS_NAME = "FlightMapPrefs";
-    
-    /* 
-     * Default Preferences Values - Matches keys in preferences.xml
-     */
-    public static final String NORTH_UP = "North_Up";
-    public static final String DISTANCE_UNITS = "Distance_Units";
-    public static final String SHOW_SEAPLANE = "Show_Seaplane";
-    public static final String SHOW_MILITARY = "Show_Military";
-    public static final String SHOW_SOFT = "Show_Soft";
-    public static final String SHOW_PRIVATE = "Show_Private";
-    public static final String SHOW_HELI = "Show_Heliports";
-    public static final String RUNWAY_LENGTH = "Runway_Length";  
-    
-    /*
-     * Keep track of whether or not FlightMap has seen updated preferences
-     */
-    public static boolean PREFS_UPDATED = true;
-        
-    @Override
-	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
+import com.google.flightmap.common.NavigationUtil.DistanceUnits;
 
-		PreferenceManager preferenceManager = getPreferenceManager();
-		preferenceManager.setSharedPreferencesName(PREFS_NAME);
-		preferenceManager.setSharedPreferencesMode(0);
-		addPreferencesFromResource(R.xml.preferences);
-		SharedPreferences sharedPreferences = preferenceManager.getSharedPreferences();
-		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
+/**
+ * Provides read-only access to shared user preferences.
+ * <p>
+ * Write access can easily be added later. It's just not needed now, so it's not
+ * here.
+ */
+public class UserPrefs {
+  // Preference keys. These match keys in preferences.xml
+  private static final String NORTH_UP = "North_Up";
+  private static final String DISTANCE_UNITS = "Distance_Units";
+  private static final String SHOW_SEAPLANE = "Show_Seaplane";
+  private static final String SHOW_MILITARY = "Show_Military";
+  private static final String SHOW_SOFT = "Show_Soft";
+  private static final String SHOW_PRIVATE = "Show_Private";
+  private static final String SHOW_HELIPORT = "Show_Heliports";
+  private static final String RUNWAY_LENGTH = "Runway_Length";
+
+  // Preference values. These match values in arrays.xml
+  private static final String DISTANCE_UNITS_MILES = "1";
+  private static final String DISTANCE_UNITS_KILOMETERS = "2";
+  private static final String DISTANCE_UNITS_NAUTICAL_MILES = "3";
+  private static final String RUNWAY_LENGTH_NONE = "1";
+  private static final String RUNWAY_LENGTH_2000 = "2";
+  private static final String RUNWAY_LENGTH_4000 = "3";
+
+  /** Filename to store preferences. */
+  public static final String PREFERENCES_FILE = "com.google.flightmap.android_preferences";
+
+  private final SharedPreferences sharedPrefs;
+
+  public UserPrefs(Context context) {
+    sharedPrefs = context.getSharedPreferences(PREFERENCES_FILE, Context.MODE_PRIVATE);
+  }
+
+  public synchronized boolean isNorthUp() {
+    return sharedPrefs.getBoolean(NORTH_UP, false);
+  }
+
+  /**
+   * Units to show speeds and distances.
+   */
+  public synchronized DistanceUnits getDistanceUnits() {
+    String distanceUnitsString =
+        sharedPrefs.getString(DISTANCE_UNITS, DISTANCE_UNITS_NAUTICAL_MILES);
+    return getDistanceUnitFromPreference(distanceUnitsString);
+  }
+
+  public synchronized boolean showSeaplane() {
+    return sharedPrefs.getBoolean(SHOW_SEAPLANE, false);
+  }
+
+  public synchronized boolean showMilitary() {
+    return sharedPrefs.getBoolean(SHOW_MILITARY, true);
+  }
+
+  public synchronized boolean showSoft() {
+    return sharedPrefs.getBoolean(SHOW_SOFT, false);
+  }
+
+  public synchronized boolean showPrivate() {
+    return sharedPrefs.getBoolean(SHOW_PRIVATE, false);
+  }
+
+  public synchronized boolean showHeliport() {
+    return sharedPrefs.getBoolean(SHOW_HELIPORT, false);
+  }
+
+  /**
+   * Minimum runway length in feet to show.
+   */
+  public synchronized int getMinRunwayLength() {
+    String runwayString = sharedPrefs.getString(RUNWAY_LENGTH, RUNWAY_LENGTH_2000);
+    return getMinRunwayLengthFromPreference(runwayString);
+  }
+
+
+  public void registerOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener listener) {
+    sharedPrefs.registerOnSharedPreferenceChangeListener(listener);
+  }
+
+  public void unregisterOnSharedPreferenceChangeListener(
+      OnSharedPreferenceChangeListener listener) {
+    sharedPrefs.unregisterOnSharedPreferenceChangeListener(listener);
+  }
+
+  /**
+   * Returns units corresponding to the distance units preference string.
+   */
+  private DistanceUnits getDistanceUnitFromPreference(String distancePrefsString) {
+    if (DISTANCE_UNITS_MILES.equals(distancePrefsString)) {
+      return DistanceUnits.MILES;
+    } else if (DISTANCE_UNITS_KILOMETERS.equals(distancePrefsString)) {
+      return DistanceUnits.KILOMETERS;
+    } else {
+      // Return Nautical miles even on a parse failure.
+      return DistanceUnits.NAUTICAL_MILES;
     }
+  }
 
-    public void onResume() {
-    	super.onResume();
-    	SharedPreferences sharedPreferences = this.getPreferences(0);
-    	FlightMap.isNorthUp = sharedPreferences.getBoolean(UserPrefs.NORTH_UP, false);
-		FlightMap.units = sharedPreferences.getString(UserPrefs.DISTANCE_UNITS, "3");
-		FlightMap.showSeaplane = sharedPreferences.getBoolean(UserPrefs.SHOW_SEAPLANE, false);
-		FlightMap.showMilitary = sharedPreferences.getBoolean(UserPrefs.SHOW_MILITARY, true);
-		FlightMap.showSoft = sharedPreferences.getBoolean(UserPrefs.SHOW_SOFT, true);
-		FlightMap.showPrivate = sharedPreferences.getBoolean(UserPrefs.SHOW_PRIVATE, true);
-		FlightMap.showHeli = sharedPreferences.getBoolean(UserPrefs.SHOW_HELI, false);
-		FlightMap.runwayLength = sharedPreferences.getString(UserPrefs.RUNWAY_LENGTH, "1");
-	}
-    
-    public boolean isPrefsUpdated() {
-    	synchronized(this) {
-    		if(UserPrefs.PREFS_UPDATED)
-    			return true;
-    		else
-    			return false;
-    	}
+  /**
+   * Returns minimum runway length corresponding to preferences string
+   */
+  private int getMinRunwayLengthFromPreference(String runwayPrefsString) {
+    if (RUNWAY_LENGTH_NONE.equals(runwayPrefsString)) {
+      return 0;
+    } else if (RUNWAY_LENGTH_4000.equals(runwayPrefsString)) {
+      return 4000;
+    } else {
+      // Return 2000 as minimum even on parse failure.
+      return 2000;
     }
-
-	@Override
-	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-		UserPrefs.PREFS_UPDATED = true;
-		if (key.equals(UserPrefs.NORTH_UP))
-			FlightMap.isNorthUp = sharedPreferences.getBoolean(UserPrefs.NORTH_UP, false);
-		if (key.equals(UserPrefs.DISTANCE_UNITS)) 
-			FlightMap.units = sharedPreferences.getString(UserPrefs.DISTANCE_UNITS, "3");
-		if (key.equals(UserPrefs.SHOW_SEAPLANE))
-			FlightMap.showSeaplane = sharedPreferences.getBoolean(UserPrefs.SHOW_SEAPLANE, false);
-		if (key.equals(UserPrefs.SHOW_MILITARY))
-			FlightMap.showMilitary = sharedPreferences.getBoolean(UserPrefs.SHOW_MILITARY, true);
-		if (key.equals(UserPrefs.SHOW_SOFT))
-			FlightMap.showSoft = sharedPreferences.getBoolean(UserPrefs.SHOW_SOFT, true);
-		if (key.equals(UserPrefs.SHOW_PRIVATE))
-			FlightMap.showPrivate = sharedPreferences.getBoolean(UserPrefs.SHOW_PRIVATE, true);
-		if (key.equals(UserPrefs.SHOW_HELI))
-			FlightMap.showHeli = sharedPreferences.getBoolean(UserPrefs.SHOW_HELI, false);
-		if (key.equals(UserPrefs.RUNWAY_LENGTH))
-			  FlightMap.runwayLength = sharedPreferences.getString(UserPrefs.RUNWAY_LENGTH, "1");
-	}
-	
-	public void onDestroy()
-	{
-		super.onDestroy();
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-		sharedPreferences.unregisterOnSharedPreferenceChangeListener(this);
-	}
-	 
+  }
 }

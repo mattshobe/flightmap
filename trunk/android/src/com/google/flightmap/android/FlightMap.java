@@ -1,12 +1,12 @@
 /*
  * Copyright (C) 2010 Google Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -28,7 +28,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
-import android.content.SharedPreferences;
 
 import com.google.flightmap.common.AviationDbAdapter;
 import com.google.flightmap.common.CustomGridAirportDirectory;
@@ -53,31 +52,20 @@ public class FlightMap extends Activity {
   private MapView mapView;
   AviationDbAdapter aviationDbAdapter;
   CustomGridAirportDirectory airportDirectory;
-  
-  public static boolean isNorthUp;
-  public static String units;
-  public static boolean showSeaplane;
-  public static boolean showMilitary;
-  public static boolean showSoft;
-  public static boolean showPrivate;
-  public static boolean showHeli;
-  public static String runwayLength;
+  UserPrefs userPrefs;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    
+    userPrefs = new UserPrefs(this);
     locationHandler =
         new LocationHandler((LocationManager) getSystemService(Context.LOCATION_SERVICE));
-    
-    aviationDbAdapter = new AndroidAviationDbAdapter();
+    aviationDbAdapter = new AndroidAviationDbAdapter(userPrefs);
     airportDirectory = new CustomGridAirportDirectory(aviationDbAdapter);
     airportDirectory.open();
 
-    getPreferences(this);
-    
     if (null == getMapView()) {
-      setMapView(new MapView(FlightMap.this));
+      setMapView(new MapView(this));
     }
 
     // Show the disclaimer screen if there's no previous state, or the user
@@ -91,7 +79,7 @@ public class FlightMap extends Activity {
     }
   }
 
-  
+
   @Override
   public void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
@@ -112,7 +100,7 @@ public class FlightMap extends Activity {
     }
   }
 
-  
+
   private void showDisclaimerView() {
     setContentView(R.layout.disclaimer);
 
@@ -131,18 +119,6 @@ public class FlightMap extends Activity {
     setContentView(getMapView());
   }
 
-  private void getPreferences(Context context) {
-  	SharedPreferences sharedPreferences = this.getPreferences(0);
-	isNorthUp = sharedPreferences.getBoolean(UserPrefs.NORTH_UP, false);
-	units = sharedPreferences.getString(UserPrefs.DISTANCE_UNITS, "3");
-	showSeaplane = sharedPreferences.getBoolean(UserPrefs.SHOW_SEAPLANE, false);
-	showMilitary = sharedPreferences.getBoolean(UserPrefs.SHOW_MILITARY, true);
-	showSoft = sharedPreferences.getBoolean(UserPrefs.SHOW_SOFT, true);
-	showPrivate = sharedPreferences.getBoolean(UserPrefs.SHOW_PRIVATE, true);
-	showHeli = sharedPreferences.getBoolean(UserPrefs.SHOW_HELI, false);
-	runwayLength = sharedPreferences.getString(UserPrefs.RUNWAY_LENGTH, "1");
-  }
-  
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
     super.onCreateOptionsMenu(menu);
@@ -155,9 +131,9 @@ public class FlightMap extends Activity {
     super.onOptionsItemSelected(item);
     switch (item.getItemId()) {
       case MENU_SETTINGS:
-    	  Intent startIntent = new Intent(this, UserPrefs.class);
-    	  startActivity(startIntent);
-    	  return true;
+        Intent startIntent = new Intent(this, UserPrefsActivity.class);
+        startActivity(startIntent);
+        return true;
     }
     return false;
   }
@@ -192,14 +168,14 @@ public class FlightMap extends Activity {
       return;
     }
     drawUi();
-    
+
     updater.scheduleUpdate(UPDATE_RATE);
   }
 
   private void drawUi() {
     MapView map = getMapView();
-    if (null == map) {
-      return; // Disclaimer not accepted yet.
+    if (!isDisclaimerAccepted()) {
+      return;
     }
     Location location = locationHandler.getLocation();
     map.drawMap(location);
