@@ -71,4 +71,28 @@ limitations under the License.
     -->
     <setup />
 
+
+  <target name="javadoc"
+      description="Generate Javadocs.">
+    <delete dir="javadoc"/>
+    <mkdir dir="javadoc"/>
+    <javadoc
+        packagenames="com.google.flightmap.*"
+        destdir="javadoc"
+        use="true"
+        author="true"
+        protected="true"
+        windowtitle="Flight Map ${version}">
+      <sourcepath>
+        <pathelement location="${source.dir}"/>
+      </sourcepath>
+      <classpath>
+        <pathelement location="libs/flightmap-common-0.01.jar" />
+        <pathelement location="${sdk.dir}/tools/lib/sdklib.jar" />
+        <pathelement location="${sdk.dir}/platforms/android-7/android.jar" />
+        <pathelement location="${sdk.dir}/platforms/android-7/android.jar" />
+      </classpath>
+      <link href="http://java.sun.com/javase/6/docs/api"/>
+    </javadoc>
+  </target>
 </project>

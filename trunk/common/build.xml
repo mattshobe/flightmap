@@ -132,7 +132,7 @@ limitations under the License.
     <delete dir="${build.dir}/javadoc"/>
     <mkdir dir="${build.dir}/javadoc"/>
     <javadoc
-      packagenames="com.google.flightmap.common.*"
+      packagenames="com.google.flightmap.*"
          destdir="${build.dir}/javadoc"
          use="true"
          author="true"
