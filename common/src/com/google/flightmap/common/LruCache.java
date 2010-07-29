@@ -23,7 +23,7 @@ import java.util.Map.Entry;
  */
 public class LruCache<K, V> extends LinkedHashMap<K, V> {
   /** Never allow HashMap to grow. */
-  private static final float LOAD_FACTOR = 1.1f;
+  private static final float LOAD_FACTOR = 0.8f;
   private static final long serialVersionUID = 4355961131491046577L;
   private int capacity;
 

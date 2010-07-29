@@ -42,7 +42,7 @@ import com.google.flightmap.common.data.Airport;
 import com.google.flightmap.common.data.LatLng;
 import com.google.flightmap.common.data.LatLngRect;
 
-import java.util.LinkedList;
+import java.util.Collection;
 
 /**
  * View for the moving map.
@@ -350,7 +350,7 @@ public class MapView extends SurfaceView
     final int height = c.getHeight();
     final LatLngRect screenArea =
         getScreenArea(zoomCopy, locationLatLng, locationPoint, width, height);
-    LinkedList<Airport> nearbyAirports = flightMap.airportDirectory.getAirportsInRectangle(
+    final Collection<Airport> nearbyAirports = flightMap.airportDirectory.getAirportsInRectangle(
         screenArea, getMinimumAirportRank(zoomCopy));
     for (Airport airport : nearbyAirports) {
       final Paint airportPaint = getAirportPaint(airport);

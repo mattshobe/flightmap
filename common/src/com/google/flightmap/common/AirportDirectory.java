@@ -21,9 +21,8 @@ import com.google.flightmap.common.data.AirportDistance;
 import com.google.flightmap.common.data.LatLng;
 import com.google.flightmap.common.data.LatLngRect;
 
-import java.sql.SQLException;
-import java.util.LinkedList;
-import java.util.TreeSet;
+import java.util.Collection;
+import java.util.SortedSet;
 
 public interface AirportDirectory {
   /**
@@ -34,8 +33,8 @@ public interface AirportDirectory {
    * @param radius    Radius of search [meters]
    * @param minRank   Minimum airport rank to return
    */
-  public TreeSet<AirportDistance> getAirportsWithinRadius(final LatLng position,
-      final double radius, final int minRank) throws SQLException;
+  public SortedSet<AirportDistance> getAirportsWithinRadius(final LatLng position,
+      final double radius, final int minRank);
 
   /**
    * Returns airports in {@code area}.
@@ -43,8 +42,7 @@ public interface AirportDirectory {
    * @param area      Area of search
    * @param minRank   Minimum airport rank to return
    */
-  public LinkedList<Airport> getAirportsInRectangle(final LatLngRect area, final int minRank)
-    throws SQLException;
+  public Collection<Airport> getAirportsInRectangle(final LatLngRect area, final int minRank);
 
   public void open();
 

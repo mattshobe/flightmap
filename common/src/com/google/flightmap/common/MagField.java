@@ -70,9 +70,6 @@ public class MagField {
   private static final double a2 = a*a;
   private static final double a4 = a2*a2;
 
-  /** Inverse flattening IAU66 ellipsoid */
-  private static final double f = 1.0 / 298.25;
-
   /** Minor radius (km) IAU66 ellipsoid
    * b=a*(1-f) */
   private static final double b = 6378.16 * (1.0 - 1.0 / 298.25);

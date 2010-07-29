@@ -16,8 +16,6 @@
 
 package com.google.flightmap.parsing;
 
-import com.google.flightmap.common.CustomGridUtil;
-
 import java.sql.*;
 import java.util.regex.*;
 import java.io.*;
@@ -55,15 +53,6 @@ public class NfdParser {
     }
   }
 
-  private void addAndroidMetadataToDb(Connection conn) throws SQLException {
-    Statement stat = conn.createStatement();
-    stat.executeUpdate("DROP TABLE IF EXISTS android_metadata;");
-    stat.executeUpdate("CREATE TABLE android_metadata (locale TEXT);");
-    stat.executeUpdate("INSERT INTO android_metadata VALUES ('en_US');");
-    stat.close();
-
-  }
-
   private void addAirportDataToDb() throws SQLException, IOException {
     BufferedReader in = new BufferedReader(new FileReader(this.sourceFile));
 
@@ -72,7 +61,7 @@ public class NfdParser {
     Matcher airportArincMatcher;
 
     // Airport data variables
-    String icao, iata, name, latString, lngString;
+    String icao, iata;
 
     String line;
     while ((line = in.readLine()) != null) {

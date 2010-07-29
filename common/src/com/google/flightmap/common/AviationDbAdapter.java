@@ -18,8 +18,9 @@ package com.google.flightmap.common;
 
 import com.google.flightmap.common.data.Airport;
 
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.List;
 
 /**
  * Low level interface to database entities.
@@ -31,16 +32,16 @@ public interface AviationDbAdapter {
 
   public Airport getAirport(int airportId);
 
-  public LinkedList<Airport> getAirportsInCells(int startCell, int endCell);
-
   /**
-   * Returns a lits of airports in the given cells with rank >= {@code minRank}.
+   * Returns a list of airports in the given cells with rank >= {@code minRank}.
    */
-  public LinkedList<Airport> getAirportsInCells(int startCell, int endCell, int minRank);
+  public Collection<Airport> getAirportsInCells(int startCell, int endCell, int minRank);
 
-  public HashMap<String, String> getAirportProperties(int airportId);
+  public Map<String, String> getAirportProperties(int airportId);
 
-  public LinkedList<String> getAirportComms(int airportId);
+  public List<String> getAirportComms(int airportId);
 
-  public HashMap<String, String> getRunwayEndProperties(int runwayEndId);
+  public Map<String, String> getRunwayEndProperties(int runwayEndId);
+  
+  public String getConstant(int constantId);
 }
