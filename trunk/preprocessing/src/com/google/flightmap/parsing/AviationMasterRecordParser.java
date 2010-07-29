@@ -28,7 +28,6 @@ import java.io.*;
 import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.*;
 
 /**
  * Parses airports from FAA Airport Master Record file and adds them to a SQLite database
@@ -49,10 +48,6 @@ public class AviationMasterRecordParser {
   private final static String AIRPORT_LATITUDE_HEADER = "ARPLatitudeS";
   private final static String AIRPORT_STATUS_HEADER = "AirportStatusCode"; // O, CP, CI
   private final static String AIRPORT_CONTROL_TOWER_HEADER = "ATCT";
-  // Airport operations headers
-  private final static String[] AIRPORT_OPS_HEADERS = {
-      "OperationsCommercial", "OperationsCommuter", "OperationsAirTaxi", "OperationsGALocal",
-      "OperationsGAItin", "OperationsMilitary" };
   // Airport property headers
   private final static String AIRPORT_ELEVATION_HEADER = "ARPElevation";
   private final static String AIRPORT_BEACON_COLOR_HEADER = "BeaconColor";
@@ -1064,7 +1059,6 @@ public class AviationMasterRecordParser {
     if ("".equals(vasi)) {
       return null;
     }
-    String description;
     if ("SAVASI".equals(vasi)) {
       return "Simplified abbreviated visual approach slope indicator";
     } else if ("VASI".equals(vasi)) {

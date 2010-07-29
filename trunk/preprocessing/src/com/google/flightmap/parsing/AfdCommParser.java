@@ -16,14 +16,6 @@
 
 package com.google.flightmap.parsing;
 
-import com.google.flightmap.common.CustomGridUtil;
-import com.google.flightmap.common.data.Airport;
-import com.google.flightmap.common.data.LatLng;
-import com.google.flightmap.common.data.Runway;
-import com.google.flightmap.db.JdbcAviationDbAdapter;
-
-import org.apache.commons.lang.WordUtils;
-
 import java.io.*;
 import java.sql.*;
 import java.util.HashMap;
@@ -36,7 +28,6 @@ import java.util.regex.*;
  */
 public class AfdCommParser {
   private Connection dbConn;
-  private final String afdFile;
 //  private final String runwaySourceFile;
   private final String dbFile;
   private final Map<String, String> iataToIcao = new HashMap<String, String>();
@@ -52,7 +43,6 @@ public class AfdCommParser {
   public AfdCommParser(final String afdFile,
                        final String iataToIcaoFile,
                        final String dbFile) {
-    this.afdFile = afdFile;
     this.dbFile = dbFile;
     try {
       final BufferedReader in = new BufferedReader(new FileReader(iataToIcaoFile));

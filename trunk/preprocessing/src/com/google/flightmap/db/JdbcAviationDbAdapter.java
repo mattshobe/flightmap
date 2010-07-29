@@ -20,7 +20,6 @@ import com.google.flightmap.common.AviationDbAdapter;
 import com.google.flightmap.common.data.*;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -116,17 +115,21 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
     }
   }
 
-  private String getConstant(final int constantId) throws SQLException {
-    if (getConstantStmt == null) {
-      getConstantStmt = dbConn.prepareStatement("SELECT constant FROM constants WHERE _id = ?");
-    }
+  public String getConstant(final int constantId) {
+    try {
+      if (getConstantStmt == null) {
+        getConstantStmt = dbConn.prepareStatement("SELECT constant FROM constants WHERE _id = ?");
+      }
 
-    getConstantStmt.setInt(1, constantId);
-    final ResultSet constant = getConstantStmt.executeQuery();
-    if (!constant.next()) {
-      return null;
+      getConstantStmt.setInt(1, constantId);
+      final ResultSet constant = getConstantStmt.executeQuery();
+      if (!constant.next()) {
+        return null;
+      }
+      return constant.getString("constant");
+    } catch (SQLException sqlEx) {
+      throw new RuntimeException(sqlEx);
     }
-    return constant.getString("constant");
   }
 
   private SortedSet<Runway> getRunways(final int airportId) throws SQLException {
@@ -174,11 +177,6 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
     return runwayEnds;
   }
 
-
-  public LinkedList<Airport> getAirportsInCells(final int startCell, final int endCell) {
-    return getAirportsInCells(startCell, endCell, 0);
-  }
-
   /**
    * Returns a lits of airports in the given cells with rank >= {@code minRank}.
    */
@@ -206,7 +204,7 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
       throw new RuntimeException(sqlEx);
     }
   }
-
+  
   public HashMap<String, String> getAirportProperties(final int airportId) {
     try {
       if (getAirportPropertiesStmt == null) {

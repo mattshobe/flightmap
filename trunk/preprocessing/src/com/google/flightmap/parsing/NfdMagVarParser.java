@@ -16,7 +16,6 @@
 
 package com.google.flightmap.parsing;
 
-import java.sql.*;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,7 +27,6 @@ import java.util.Vector;
 import java.util.regex.*;
 import java.io.*;
 
-import com.google.flightmap.common.CustomGridUtil;
 import com.google.flightmap.parsing.data.MagVar;
 
 
