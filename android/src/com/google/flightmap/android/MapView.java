@@ -20,11 +20,13 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Paint.Align;
 import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
@@ -110,6 +112,11 @@ public class MapView extends SurfaceView
   private Location previousLocation;
   private float previousZoom;
   private boolean prefsChanged;
+  // Caching.  Values used in computing screen area, avoids unecessery memory allocation.
+  private final Matrix rotationMatrix = new Matrix();
+  private final Point topLeftCorner = new Point();
+  private final Point bottomRightCorner = new Point();
+  private final RectF screenRect = new RectF();
 
   // Magnetic variation w/ caching.
   private final CachedMagneticVariation magneticVariation = new CachedMagneticVariation();
@@ -319,7 +326,7 @@ public class MapView extends SurfaceView
 
     // Display message about no current location and return.
     if (null == location || System.currentTimeMillis() - location.getTime() > MAX_LOCATION_AGE) {
-      c.drawText(flightMap.getText(R.string.old_location).toString(), c.getWidth() / 2, //
+      c.drawText(flightMap.getText(R.string.old_location).toString(), c.getWidth() / 2, 
       c.getHeight() / 2, ERROR_TEXT_PAINT);
       return;
     }
@@ -348,8 +355,9 @@ public class MapView extends SurfaceView
     // Draw airports.
     final int width = c.getWidth();
     final int height = c.getHeight();
+    final int orientation = isTrackUp ? (int)(location.getBearing()) : 0;
     final LatLngRect screenArea =
-        getScreenArea(zoomCopy, locationLatLng, locationPoint, width, height);
+        getScreenArea(zoomCopy, locationLatLng, orientation, locationPoint, width, height);
     final Collection<Airport> nearbyAirports = flightMap.airportDirectory.getAirportsInRectangle(
         screenArea, getMinimumAirportRank(zoomCopy));
     for (Airport airport : nearbyAirports) {
@@ -508,15 +516,27 @@ public class MapView extends SurfaceView
 
   /**
    * Returns the distance in meters from the aircraft screen location to the
-   * furthest screen edge.
+   * farthest screen edge.
    */
   private synchronized LatLngRect getScreenArea(final float zoom, final LatLng location,
-      final Point locationPoint, final int width, final int height) {
+      final int orientation, final Point locationPoint, final int width, final int height) {
     // Pixel coordinates of the top-left screen corner.
-    final Point topLeftCorner = new Point(locationPoint.x - aircraftX, locationPoint.y - aircraftY);
-    final Point bottomRightCorner = new Point(topLeftCorner.x + width, topLeftCorner.y + height);
+    topLeftCorner.set(locationPoint.x - aircraftX, locationPoint.y - aircraftY);
+    bottomRightCorner.set(topLeftCorner.x + width, topLeftCorner.y + height);
+
+    if (orientation != 0) {
+      screenRect.set(topLeftCorner.x, topLeftCorner.y, bottomRightCorner.x, bottomRightCorner.y);
+      rotationMatrix.reset();
+      rotationMatrix.postRotate(orientation, (topLeftCorner.x + bottomRightCorner.x)/2.0f, 
+          (topLeftCorner.y + bottomRightCorner.y)/2.0f);
+      rotationMatrix.mapRect(screenRect);
+      topLeftCorner.set((int)(screenRect.left + 0.5), (int)(screenRect.top + 0.5));
+      bottomRightCorner.set((int)(screenRect.right + 0.5), (int)(screenRect.bottom + 0.5));
+    }
+
     final LatLng topLeftLocation = MercatorProjection.fromPoint(zoom, topLeftCorner);
     final LatLng bottomRightLocation = MercatorProjection.fromPoint(zoom, bottomRightCorner);
+  
     return new LatLngRect(topLeftLocation, bottomRightLocation);
   }
 
