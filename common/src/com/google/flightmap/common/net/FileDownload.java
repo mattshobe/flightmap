@@ -35,19 +35,11 @@ import java.net.URL;
  */
 public class FileDownload {
   private static final int BUFFER_SIZE = 1024;
-  private final URL url;
 
   /**
-   * Initialized downloader for {@code url}
+   * Downloads {@code url} to {@code destination}
    */
-  public FileDownload(final URL url) {
-    this.url = url;
-  }
-
-  /**
-   * Downloads file to {@code destination}
-   */
-  public void download(final File destination) throws IOException {
+  public static void download(final URL url, final File destination) throws IOException{
     final URLConnection urlConnection = url.openConnection();
 
     final InputStream in = new BufferedInputStream(urlConnection.getInputStream());
@@ -65,9 +57,9 @@ public class FileDownload {
   }
 
   /**
-   * Returns content of file as string
+   * Gets contents of {@code url} as string
    */
-  public String getContentString() throws IOException {
+  public static String getContentString(final URL url) throws IOException {
     final URLConnection urlConnection = url.openConnection();
 
     final InputStream inStream = new BufferedInputStream(urlConnection.getInputStream());
@@ -82,20 +74,6 @@ public class FileDownload {
     } finally {
       in.close();
     }
-  }
-
-  /**
-   * Downloads {@code url} to {@code destination}
-   */
-  public static void download(final URL url, final File destination) throws IOException{
-    new FileDownload(url).download(destination);
-  }
-
-  /**
-   * Gets contents of {@code url} as string
-   */
-  public static String getContentString(final URL url) throws IOException {
-    return new FileDownload(url).getContentString();
   }
 
   /**
