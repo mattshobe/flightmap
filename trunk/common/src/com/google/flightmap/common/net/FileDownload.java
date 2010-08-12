@@ -17,11 +17,14 @@
 package com.google.flightmap.common.net;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URLConnection;
 import java.net.URL;
@@ -31,20 +34,20 @@ import java.net.URL;
  * TODO: Add support for progress listeners, file splitting, etc.
  */
 public class FileDownload {
-  private final static int BUFFER_SIZE = 1024;
+  private static final int BUFFER_SIZE = 1024;
   private final URL url;
 
   /**
-   * Prepares downloader for {@code url}
+   * Initialized downloader for {@code url}
    */
-  public FileDownload(final String url) throws MalformedURLException {
-    this.url = new java.net.URL(url);
+  public FileDownload(final URL url) {
+    this.url = url;
   }
 
   /**
    * Downloads file to {@code destination}
    */
-  synchronized public void download(final String destination) throws IOException {
+  public void download(final File destination) throws IOException {
     final URLConnection urlConnection = url.openConnection();
 
     final InputStream in = new BufferedInputStream(urlConnection.getInputStream());
@@ -62,10 +65,47 @@ public class FileDownload {
   }
 
   /**
+   * Returns content of file as string
+   */
+  public String getContentString() throws IOException {
+    final URLConnection urlConnection = url.openConnection();
+
+    final InputStream inStream = new BufferedInputStream(urlConnection.getInputStream());
+    final Reader in = new BufferedReader(new InputStreamReader(inStream));
+
+    final int contentLength = urlConnection.getContentLength();
+    final StringBuilder out = new StringBuilder(contentLength);
+
+    try {
+      getContentString(in, out);
+      return out.toString();
+    } finally {
+      in.close();
+    }
+  }
+
+  /**
    * Downloads {@code url} to {@code destination}
    */
-  public static void download(final String url, final String destination) throws IOException {
+  public static void download(final URL url, final File destination) throws IOException{
     new FileDownload(url).download(destination);
   }
-}
 
+  /**
+   * Gets contents of {@code url} as string
+   */
+  public static String getContentString(final URL url) throws IOException {
+    return new FileDownload(url).getContentString();
+  }
+
+  /**
+   * Reads content from {@code in} as string and appends it to {@code out}
+   */
+  static void getContentString(final Reader in, final StringBuilder out) throws IOException {
+    final char data[] = new char[BUFFER_SIZE];
+    int count;
+    while ((count = in.read(data, 0, BUFFER_SIZE)) != -1) {
+      out.append(data);
+    }
+  }
+}
