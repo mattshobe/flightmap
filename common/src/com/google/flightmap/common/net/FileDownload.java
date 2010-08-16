@@ -19,57 +19,111 @@ package com.google.flightmap.common.net;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.Reader;
-import java.net.MalformedURLException;
 import java.net.URLConnection;
 import java.net.URL;
+import java.util.zip.GZIPInputStream;
+
+import com.google.flightmap.common.ProgressListener;
+import com.google.flightmap.common.io.StreamUtils;
 
 /**
  * Utility class for downloading files.
- * TODO: Add support for progress listeners, file splitting, etc.
  */
 public class FileDownload {
-  private static final int BUFFER_SIZE = 1024;
+  static final int BUFFER_SIZE = 10240;
+
+  private FileDownload() {
+  }
 
   /**
-   * Downloads {@code url} to {@code destination}
+   * <p>Downloads {@code url} to {@code destination} without altering the data.</p>
+   *
+   * <p>Deletes {@code destination} on failure.</p>
+   * 
+   * @param listener Optional progress listener.
    */
-  public static void download(final URL url, final File destination) throws IOException{
+  public static void download(final URL url, final File destination, final ProgressListener listener)
+      throws IOException {
     final URLConnection urlConnection = url.openConnection();
+    final InputStream in = new BufferedInputStream(urlConnection.getInputStream(), BUFFER_SIZE);
+    final int contentLength = urlConnection.getContentLength();
 
-    final InputStream in = new BufferedInputStream(urlConnection.getInputStream());
-    final OutputStream out = new FileOutputStream(destination);
+    doDownload(in, destination, contentLength, listener);
+  }
+
+  /**
+   * <p>Downloads {@code url} to {@code destination} without altering the data.</p>
+   *
+   * <p>Deletes {@code destination} on failure.</p>
+   * 
+   * @param listener Optional progress listener.
+   * @return true/false on success/failure.
+   */
+  public static boolean tryDownload(final URL url, final File destination,
+      final ProgressListener listener) {
     try {
-      final byte data[] = new byte[BUFFER_SIZE];
-      int count;
-      while ((count = in.read(data)) != -1) {
-        out.write(data, 0, count);
-      }
-    } finally {
-      in.close();
-      out.close();
+      download(url, destination, listener);
+      return true;
+    } catch (IOException ioEx) {
+      ioEx.printStackTrace();
+      return false;
     }
   }
 
   /**
-   * Gets contents of {@code url} as string
+   * <p>Downloads {@code url} to {@code destination} and gunzips data on the fly.</p>
+   *
+   * <p>Deletes {@code destination} on failure.</p>
+   * 
+   * @param contentLength Length of decompressed data, in bytes.
+   * @param listener Optional progress listener.
    */
-  public static String getContentString(final URL url) throws IOException {
+  public static void downloadGunzip(final URL url, final File destination, final int contentLength,
+      final ProgressListener listener) throws IOException {
+    final URLConnection urlConnection = url.openConnection();
+    final InputStream in = new GZIPInputStream(urlConnection.getInputStream(), BUFFER_SIZE);
+    doDownload(in, destination, contentLength, listener);
+  }
+
+  /**
+   * <p>Downloads {@code url} to {@code destination} and gunzips data on the fly.</p>
+   *
+   * <p>Deletes {@code destination} on failure.</p>
+   * 
+   * @param contentLength Length of decompressed data, in bytes.
+   * @param listener Optional progress listener.
+   */
+  public static boolean tryDownloadGunzip(final URL url, final File destination,
+      final int contentLength, final ProgressListener listener) {
+    try {
+      downloadGunzip(url, destination, contentLength, listener);
+      return true;
+    } catch (IOException ioEx) {
+      ioEx.printStackTrace();
+      return false;
+    }
+  }
+
+  /**
+   * Gets contents of {@code url} as {@code String}.
+   */
+  public static String read(final URL url) throws IOException {
     final URLConnection urlConnection = url.openConnection();
 
-    final InputStream inStream = new BufferedInputStream(urlConnection.getInputStream());
+    final InputStream inStream =
+        new BufferedInputStream(urlConnection.getInputStream(), BUFFER_SIZE);
     final Reader in = new BufferedReader(new InputStreamReader(inStream));
 
     final int contentLength = urlConnection.getContentLength();
     final StringBuilder out = new StringBuilder(contentLength);
 
+    final char buf[] = new char[BUFFER_SIZE];
     try {
-      getContentString(in, out);
+      StreamUtils.read(in, out, buf);
       return out.toString();
     } finally {
       in.close();
@@ -77,13 +131,20 @@ public class FileDownload {
   }
 
   /**
-   * Reads content from {@code in} as string and appends it to {@code out}
+   * <p>Provides a generic way to download content from {@code in} to {@code out}.</p>
+   *
+   * <p>Deletes {@code destination} on failure.</p>
    */
-  static void getContentString(final Reader in, final StringBuilder out) throws IOException {
-    final char data[] = new char[BUFFER_SIZE];
-    int count;
-    while ((count = in.read(data, 0, BUFFER_SIZE)) != -1) {
-      out.append(data);
+  private static void doDownload(final InputStream in, final File destination,
+      final int contentLength, final ProgressListener listener) throws IOException {
+    final byte buf[] = new byte[BUFFER_SIZE];
+    try {
+      StreamUtils.write(in, destination, buf, contentLength, listener);
+    } catch (IOException ioEx) {
+      destination.delete();
+      throw ioEx;
+    } finally {
+      in.close();
     }
   }
 }
