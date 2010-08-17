@@ -16,7 +16,6 @@
 
 package com.google.flightmap.parsing;
 
-import java.sql.*;
 import java.util.regex.*;
 import java.io.*;
 
@@ -53,7 +52,7 @@ public class NfdParser {
     }
   }
 
-  private void addAirportDataToDb() throws SQLException, IOException {
+  private void addAirportDataToDb() throws IOException {
     BufferedReader in = new BufferedReader(new FileReader(this.sourceFile));
 
     Pattern airportArincPattern = Pattern

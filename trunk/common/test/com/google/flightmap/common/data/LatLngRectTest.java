@@ -54,14 +54,6 @@ public class LatLngRectTest extends TestCase {
   private static final LatLng WSW = new LatLng(-IN, -OUT);
   private static final LatLng WNW = new LatLng(IN, -OUT);
 
-  public void setUp() {
-
-  }
-
-  public void tearDown() {
-
-  }
-
   public void testIntersect() {
     final LatLngRect area = new LatLngRect(A, I);
     assertEquals(area.intersect(new LatLngRect(NW, nw)), new LatLngRect(A, nw));
