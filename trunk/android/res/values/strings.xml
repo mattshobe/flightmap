@@ -8,4 +8,6 @@
   <string name="no_airports">No airports found</string>
   <string name="old_location">Searching for GPS...</string>
   <string name="preferences_from_xml">Settings...</string>
+  <string name="updating_database">Updating database...</string>
+  <string name="download_failed">Database download failed.</string>
 </resources>

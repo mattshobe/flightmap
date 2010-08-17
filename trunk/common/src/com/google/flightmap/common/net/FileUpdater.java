@@ -104,11 +104,16 @@ public class FileUpdater {
       return true;
     }
 
-    final String remoteInfo = FileDownload.read(remoteInfoUrl);
-    final String localInfo = StreamUtils.read(localInfoFile);
+    return !contentsMatch(localInfoFile, remoteInfoUrl);
+  }
 
-    return !remoteInfo.equals(localInfo);
-
+  /**
+   * Checks if info {@code file} matches the latest info from remote URL.
+   */
+  private static boolean contentsMatch(final File file, final URL url) throws IOException {
+    final String local = StreamUtils.read(file);
+    final String remote = FileDownload.read(url);
+    return local.equals(remote);
   }
 
   /**
@@ -140,13 +145,22 @@ public class FileUpdater {
   /**
    * Forces an update of the local file (regardless of whether it is needed).
    */
-  private void doUpdate() throws IOException {
-    checkWorkingDir();
+  private synchronized void doUpdate() throws IOException {
     final File workingInfoFile = new File(workingDir, localInfoFile.getName());
     final File workingFile = new File(workingDir, localFile.getName());
 
-    // Download latest info file to working directory
-    FileDownload.download(remoteInfoUrl, workingInfoFile, null);
+    // Check if existing working info file matches latest info file, clean working dir if not.
+    if (workingInfoFile.exists() && !contentsMatch(workingInfoFile, remoteInfoUrl)) {
+      cleanWorkingDir();
+    }
+
+    // Create working dir if needed.
+    checkWorkingDir();
+
+    // Download latest info file to working directory if needed.
+    if (!workingInfoFile.exists()) {
+      FileDownload.download(remoteInfoUrl, workingInfoFile, null);
+    }
 
     // See if parts file is available.
     final File workingPartsFile = new File(workingDir, localFile.getName() + PARTS_SUFFIX);

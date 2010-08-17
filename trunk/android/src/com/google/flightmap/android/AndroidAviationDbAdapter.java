@@ -23,7 +23,7 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   private static final String TAG = AndroidAviationDbAdapter.class.getSimpleName();
 
   // database
-  private static final String DATABASE_PATH = "/sdcard/com.google.flightmap/aviation.db";
+  static final String DATABASE_PATH = "/sdcard/com.google.flightmap/aviation.db";
 
   // airports
   private static final String AIRPORTS_TABLE = "airports";

@@ -1,12 +1,12 @@
 /*
  * Copyright (C) 2010 Google Inc.
- *
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- *
+ * 
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -16,17 +16,21 @@
 package com.google.flightmap.android;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.Button;
 
 import com.google.flightmap.common.AirportDirectory;
@@ -34,9 +38,14 @@ import com.google.flightmap.common.AviationDbAdapter;
 import com.google.flightmap.common.CachedAirportDirectory;
 import com.google.flightmap.common.CachedAviationDbAdapter;
 import com.google.flightmap.common.CustomGridAirportDirectory;
+import com.google.flightmap.common.ProgressListener;
+
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 public class FlightMap extends Activity {
-//  private static final String TAG = FlightMap.class.getSimpleName();
+  private static final String TAG = FlightMap.class.getSimpleName();
   /**
    * Milliseconds between screen updates. Note that the fastest I've seen GPS
    * updates arrive is once per second.
@@ -44,9 +53,14 @@ public class FlightMap extends Activity {
   private static long UPDATE_RATE = 100;
 
   private static final int MENU_SETTINGS = 0;
+  private static final int DOWNLOAD_FAILED = 1;
 
   // Saved instance state constants
   private static final String DISCLAIMER_ACCEPTED = "disclaimer-accepted";
+  private static final String DATABASE_DOWNLOADED = "database-downloaded";
+
+  private static final String AVIATION_DATABASE_URL = 
+      "http://sites.google.com/site/flightmapdata/aviation-db/aviation.db";
 
   private boolean disclaimerAccepted;
   private boolean isRunning;
@@ -56,22 +70,17 @@ public class FlightMap extends Activity {
   AviationDbAdapter aviationDbAdapter;
   AirportDirectory airportDirectory;
   UserPrefs userPrefs;
+  private boolean initializationDone;
+  private boolean databaseDownloaded;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    userPrefs = new UserPrefs(this);
     locationHandler =
         new LocationHandler((LocationManager) getSystemService(Context.LOCATION_SERVICE));
-    //aviationDbAdapter = new AndroidAviationDbAdapter(userPrefs);
-    aviationDbAdapter = new CachedAviationDbAdapter(new AndroidAviationDbAdapter(userPrefs));
-    airportDirectory = new CustomGridAirportDirectory(aviationDbAdapter);
-        new CachedAirportDirectory(new CustomGridAirportDirectory(aviationDbAdapter));
-    airportDirectory.open();
 
-    if (null == getMapView()) {
-      setMapView(new MapView(this));
-    }
+    setDatabaseDownloaded(
+        (null != savedInstanceState && savedInstanceState.getBoolean(DATABASE_DOWNLOADED)));
 
     // Show the disclaimer screen if there's no previous state, or the user
     // didn't accept the disclaimer.
@@ -80,15 +89,32 @@ public class FlightMap extends Activity {
       showDisclaimerView();
     } else { // disclaimer accepted.
       setDisclaimerAccepted(true);
-      showMapView();
+      downloadDatabase();
     }
   }
 
+  @Override
+  protected Dialog onCreateDialog(int id) {
+    switch (id) {
+      case DOWNLOAD_FAILED:
+        return new AlertDialog.Builder(this).setMessage(R.string.download_failed)
+            .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+              @Override
+              public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+              }
+            }).create();
+
+      default:
+        return null;
+    }
+  }
 
   @Override
   public void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
     outState.putBoolean(DISCLAIMER_ACCEPTED, isDisclaimerAccepted());
+    outState.putBoolean(DATABASE_DOWNLOADED, isDatabaseDownloaded());
     MapView map = getMapView();
     if (null != map) {
       map.saveInstanceState(outState);
@@ -111,16 +137,83 @@ public class FlightMap extends Activity {
 
     // Set disclaimer "agree" button to switch to map view.
     Button agreeButton = (Button) findViewById(R.id.agree);
-    agreeButton.setOnClickListener(new OnClickListener() {
+    agreeButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
         setDisclaimerAccepted(true);
-        showMapView();
+        downloadDatabase();
       }
     });
   }
 
-  private void showMapView() {
+  /**
+   * If there is a network connection, try to update the database.
+   */
+  private void downloadDatabase() {
+    if (isDatabaseDownloaded()) {
+      downloadDatabaseDone();
+      return;
+    }
+
+    final File localFile = new File(AndroidAviationDbAdapter.DATABASE_PATH);
+    final File workingDir = new File(AndroidAviationDbAdapter.DATABASE_PATH + ".work");
+    URL url = null;
+    try {
+      url = new URL(AVIATION_DATABASE_URL);
+    } catch (MalformedURLException e) {
+      Log.e(TAG, "Bad url", e);
+      return;
+    }
+
+    final ProgressDialog dialog = new ProgressDialog(this);
+    dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+    dialog.setMessage(this.getString(R.string.updating_database));
+    dialog.show();
+
+    final ProgressListener dbUpdateListener = new ProgressListener() {
+      @Override
+      public void hasCompleted(boolean success) {
+        dialog.dismiss();
+        Log.i(TAG, "Download completed.  Success: " + success);
+        if (!success) {
+          showDialog(DOWNLOAD_FAILED);
+          Log.e(TAG, "Download failed");
+        }
+        downloadDatabaseDone();
+      }
+
+      @Override
+      public void hasProgressed(int percent) {
+        dialog.setProgress(percent);
+      }
+    };
+
+    final FileUpdaterTask.Params params = new FileUpdaterTask.Params(localFile, url, workingDir);
+    new FileUpdaterTask(dbUpdateListener).execute(params);
+  }
+
+  private void downloadDatabaseDone() {
+    setDatabaseDownloaded(true);
+    initializeApplication();
+  }
+
+  private void initializeApplication() {
+    userPrefs = new UserPrefs(this);
+    aviationDbAdapter = new CachedAviationDbAdapter(new AndroidAviationDbAdapter(userPrefs));
+    airportDirectory = new CustomGridAirportDirectory(aviationDbAdapter);
+    new CachedAirportDirectory(new CustomGridAirportDirectory(aviationDbAdapter));
+
+    // TODO: handle the case of this throwing when there's no database.
+    airportDirectory.open();
+
+    if (null == getMapView()) {
+      setMapView(new MapView(this));
+    }
+
+    setInitializationDone(true);
+    setRunning(true);
+
+    // Now show the map.
     setContentView(getMapView());
   }
 
@@ -147,7 +240,7 @@ public class FlightMap extends Activity {
   protected void onResume() {
     super.onResume();
     locationHandler.startListening();
-    setRunning(true);
+    setRunning(isInitializationDone());
     update();
   }
 
@@ -161,7 +254,9 @@ public class FlightMap extends Activity {
   @Override
   protected void onDestroy() {
     super.onDestroy();
-    airportDirectory.close();
+    if (airportDirectory != null) {
+      airportDirectory.close();
+    }
   }
 
   /**
@@ -169,12 +264,11 @@ public class FlightMap extends Activity {
    * {@link UpdateHandler}.
    */
   private void update() {
+    updater.scheduleUpdate(UPDATE_RATE);
     if (!isRunning()) {
       return;
     }
     drawUi();
-
-    updater.scheduleUpdate(UPDATE_RATE);
   }
 
   private void drawUi() {
@@ -228,5 +322,22 @@ public class FlightMap extends Activity {
 
   public synchronized boolean isDisclaimerAccepted() {
     return disclaimerAccepted;
+  }
+
+
+  private synchronized boolean isInitializationDone() {
+    return initializationDone;
+  }
+
+  private synchronized void setInitializationDone(final boolean initializationDone) {
+    this.initializationDone = initializationDone;
+  }
+
+  private synchronized boolean isDatabaseDownloaded() {
+    return databaseDownloaded;
+  }
+
+  private synchronized void setDatabaseDownloaded(final boolean databaseDownloaded) {
+    this.databaseDownloaded = databaseDownloaded;
   }
 }
