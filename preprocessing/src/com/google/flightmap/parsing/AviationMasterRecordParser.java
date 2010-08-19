@@ -93,6 +93,7 @@ public class AviationMasterRecordParser {
     RUNWAY_SURFACE_MAP = new HashMap<String, String>();
     RUNWAY_SURFACE_MAP.put("CONC", "Portland cement concrete");
     RUNWAY_SURFACE_MAP.put("ASPH", "Asphalt or bituminous concrete");
+    RUNWAY_SURFACE_MAP.put("PEM", "Asphalt concrete");
     RUNWAY_SURFACE_MAP.put("SNOW", "Snow");
     RUNWAY_SURFACE_MAP.put("ICE", "Ice");
     RUNWAY_SURFACE_MAP.put("MATS", "Pierced steel planking, landing mats");
