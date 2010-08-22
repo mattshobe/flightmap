@@ -349,7 +349,8 @@ public class FileUpdater {
       return;
     }
 
-    if (!workingDir.mkdir()) {
+    // Can only get here if the working directory does not exist.
+    if (!workingDir.mkdirs()) {
       throw new IOException("Could not create working directory: " + workingDir.getPath());
     }
   }
