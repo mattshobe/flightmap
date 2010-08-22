@@ -64,8 +64,6 @@ Here's an example of how to create an emulated device with SD card storage.
 $ android create avd --name droid --target android-7 --skin WVGA800 --sdcard 16M
 }}}
 
-See the [GettingStarted#Copy_Database Copy Database] section for the next step.
-
 == Actual Device Set Up ==
 Details on how to connect your development device to your computer are [http://developer.android.com/guide/developing/device.html here]. Once you've connected your device via USB, you can test that it's working like this:
 {{{
@@ -75,16 +73,6 @@ HT9C7P800556	device
 }}}
 
 If you don't see any devices listed, you didn't set it up right. Make sure you enabled USB debugging on your device.
-
-Once your device is connected to your computer, go to the next section for how to copy the database over.
-
-== Copy Database ==
-Copy the navigation data to your emulator or actual device with the following commands. (Obviously, if you're copying to the emulator, it needs to be running. Use `emulator -avd droid &` to start it.)
-
-{{{
-$ adb push data/aviation.db /sdcard/com.google.flightmap/aviation.db
-238 KB/s (722944 bytes in 2.958s)
-}}}
 
 = Eclipse Setup =
 See EclipseSetup.
