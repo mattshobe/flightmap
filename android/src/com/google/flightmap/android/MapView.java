@@ -1,12 +1,12 @@
 /*
  * Copyright (C) 2010 Google Inc.
- *
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- *
+ * 
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -32,6 +32,7 @@ import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -49,8 +50,8 @@ import java.util.Collection;
 /**
  * View for the moving map.
  */
-public class MapView extends SurfaceView
-    implements SurfaceHolder.Callback, OnSharedPreferenceChangeListener {
+public class MapView extends SurfaceView implements SurfaceHolder.Callback,
+    OnSharedPreferenceChangeListener {
   private static final String TAG = MapView.class.getSimpleName();
 
   // Saved instance state constants.
@@ -84,6 +85,12 @@ public class MapView extends SurfaceView
   private static final float PANEL_TEXT_BASELINE =
       PANEL_HEIGHT - PANEL_NOTCH_HEIGHT - PANEL_TEXT_MARGIN;
   private static final String DEGREES_SYMBOL = "\u00b0";
+  /**
+   * When UserPrefs.controlHeadingWithKeys() is true, allow d-pad arrow keys to
+   * change heading. For testing purposes only. This stores the fake heading.
+   */
+  private int headingForTesting;
+
   private Path topPanel;
 
   // Main class.
@@ -112,7 +119,8 @@ public class MapView extends SurfaceView
   private Location previousLocation;
   private float previousZoom;
   private boolean prefsChanged;
-  // Caching.  Values used in computing screen area, avoids unecessery memory allocation.
+  // Caching. Values used in computing screen area, avoids unecessery memory
+  // allocation.
   private final Matrix rotationMatrix = new Matrix();
   private final Point topLeftCorner = new Point();
   private final Point bottomRightCorner = new Point();
@@ -182,6 +190,40 @@ public class MapView extends SurfaceView
     PANEL_UNITS_PAINT.setTextSize(18 * density);
   }
 
+  /**
+   * Forces a heading change, for testing purposes only.
+   */
+  @Override
+  public boolean onKeyDown(int keyCode, KeyEvent event) {
+    if (!flightMap.userPrefs.controlHeadingWithKeys()) {
+      return false;
+    }
+    synchronized (this) {
+      switch (keyCode) {
+        case KeyEvent.KEYCODE_DPAD_CENTER:
+          headingForTesting = 0;
+          previousLocation = null;
+          return true;
+
+        case KeyEvent.KEYCODE_DPAD_LEFT:
+          headingForTesting -= 20;
+          if (headingForTesting < 0) {
+            headingForTesting += 360;
+          }
+          previousLocation = null;
+          return true;
+
+        case KeyEvent.KEYCODE_DPAD_RIGHT:
+          headingForTesting = (headingForTesting + 20) % 360;
+          previousLocation = null;
+          return true;
+
+        default:
+          return false;
+      }
+    }
+  }
+
   @Override
   public boolean onTouchEvent(MotionEvent event) {
     showZoomController();
@@ -208,8 +250,7 @@ public class MapView extends SurfaceView
   }
 
   @Override
-  public synchronized void onSharedPreferenceChanged(
-      SharedPreferences sharedPreferences, String key) {
+  public synchronized void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
     setPrefsChanged(true);
   }
 
@@ -326,10 +367,16 @@ public class MapView extends SurfaceView
 
     // Display message about no current location and return.
     if (null == location || System.currentTimeMillis() - location.getTime() > MAX_LOCATION_AGE) {
-      c.drawText(flightMap.getText(R.string.old_location).toString(), c.getWidth() / 2, 
-      c.getHeight() / 2, ERROR_TEXT_PAINT);
+      c.drawText(flightMap.getText(R.string.old_location).toString(), c.getWidth() / 2, c
+          .getHeight() / 2, ERROR_TEXT_PAINT);
       return;
     }
+
+    Log.i(TAG, "before heading override: " + location.getBearing());
+    if (flightMap.userPrefs.controlHeadingWithKeys()) {
+      location.setBearing(headingForTesting);
+    }
+    Log.i(TAG, "after  heading override: " + location.getBearing());
 
     LatLng locationLatLng = LatLng.fromDouble(location.getLatitude(), location.getLongitude());
 
@@ -355,11 +402,12 @@ public class MapView extends SurfaceView
     // Draw airports.
     final int width = c.getWidth();
     final int height = c.getHeight();
-    final int orientation = isTrackUp ? (int)(location.getBearing()) : 0;
+    final int orientation = isTrackUp ? (int) (location.getBearing()) : 0;
     final LatLngRect screenArea =
         getScreenArea(zoomCopy, locationLatLng, orientation, locationPoint, width, height);
-    final Collection<Airport> nearbyAirports = flightMap.airportDirectory.getAirportsInRectangle(
-        screenArea, getMinimumAirportRank(zoomCopy));
+    final Collection<Airport> nearbyAirports =
+        flightMap.airportDirectory.getAirportsInRectangle(screenArea,
+            getMinimumAirportRank(zoomCopy));
     for (Airport airport : nearbyAirports) {
       final Paint airportPaint = getAirportPaint(airport);
       Point airportPoint = MercatorProjection.toPoint(zoomCopy, airport.location);
@@ -433,15 +481,15 @@ public class MapView extends SurfaceView
       c.drawText(" ft", width - PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_UNITS_PAINT);
       textWidth = getTextWidth(" ft", PANEL_UNITS_PAINT);
       PANEL_DIGITS_PAINT.setTextAlign(Align.RIGHT);
-      c.drawText(
-          altitude, width - textWidth - PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_DIGITS_PAINT);
+      c.drawText(altitude, width - textWidth - PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE,
+          PANEL_DIGITS_PAINT);
     }
   }
 
   /**
    * Returns {@code location} with the bearing converted from true to magnetic.
    * Does not modify {@code location} if location.hasBearing() is false.
-   *
+   * 
    * @param locationLatLng
    */
   private Location convertToMagneticBearing(Location location, LatLng locationLatLng) {
@@ -527,16 +575,16 @@ public class MapView extends SurfaceView
     if (orientation != 0) {
       screenRect.set(topLeftCorner.x, topLeftCorner.y, bottomRightCorner.x, bottomRightCorner.y);
       rotationMatrix.reset();
-      rotationMatrix.postRotate(orientation, (topLeftCorner.x + bottomRightCorner.x)/2.0f, 
-          (topLeftCorner.y + bottomRightCorner.y)/2.0f);
+      rotationMatrix.postRotate(orientation, (topLeftCorner.x + bottomRightCorner.x) / 2.0f,
+          (topLeftCorner.y + bottomRightCorner.y) / 2.0f);
       rotationMatrix.mapRect(screenRect);
-      topLeftCorner.set((int)(screenRect.left + 0.5), (int)(screenRect.top + 0.5));
-      bottomRightCorner.set((int)(screenRect.right + 0.5), (int)(screenRect.bottom + 0.5));
+      topLeftCorner.set((int) (screenRect.left + 0.5), (int) (screenRect.top + 0.5));
+      bottomRightCorner.set((int) (screenRect.right + 0.5), (int) (screenRect.bottom + 0.5));
     }
 
     final LatLng topLeftLocation = MercatorProjection.fromPoint(zoom, topLeftCorner);
     final LatLng bottomRightLocation = MercatorProjection.fromPoint(zoom, bottomRightCorner);
-  
+
     return new LatLngRect(topLeftLocation, bottomRightLocation);
   }
 

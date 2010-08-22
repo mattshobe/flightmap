@@ -1,12 +1,12 @@
 /*
  * Copyright (C) 2010 Google Inc.
- *
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- *
+ * 
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -37,6 +37,7 @@ public class UserPrefs {
   private static final String SHOW_PRIVATE = "Show_Private";
   private static final String SHOW_HELIPORT = "Show_Heliports";
   private static final String RUNWAY_LENGTH = "Runway_Length";
+  private static final String FAKE_HEADING = "Fake_Heading";
 
   // Preference values. These match values in arrays.xml
   private static final String DISTANCE_UNITS_MILES = "1";
@@ -96,13 +97,20 @@ public class UserPrefs {
     return getMinRunwayLengthFromPreference(runwayString);
   }
 
+  /**
+   * True if hitting the directional-pad arrow keys controls the heading instead
+   * of using the heading from the GPS location.
+   */
+  public synchronized boolean controlHeadingWithKeys() {
+    return sharedPrefs.getBoolean(FAKE_HEADING, false);
+  }
+
 
   public void registerOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener listener) {
     sharedPrefs.registerOnSharedPreferenceChangeListener(listener);
   }
 
-  public void unregisterOnSharedPreferenceChangeListener(
-      OnSharedPreferenceChangeListener listener) {
+  public void unregisterOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener listener) {
     sharedPrefs.unregisterOnSharedPreferenceChangeListener(listener);
   }
 
