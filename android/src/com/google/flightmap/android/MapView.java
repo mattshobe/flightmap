@@ -16,6 +16,7 @@
 package com.google.flightmap.android;
 
 import java.util.Collection;
+import java.util.LinkedList;
 
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
@@ -83,12 +84,15 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   private static final float PANEL_TEXT_BASELINE =
       PANEL_HEIGHT - PANEL_NOTCH_HEIGHT - PANEL_TEXT_MARGIN;
   private static final String DEGREES_SYMBOL = "\u00b0";
+
   /**
-   * When UserPrefs.controlHeadingWithKeys() is true, allow d-pad arrow keys to
-   * change heading. For testing purposes only. This stores the fake heading.
+   * This stores the fake heading used when UserPrefs.controlHeadingWithKeys()
+   * is true. This allow d-pad arrow keys to change heading for testing purposes
+   * only.
    */
   private int headingForTesting;
 
+  // Rectangle with a notch that's the background for the top panel area.
   private Path topPanel;
 
   // Main class.
@@ -132,6 +136,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
 
   // Magnetic variation w/ caching.
   private final CachedMagneticVariation magneticVariation = new CachedMagneticVariation();
+
+  // Airports currently on the screen.
+  private Collection<Airport> airportsOnScreen;
 
   // Static initialization.
   static {
@@ -233,12 +240,20 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
 
   @Override
   public boolean onTouchEvent(MotionEvent event) {
-    showZoomController();
-    return true;
-  }
+    if (event.getAction() != MotionEvent.ACTION_DOWN) {
+      return false;
+    }
+    // See if an airport was tapped.
+    Collection<Airport> airportsNearTap =
+        getAirportsNearScreenPoint(new Point(Math.round(event.getX()), Math.round(event.getY())));
+    if (!airportsNearTap.isEmpty()) {
+      for (Airport airport : airportsNearTap) {
+        Log.i(TAG, "Airport near tap: " + airport);
+      }
+      return true;
+    }
 
-  @Override
-  public boolean onTrackballEvent(MotionEvent event) {
+    // Only get here if the user tapped in a blank area of the map.
     showZoomController();
     return true;
   }
@@ -247,6 +262,46 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     if (null != zoomController) {
       zoomController.setVisible(true);
     }
+  }
+
+  /**
+   * Returns a list of airports near {@code screenPoint}. Result may be empty,
+   * but will never be null.
+   */
+  private synchronized Collection<Airport> getAirportsNearScreenPoint(Point screenPoint) {
+    Collection<Airport> result = new LinkedList<Airport>();
+    if (airportsOnScreen == null || airportsOnScreen.isEmpty()) {
+      return result;
+    }
+
+    // Make a rectangle enclosed by a 30-pixel circle around {@code
+    // screenPoint}. Test if any airports are contained by that rectangle.
+    LatLngRect touchRect = createRectangleAroundPoint(screenPoint, 30);
+    for (Airport airport : airportsOnScreen) {
+      if (touchRect.contains(airport.location)) {
+        result.add(airport);
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Returns a rectangle that is enclosed by a circle of {@code radius} pixels
+   * centered on {@code point}.
+   */
+  private LatLngRect createRectangleAroundPoint(final Point point, final int radius) {
+    LatLngRect result = new LatLngRect();
+    Point corner = new Point();
+    corner.x = point.x - radius;
+    corner.y = point.y - radius;
+    result.add(getLocationForPoint(corner));
+    corner.x = point.x + radius;
+    result.add(getLocationForPoint(corner));
+    corner.y = point.y + radius;
+    result.add(getLocationForPoint(corner));
+    corner.x = point.x - radius;
+    result.add(getLocationForPoint(corner));
+    return result;
   }
 
   @Override
@@ -420,10 +475,10 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     final int width = c.getWidth();
     final float orientation = isTrackUp ? location.getBearing() : 0;
     final LatLngRect screenArea = getScreenRectangle(zoomCopy, orientation, locationPoint);
-    final Collection<Airport> nearbyAirports =
+    airportsOnScreen =
         flightMap.airportDirectory.getAirportsInRectangle(screenArea,
             getMinimumAirportRank(zoomCopy));
-    for (Airport airport : nearbyAirports) {
+    for (Airport airport : airportsOnScreen) {
       final Paint airportPaint = getAirportPaint(airport);
       Point airportPoint = MercatorProjection.toPoint(zoomCopy, airport.location);
       c.drawCircle(airportPoint.x, airportPoint.y, 15, airportPaint);
@@ -585,9 +640,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    * Returns a rectangle enclosing the current view.
    * 
    * @param zoom zoomlevel
-   * @param orientation bearing in degrees from {@code locationPoint} to the top center of
-   *        the screen. Will be 0 when north-up, and the current
-   *        track when track-up.
+   * @param orientation bearing in degrees from {@code locationPoint} to the top
+   *        center of the screen. Will be 0 when north-up, and the current track
+   *        when track-up.
    * @param locationPoint pixel coordinates of current location (as returned by
    *        {@link MercatorProjection#toPoint}
    * @param width screen width in pixels.
@@ -604,12 +659,32 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   }
 
   /**
+   * Returns ground position corresponding to {@code screenPoint}. Uses {@code
+   * previousLocation} to set location and orientation and calls
+   * {@link #getLocationForPoint(float, float, Point, Point)}.
+   * 
+   * @param screenPoint coordinates in screen pixel space (such as from a touch
+   *        event).
+   * @return ground position, or null if {@code previousLocation} is null.
+   */
+  private synchronized LatLng getLocationForPoint(Point screenPoint) {
+    if (null == previousLocation) {
+      return null;
+    }
+    final LatLng location =
+        LatLng.fromDouble(previousLocation.getLatitude(), previousLocation.getLongitude());
+    final Point locationPoint = MercatorProjection.toPoint(getZoom(), location);
+    final float orientation = flightMap.userPrefs.isNorthUp() ? 0 : previousLocation.getBearing();
+    return getLocationForPoint(getZoom(), orientation, locationPoint, screenPoint);
+  }
+
+  /**
    * Returns ground position corresponding to {@code screenPoint}.
    * 
    * @param zoom zoom level.
-   * @param orientation bearing in degrees from {@code locationPoint} to the top center of
-   *        the screen. Will be 0 when north-up, and the current
-   *        track when track-up.
+   * @param orientation bearing in degrees from {@code locationPoint} to the top
+   *        center of the screen. Will be 0 when north-up, and the current track
+   *        when track-up.
    * @param locationPoint pixel coordinates of current location (in Mercator
    *        pixel space as returned by {@link MercatorProjection#toPoint}
    * @param screenPoint coordinates in screen pixel space (such as from a touch
