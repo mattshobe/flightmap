@@ -15,6 +15,8 @@
  */
 package com.google.flightmap.android;
 
+import java.util.Collection;
+
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Resources;
@@ -22,11 +24,9 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.Paint.Align;
 import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.Rect;
-import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
@@ -44,8 +44,6 @@ import com.google.flightmap.common.NavigationUtil.DistanceUnits;
 import com.google.flightmap.common.data.Airport;
 import com.google.flightmap.common.data.LatLng;
 import com.google.flightmap.common.data.LatLngRect;
-
-import java.util.Collection;
 
 /**
  * View for the moving map.
@@ -119,12 +117,18 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   private Location previousLocation;
   private float previousZoom;
   private boolean prefsChanged;
-  // Caching. Values used in computing screen area, avoids unecessery memory
-  // allocation.
-  private final Matrix rotationMatrix = new Matrix();
-  private final Point topLeftCorner = new Point();
-  private final Point bottomRightCorner = new Point();
-  private final RectF screenRect = new RectF();
+
+  // Performance optimization. Create these objects only once since they are
+  // used in rendering.
+  private final Matrix screenMatrix = new Matrix();
+  /** Used by {@link #getLocationForPoint} */
+  private float[] screenPoints = new float[2];
+  /**
+   * Coordinates of the 4 corners of the screen in screen pixel space. Numbered
+   * clockwise starting with the top-left corner screenCorners[3] is the
+   * bottom-left corner. These are set in {@link #surfaceChanged}
+   */
+  private final Point[] screenCorners = new Point[4];
 
   // Magnetic variation w/ caching.
   private final CachedMagneticVariation magneticVariation = new CachedMagneticVariation();
@@ -134,20 +138,20 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     // Do not put any calls to setTextSize here. Put them in #setTextSizes().
     ERROR_TEXT_PAINT.setAntiAlias(true);
     ERROR_TEXT_PAINT.setColor(Color.WHITE);
-    ERROR_TEXT_PAINT.setTextAlign(Align.CENTER);
+    ERROR_TEXT_PAINT.setTextAlign(Paint.Align.CENTER);
     TOWERED_PAINT.setAntiAlias(true);
     TOWERED_PAINT.setARGB(0xff, 0x0, 0xcc, 0xff);
-    TOWERED_PAINT.setTextAlign(Align.CENTER);
+    TOWERED_PAINT.setTextAlign(Paint.Align.CENTER);
     NON_TOWERED_PAINT.setAntiAlias(true);
     NON_TOWERED_PAINT.setARGB(0xff, 0xcc, 0x33, 0xcc);
-    NON_TOWERED_PAINT.setTextAlign(Align.CENTER);
+    NON_TOWERED_PAINT.setTextAlign(Paint.Align.CENTER);
     AIRPORT_TEXT_PAINT.setAntiAlias(true);
     AIRPORT_TEXT_PAINT.setARGB(0xff, 0xff, 0xff, 0xff);
     AIRPORT_TEXT_PAINT.setTypeface(Typeface.SANS_SERIF);
-    AIRPORT_TEXT_PAINT.setTextAlign(Align.CENTER);
+    AIRPORT_TEXT_PAINT.setTextAlign(Paint.Align.CENTER);
     AIRCRAFT_PAINT.setColor(Color.GREEN);
     AIRCRAFT_PAINT.setStrokeWidth(3);
-    PANEL_BACKGROUND_PAINT.setARGB(0xee, 0x22, 0x22, 0x22); // 0.8 alpha, #333
+    PANEL_BACKGROUND_PAINT.setARGB(0xee, 0x22, 0x22, 0x22);
     PANEL_DIGITS_PAINT.setAntiAlias(true);
     PANEL_DIGITS_PAINT.setColor(Color.WHITE);
     PANEL_DIGITS_PAINT.setTypeface(Typeface.SANS_SERIF);
@@ -162,6 +166,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     this.flightMap = flightMap;
     this.density = flightMap.getResources().getDisplayMetrics().density;
     this.zoomScale = new ZoomScale(density, flightMap.userPrefs);
+    for (int i = 0; i < 4; i++) {
+      screenCorners[i] = new Point();
+    }
     getHolder().addCallback(this);
     setFocusable(true); // make sure we get key events
     setKeepScreenOn(true);
@@ -266,18 +273,26 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    * Surface dimensions changed.
    */
   @Override
-  public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-    synchronized (this) {
-      if (flightMap.userPrefs.isNorthUp()) {
-        // Center the aircraft on the screen.
-        aircraftX = width / 2;
-        aircraftY = height / 2;
-      } else {
-        // Center the aircraft horizontally, and 3/4 of the way down vertically.
-        aircraftX = width / 2;
-        aircraftY = height - (height / 4);
-      }
+  public synchronized void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+    if (flightMap.userPrefs.isNorthUp()) {
+      // Center the aircraft on the screen.
+      aircraftX = width / 2;
+      aircraftY = height / 2;
+    } else {
+      // Center the aircraft horizontally, and 3/4 of the way down vertically.
+      aircraftX = width / 2;
+      aircraftY = height - (height / 4);
     }
+
+    // Update pixel coordinates of screen corners.
+    // 
+    // screenCorners[0] x & y are always 0.
+    // screenCorners[1].y is always 0.
+    // screenCorners[3].x is always 0.
+    screenCorners[1].x = width - 1;
+    screenCorners[2].x = width - 1;
+    screenCorners[2].y = height - 1;
+    screenCorners[3].y = height - 1;
     createTopPanelPath(width);
   }
 
@@ -403,10 +418,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
 
     // Draw airports.
     final int width = c.getWidth();
-    final int height = c.getHeight();
-    final int orientation = isTrackUp ? (int) (location.getBearing()) : 0;
-    final LatLngRect screenArea =
-        getScreenRectangle(zoomCopy, orientation, locationPoint, width, height);
+    final float orientation = isTrackUp ? location.getBearing() : 0;
+    final LatLngRect screenArea = getScreenRectangle(zoomCopy, orientation, locationPoint);
     final Collection<Airport> nearbyAirports =
         flightMap.airportDirectory.getAirportsInRectangle(screenArea,
             getMinimumAirportRank(zoomCopy));
@@ -414,6 +427,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       final Paint airportPaint = getAirportPaint(airport);
       Point airportPoint = MercatorProjection.toPoint(zoomCopy, airport.location);
       c.drawCircle(airportPoint.x, airportPoint.y, 15, airportPaint);
+
       // Undo, then redo the track-up rotation so the labels are always at the
       // top for track up.
       if (isTrackUp) {
@@ -424,7 +438,6 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         c.rotate(360 - location.getBearing(), airportPoint.x, airportPoint.y);
       }
     }
-
 
     // Draw airplane.
     c.translate(locationPoint.x, locationPoint.y);
@@ -467,22 +480,22 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       }
 
       // Draw speed.
-      PANEL_DIGITS_PAINT.setTextAlign(Align.LEFT);
+      PANEL_DIGITS_PAINT.setTextAlign(Paint.Align.LEFT);
       c.drawText(speed, PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_DIGITS_PAINT);
       int textWidth = getTextWidth(speed, PANEL_DIGITS_PAINT);
-      PANEL_UNITS_PAINT.setTextAlign(Align.LEFT);
+      PANEL_UNITS_PAINT.setTextAlign(Paint.Align.LEFT);
       c.drawText(speedUnits, textWidth + PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_UNITS_PAINT);
 
       // Draw track.
       final float center = width / 2.0f;
-      PANEL_DIGITS_PAINT.setTextAlign(Align.CENTER);
+      PANEL_DIGITS_PAINT.setTextAlign(Paint.Align.CENTER);
       c.drawText(track, center, PANEL_TEXT_BASELINE, PANEL_DIGITS_PAINT);
 
       // Draw altitude. Draw the units first, since it's right-aligned.
-      PANEL_UNITS_PAINT.setTextAlign(Align.RIGHT);
+      PANEL_UNITS_PAINT.setTextAlign(Paint.Align.RIGHT);
       c.drawText(" ft", width - PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_UNITS_PAINT);
       textWidth = getTextWidth(" ft", PANEL_UNITS_PAINT);
-      PANEL_DIGITS_PAINT.setTextAlign(Align.RIGHT);
+      PANEL_DIGITS_PAINT.setTextAlign(Paint.Align.RIGHT);
       c.drawText(altitude, width - textWidth - PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE,
           PANEL_DIGITS_PAINT);
     }
@@ -564,41 +577,65 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     this.zoom = zoom;
   }
 
+  public synchronized float getZoom() {
+    return zoom;
+  }
+
   /**
    * Returns a rectangle enclosing the current view.
    * 
    * @param zoom zoomlevel
-   * @param bearing current bearing in degrees
+   * @param orientation bearing in degrees from {@code locationPoint} to the top center of
+   *        the screen. Will be 0 when north-up, and the current
+   *        track when track-up.
    * @param locationPoint pixel coordinates of current location (as returned by
    *        {@link MercatorProjection#toPoint}
    * @param width screen width in pixels.
    * @param height screen height in pixels.
    */
-  private synchronized LatLngRect getScreenRectangle(final float zoom, final int bearing,
-      final Point locationPoint, final int width, final int height) {
-    // Pixel coordinates of the top-left screen corner.
-    topLeftCorner.set(locationPoint.x - aircraftX, locationPoint.y - aircraftY);
-    bottomRightCorner.set(topLeftCorner.x + width, topLeftCorner.y + height);
-
-    // Adjust for screen rotation when track-up. No adjustment needed when
-    // north-up since the screen is not rotated.
-    if (!flightMap.userPrefs.isNorthUp() && bearing != 0) {
-      screenRect.set(topLeftCorner.x, topLeftCorner.y, bottomRightCorner.x, bottomRightCorner.y);
-      rotationMatrix.reset();
-      rotationMatrix.postRotate(bearing, topLeftCorner.x + aircraftX, topLeftCorner.y + aircraftY);
-      rotationMatrix.mapRect(screenRect);
-      topLeftCorner.set((int) (screenRect.left + 0.5), (int) (screenRect.top + 0.5));
-      bottomRightCorner.set((int) (screenRect.right + 0.5), (int) (screenRect.bottom + 0.5));
+  private synchronized LatLngRect getScreenRectangle(final float zoom, final float orientation,
+      final Point locationPoint) {
+    // Make rectangle that encloses the 4 screen corners.
+    LatLngRect result = new LatLngRect();
+    for (int i = 0; i < 4; i++) {
+      result.add(getLocationForPoint(zoom, orientation, locationPoint, screenCorners[i]));
     }
-
-    final LatLng topLeftLocation = MercatorProjection.fromPoint(zoom, topLeftCorner);
-    final LatLng bottomRightLocation = MercatorProjection.fromPoint(zoom, bottomRightCorner);
-
-    return new LatLngRect(topLeftLocation, bottomRightLocation);
+    return result;
   }
 
-  public synchronized float getZoom() {
-    return zoom;
+  /**
+   * Returns ground position corresponding to {@code screenPoint}.
+   * 
+   * @param zoom zoom level.
+   * @param orientation bearing in degrees from {@code locationPoint} to the top center of
+   *        the screen. Will be 0 when north-up, and the current
+   *        track when track-up.
+   * @param locationPoint pixel coordinates of current location (in Mercator
+   *        pixel space as returned by {@link MercatorProjection#toPoint}
+   * @param screenPoint coordinates in screen pixel space (such as from a touch
+   *        event).
+   */
+  private synchronized LatLng getLocationForPoint(final float zoom, final float orientation,
+      final Point locationPoint, final Point screenPoint) {
+    // The operations on screenMatrix are the opposite of the ones applied to
+    // the canvas in drawMapOnCanvas().
+    //
+    // drawMapOnCanvas() does the following:
+    // c.translate(aircraftX, aircraftY);
+    // if (isTrackUp) c.rotate(360 - bearing);
+    // c.translate(-locationPoint.x, -locationPoint.y);
+    screenMatrix.reset();
+    screenMatrix.postTranslate(-aircraftX, -aircraftY);
+    if (!flightMap.userPrefs.isNorthUp()) {
+      screenMatrix.postRotate(orientation);
+    }
+    screenMatrix.postTranslate(locationPoint.x, locationPoint.y);
+    screenPoints[0] = screenPoint.x;
+    screenPoints[1] = screenPoint.y;
+    screenMatrix.mapPoints(screenPoints);
+    Point mercatorPoint = new Point(Math.round(screenPoints[0]), Math.round(screenPoints[1]));
+    LatLng result = MercatorProjection.fromPoint(zoom, mercatorPoint);
+    return result;
   }
 
   /**
