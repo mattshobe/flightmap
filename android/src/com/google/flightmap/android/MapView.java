@@ -267,19 +267,21 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    */
   @Override
   public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-    if (flightMap.userPrefs.isNorthUp()) {
-      // Center the aircraft horizontally, and 3/4 of the way down vertically.
-      aircraftX = width / 2;
-      aircraftY = height - (height / 4);
-    } else {
-      // Center the aircraft on the screen.
-      aircraftX = width / 2;
-      aircraftY = height / 2;
+    synchronized (this) {
+      if (flightMap.userPrefs.isNorthUp()) {
+        // Center the aircraft on the screen.
+        aircraftX = width / 2;
+        aircraftY = height / 2;
+      } else {
+        // Center the aircraft horizontally, and 3/4 of the way down vertically.
+        aircraftX = width / 2;
+        aircraftY = height - (height / 4);
+      }
     }
     createTopPanelPath(width);
   }
 
-  private void createTopPanelPath(int width) {
+  private synchronized void createTopPanelPath(int width) {
     final float center = width / 2.0f;
     topPanel = new Path();
     topPanel.moveTo(0, 0);
@@ -372,11 +374,11 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       return;
     }
 
-    Log.i(TAG, "before heading override: " + location.getBearing());
+    // Override bearing if the user pref to control heading with the direction
+    // pad is set.
     if (flightMap.userPrefs.controlHeadingWithKeys()) {
       location.setBearing(headingForTesting);
     }
-    Log.i(TAG, "after  heading override: " + location.getBearing());
 
     LatLng locationLatLng = LatLng.fromDouble(location.getLatitude(), location.getLongitude());
 
@@ -404,7 +406,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     final int height = c.getHeight();
     final int orientation = isTrackUp ? (int) (location.getBearing()) : 0;
     final LatLngRect screenArea =
-        getScreenArea(zoomCopy, locationLatLng, orientation, locationPoint, width, height);
+        getScreenRectangle(zoomCopy, orientation, locationPoint, width, height);
     final Collection<Airport> nearbyAirports =
         flightMap.airportDirectory.getAirportsInRectangle(screenArea,
             getMinimumAirportRank(zoomCopy));
@@ -563,19 +565,25 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   }
 
   /**
-   * Returns the distance in meters from the aircraft screen location to the
-   * farthest screen edge.
+   * Returns a rectangle enclosing the current view.
+   * 
+   * @param zoom zoomlevel
+   * @param bearing current bearing in degrees
+   * @param locationPoint pixel coordinates of current location (as returned by
+   *        {@link MercatorProjection#toPoint}
+   * @param width screen width in pixels.
+   * @param height screen height in pixels.
    */
-  private synchronized LatLngRect getScreenArea(final float zoom, final LatLng location,
-      final int orientation, final Point locationPoint, final int width, final int height) {
+  private synchronized LatLngRect getScreenRectangle(final float zoom, final int bearing,
+      final Point locationPoint, final int width, final int height) {
     // Pixel coordinates of the top-left screen corner.
     topLeftCorner.set(locationPoint.x - aircraftX, locationPoint.y - aircraftY);
     bottomRightCorner.set(topLeftCorner.x + width, topLeftCorner.y + height);
 
-    if (orientation != 0) {
+    if (bearing != 0) {
       screenRect.set(topLeftCorner.x, topLeftCorner.y, bottomRightCorner.x, bottomRightCorner.y);
       rotationMatrix.reset();
-      rotationMatrix.postRotate(orientation, (topLeftCorner.x + bottomRightCorner.x) / 2.0f,
+      rotationMatrix.postRotate(bearing, (topLeftCorner.x + bottomRightCorner.x) / 2.0f,
           (topLeftCorner.y + bottomRightCorner.y) / 2.0f);
       rotationMatrix.mapRect(screenRect);
       topLeftCorner.set((int) (screenRect.left + 0.5), (int) (screenRect.top + 0.5));
