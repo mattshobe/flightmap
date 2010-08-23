@@ -580,11 +580,12 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     topLeftCorner.set(locationPoint.x - aircraftX, locationPoint.y - aircraftY);
     bottomRightCorner.set(topLeftCorner.x + width, topLeftCorner.y + height);
 
-    if (bearing != 0) {
+    // Adjust for screen rotation when track-up. No adjustment needed when
+    // north-up since the screen is not rotated.
+    if (!flightMap.userPrefs.isNorthUp() && bearing != 0) {
       screenRect.set(topLeftCorner.x, topLeftCorner.y, bottomRightCorner.x, bottomRightCorner.y);
       rotationMatrix.reset();
-      rotationMatrix.postRotate(bearing, (topLeftCorner.x + bottomRightCorner.x) / 2.0f,
-          (topLeftCorner.y + bottomRightCorner.y) / 2.0f);
+      rotationMatrix.postRotate(bearing, topLeftCorner.x + aircraftX, topLeftCorner.y + aircraftY);
       rotationMatrix.mapRect(screenRect);
       topLeftCorner.set((int) (screenRect.left + 0.5), (int) (screenRect.top + 0.5));
       bottomRightCorner.set((int) (screenRect.right + 0.5), (int) (screenRect.bottom + 0.5));
