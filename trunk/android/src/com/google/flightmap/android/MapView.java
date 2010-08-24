@@ -37,6 +37,11 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TableLayout;
+import android.widget.TableRow;
+import android.widget.TextView;
 import android.widget.ZoomButtonsController;
 
 import com.google.flightmap.common.CachedMagneticVariation;
@@ -140,6 +145,10 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   // Airports currently on the screen.
   private Collection<Airport> airportsOnScreen;
 
+  // Tapcard shows details about an item. Appears as a floating window above the
+  // map, with the top panel still visible.
+  private final TableLayout tapcardLayout;
+
   // Static initialization.
   static {
     // Do not put any calls to setTextSize here. Put them in #setTextSizes().
@@ -182,9 +191,60 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     createZoomController();
     setTextSizes();
 
-    // Set up airplane image.
     Resources res = flightMap.getResources();
+
+    // Set up airplane image.
     airplaneImage = res.getDrawable(R.drawable.aircraft);
+    createAirplaneImage();
+
+    // Create the tapcard layout, but it's GONE until shown.
+    tapcardLayout = new TableLayout(flightMap);
+    tapcardLayout.setVisibility(View.GONE);
+  }
+
+  /**
+   * Shows tapcard corresponding to {@code airport}.
+   */
+  private synchronized void showTapcard(Airport airport) {
+    // This is a proof-of-concept implementation only!
+    // It doesn't match the UI mock at all.
+    
+    tapcardLayout.removeAllViews();
+
+    // Row 1
+    TableRow row1 = new TableRow(flightMap);
+    TextView icaoText = new TextView(flightMap);
+    icaoText.setText(airport.icao);
+    icaoText.setTextColor(Color.WHITE);
+    row1.addView(icaoText);
+    TextView airportName = new TextView(flightMap);
+    airportName.setText(airport.name);
+    airportName.setTextColor(Color.WHITE);
+    row1.setBackgroundColor(airport.isTowered ? TOWERED_PAINT.getColor() : NON_TOWERED_PAINT.getColor());
+    row1.addView(airportName);
+    // Extra margin for row1 to get below the top panel.
+    TableLayout.LayoutParams row1Margin = new TableLayout.LayoutParams();
+    row1Margin.topMargin = (int) PANEL_HEIGHT;
+    tapcardLayout.addView(row1, row1Margin);
+
+    // Row 2
+    TableRow row2 = new TableRow(flightMap);
+    Button close = new Button(flightMap);
+    close.setText("Close");
+    close.setOnClickListener(new OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        synchronized(MapView.this) {
+          tapcardLayout.setVisibility(View.GONE);
+        }
+      }
+    });
+    row2.addView(close);
+    tapcardLayout.addView(row2);
+    tapcardLayout.setVisibility(VISIBLE);
+  }
+
+  private void createAirplaneImage() {
     int airplaneImageWidth = airplaneImage.getIntrinsicWidth();
     int airplaneImageHeight = airplaneImage.getIntrinsicHeight();
     // Set bounds so the airplane is centered when drawn.
@@ -250,6 +310,10 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       for (Airport airport : airportsNearTap) {
         Log.i(TAG, "Airport near tap: " + airport);
       }
+
+      // TODO: UI to let user choose between several nearby airports.
+      // For now, one of them is chosen.
+      showTapcard(airportsNearTap.iterator().next());
       return true;
     }
 
@@ -712,6 +776,14 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     LatLng result = MercatorProjection.fromPoint(zoom, mercatorPoint);
     return result;
   }
+
+  /**
+   * Returns the tapcard view instance for the map.
+   */
+  public synchronized View getTapcardView() {
+    return tapcardLayout;
+  }
+
 
   /**
    * Saves map-specific state info to {@code outState}.

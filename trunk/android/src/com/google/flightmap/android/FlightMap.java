@@ -15,6 +15,10 @@
  */
 package com.google.flightmap.android;
 
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -32,6 +36,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.FrameLayout;
 
 import com.google.flightmap.common.AirportDirectory;
 import com.google.flightmap.common.AviationDbAdapter;
@@ -39,10 +44,6 @@ import com.google.flightmap.common.CachedAirportDirectory;
 import com.google.flightmap.common.CachedAviationDbAdapter;
 import com.google.flightmap.common.CustomGridAirportDirectory;
 import com.google.flightmap.common.ProgressListener;
-
-import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 public class FlightMap extends Activity {
   private static final String TAG = FlightMap.class.getSimpleName();
@@ -59,7 +60,7 @@ public class FlightMap extends Activity {
   private static final String DISCLAIMER_ACCEPTED = "disclaimer-accepted";
   private static final String DATABASE_DOWNLOADED = "database-downloaded";
 
-  private static final String AVIATION_DATABASE_URL = 
+  private static final String AVIATION_DATABASE_URL =
       "http://sites.google.com/site/flightmapdata/aviation-db/aviation.db";
 
   private boolean disclaimerAccepted;
@@ -79,8 +80,8 @@ public class FlightMap extends Activity {
     locationHandler =
         new LocationHandler((LocationManager) getSystemService(Context.LOCATION_SERVICE));
 
-    setDatabaseDownloaded(
-        (null != savedInstanceState && savedInstanceState.getBoolean(DATABASE_DOWNLOADED)));
+    setDatabaseDownloaded((null != savedInstanceState && savedInstanceState
+        .getBoolean(DATABASE_DOWNLOADED)));
 
     // Show the disclaimer screen if there's no previous state, or the user
     // didn't accept the disclaimer.
@@ -192,12 +193,15 @@ public class FlightMap extends Activity {
     new FileUpdaterTask(dbUpdateListener).execute(params);
   }
 
+  /**
+   * Called after the database is downloaded successfully.
+   */
   private void downloadDatabaseDone() {
     setDatabaseDownloaded(true);
     initializeApplication();
   }
 
-  private void initializeApplication() {
+  private synchronized void initializeApplication() {
     userPrefs = new UserPrefs(this);
     aviationDbAdapter = new CachedAviationDbAdapter(new AndroidAviationDbAdapter(userPrefs));
     airportDirectory = new CustomGridAirportDirectory(aviationDbAdapter);
@@ -214,7 +218,22 @@ public class FlightMap extends Activity {
     setRunning(true);
 
     // Now show the map.
-    setContentView(getMapView());
+    showMap();
+  }
+
+  /**
+   * Shows the map. This is called by initializeApplication once the application
+   * is ready to display the map.
+   */
+  private synchronized void showMap() {
+    // Create a FrameLayout with two children: MapView and TapcardView. The
+    // latter is initially hidden and will be shown by MapView when it's time to
+    // display the tapcard. This lets the top panel of the MapView remain
+    // visible when the tapcard comes up.
+    FrameLayout frame = new FrameLayout(this);
+    frame.addView(mapView);
+    frame.addView(mapView.getTapcardView());
+    setContentView(frame);
   }
 
   @Override
