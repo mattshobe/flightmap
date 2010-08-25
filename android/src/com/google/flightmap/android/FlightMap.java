@@ -36,7 +36,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.FrameLayout;
 
 import com.google.flightmap.common.AirportDirectory;
 import com.google.flightmap.common.AviationDbAdapter;
@@ -226,14 +225,7 @@ public class FlightMap extends Activity {
    * is ready to display the map.
    */
   private synchronized void showMap() {
-    // Create a FrameLayout with two children: MapView and TapcardView. The
-    // latter is initially hidden and will be shown by MapView when it's time to
-    // display the tapcard. This lets the top panel of the MapView remain
-    // visible when the tapcard comes up.
-    FrameLayout frame = new FrameLayout(this);
-    frame.addView(mapView);
-    frame.addView(mapView.getTapcardView());
-    setContentView(frame);
+    setContentView(getMapView());
   }
 
   @Override
