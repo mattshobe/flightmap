@@ -1,12 +1,12 @@
 /*
  * Copyright (C) 2010 Google Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -50,8 +50,8 @@ import com.google.flightmap.common.data.LatLngRect;
 /**
  * View for the moving map.
  */
-public class MapView extends SurfaceView implements SurfaceHolder.Callback,
-    OnSharedPreferenceChangeListener {
+public class MapView extends SurfaceView
+    implements SurfaceHolder.Callback, OnSharedPreferenceChangeListener {
   private static final String TAG = MapView.class.getSimpleName();
 
   // Saved instance state constants.
@@ -273,7 +273,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    * Returns single airport from {@code airports}. If the collection has exactly
    * one item, that Airport will be returned. Otherwise a dialog box will be
    * shown so the user can choose an airport.
-   * 
+   *
    * @param airports airports to choose from. May not be null or empty.
    */
   private Airport chooseSingleAirport(Collection<Airport> airports) {
@@ -286,15 +286,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    * Shows tapcard for an airport.
    */
   private void showTapcard(Airport airport) {
-    Bundle airportBundle = new Bundle();
-    airportBundle.putString(TapcardActivity.AIRPORT_ICAO, airport.icao);
-    airportBundle.putString(TapcardActivity.AIRPORT_NAME, airport.name);
-    airportBundle.putInt(TapcardActivity.AIRPORT_LAT, airport.location.lat);
-    airportBundle.putInt(TapcardActivity.AIRPORT_LNG, airport.location.lng);
-    
     Intent tapcardIntent = new Intent(flightMap, TapcardActivity.class);
-    tapcardIntent.putExtras(airportBundle);
-     flightMap.startActivity(tapcardIntent);
+    tapcardIntent.putExtra(TapcardActivity.AIRPORT_ID, airport.id);
+    flightMap.startActivity(tapcardIntent);
   }
 
   private synchronized void showZoomController() {
@@ -351,7 +345,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   }
 
   @Override
-  public synchronized void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+  public synchronized void onSharedPreferenceChanged(
+      SharedPreferences sharedPreferences, String key) {
     setPrefsChanged(true);
   }
 
@@ -478,8 +473,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
 
     // Display message about no current location and return.
     if (null == location || System.currentTimeMillis() - location.getTime() > MAX_LOCATION_AGE) {
-      c.drawText(flightMap.getText(R.string.old_location).toString(), c.getWidth() / 2, c
-          .getHeight() / 2, ERROR_TEXT_PAINT);
+      c.drawText(flightMap.getText(R.string.old_location).toString(), c.getWidth() / 2,
+          c.getHeight() / 2, ERROR_TEXT_PAINT);
       return;
     }
 
@@ -514,9 +509,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     final int width = c.getWidth();
     final float orientation = isTrackUp ? location.getBearing() : 0;
     final LatLngRect screenArea = getScreenRectangle(zoomCopy, orientation, locationPoint);
-    airportsOnScreen =
-        flightMap.airportDirectory.getAirportsInRectangle(screenArea,
-            getMinimumAirportRank(zoomCopy));
+    airportsOnScreen = flightMap.airportDirectory.getAirportsInRectangle(
+        screenArea, getMinimumAirportRank(zoomCopy));
     for (Airport airport : airportsOnScreen) {
       final Paint airportPaint = getAirportPaint(airport);
       Point airportPoint = MercatorProjection.toPoint(zoomCopy, airport.location);
@@ -590,15 +584,15 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       c.drawText(" ft", width - PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_UNITS_PAINT);
       textWidth = getTextWidth(" ft", PANEL_UNITS_PAINT);
       PANEL_DIGITS_PAINT.setTextAlign(Paint.Align.RIGHT);
-      c.drawText(altitude, width - textWidth - PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE,
-          PANEL_DIGITS_PAINT);
+      c.drawText(
+          altitude, width - textWidth - PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_DIGITS_PAINT);
     }
   }
 
   /**
    * Returns {@code location} with the bearing converted from true to magnetic.
    * Does not modify {@code location} if location.hasBearing() is false.
-   * 
+   *
    * @param locationLatLng
    */
   private Location convertToMagneticBearing(Location location, LatLng locationLatLng) {
@@ -677,7 +671,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
 
   /**
    * Returns a rectangle enclosing the current view.
-   * 
+   *
    * @param zoom zoomlevel
    * @param orientation bearing in degrees from {@code locationPoint} to the top
    *        center of the screen. Will be 0 when north-up, and the current track
@@ -687,8 +681,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    * @param width screen width in pixels.
    * @param height screen height in pixels.
    */
-  private synchronized LatLngRect getScreenRectangle(final float zoom, final float orientation,
-      final Point locationPoint) {
+  private synchronized LatLngRect getScreenRectangle(
+      final float zoom, final float orientation, final Point locationPoint) {
     // Make rectangle that encloses the 4 screen corners.
     LatLngRect result = new LatLngRect();
     for (int i = 0; i < 4; i++) {
@@ -701,7 +695,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    * Returns ground position corresponding to {@code screenPoint}. Uses {@code
    * previousLocation} to set location and orientation and calls
    * {@link #getLocationForPoint(float, float, Point, Point)}.
-   * 
+   *
    * @param screenPoint coordinates in screen pixel space (such as from a touch
    *        event).
    * @return ground position, or null if {@code previousLocation} is null.
@@ -719,7 +713,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
 
   /**
    * Returns ground position corresponding to {@code screenPoint}.
-   * 
+   *
    * @param zoom zoom level.
    * @param orientation bearing in degrees from {@code locationPoint} to the top
    *        center of the screen. Will be 0 when north-up, and the current track
