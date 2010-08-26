@@ -203,8 +203,7 @@ public class FlightMap extends Activity {
   private synchronized void initializeApplication() {
     userPrefs = new UserPrefs(this);
     aviationDbAdapter = new CachedAviationDbAdapter(new AndroidAviationDbAdapter(userPrefs));
-    airportDirectory = new CustomGridAirportDirectory(aviationDbAdapter);
-    new CachedAirportDirectory(new CustomGridAirportDirectory(aviationDbAdapter));
+    airportDirectory = new CachedAirportDirectory(new CustomGridAirportDirectory(aviationDbAdapter));
 
     // TODO: handle the case of this throwing when there's no database.
     airportDirectory.open();
