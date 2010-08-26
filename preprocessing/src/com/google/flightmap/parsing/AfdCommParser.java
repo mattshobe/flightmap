@@ -95,7 +95,9 @@ public class AfdCommParser {
     stat.executeUpdate("CREATE TABLE airport_comm (" +
                        "_id INTEGER PRIMARY KEY ASC, " +
                        "airport_id INTEGER NOT NULL, " +
-                       "comm TEXT NOT NULL);");
+                       "identifier TEXT NOT NULL, " +
+                       "frequency TEXT NOT NULL, " +
+                       "remarks TEXT);");
     stat.executeUpdate("CREATE INDEX airport_comm_airport_id_index ON " +
                        "airport_comm (airport_id)");
     stat.close();
@@ -137,22 +139,36 @@ public class AfdCommParser {
           start = stop;
           break;
         }
-        System.out.println("  - " + freqMatcher.group(0));
-        addAirportCommToDb(iata, freqMatcher.group(0));
+        System.out.println("  -> " + freqMatcher.group(0));
+        final String identifier = freqMatcher.group(1).trim();
+        final String frequency = freqMatcher.group(2).trim();
+        String remarks = freqMatcher.group(3);
+        if (remarks != null) {
+          remarks = remarks.trim();
+        }
+        
+        addAirportCommToDb(iata, identifier, frequency, remarks);
         start = freqMatcher.end();
       }
     }
   }
 
 
-  private void addAirportCommToDb(final String iata, final String comm) throws SQLException {
-    System.out.println("Adding: " + iata + " " + comm);
+  private void addAirportCommToDb(final String iata, final String identifier,
+      final String frequency, final String remarks) throws SQLException {
     final PreparedStatement addAirportCommStmt = dbConn.prepareStatement(
-        "INSERT INTO airport_comm (airport_id, comm) VALUES (?, ?)");
+        "INSERT INTO airport_comm (airport_id, identifier, frequency, remarks) " + 
+        "VALUES (?, ?, ?, ?)");
     final int airportId = getAirportId(iata);
     if (airportId != -1) {
       addAirportCommStmt.setInt(1, getAirportId(iata));
-      addAirportCommStmt.setString(2, comm);
+      addAirportCommStmt.setString(2, identifier);
+      addAirportCommStmt.setString(3, frequency);
+      if (remarks != null) {
+        addAirportCommStmt.setString(4, remarks);
+      } else {
+        addAirportCommStmt.setNull(4, Types.VARCHAR);
+      }
       addAirportCommStmt.executeUpdate();
     }
   }
