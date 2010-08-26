@@ -31,8 +31,10 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.text.format.Time;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -52,7 +54,6 @@ public class FlightMap extends Activity {
    */
   private static long UPDATE_RATE = 100;
 
-  private static final int MENU_SETTINGS = 0;
   private static final int DOWNLOAD_FAILED = 1;
 
   // Saved instance state constants
@@ -79,6 +80,7 @@ public class FlightMap extends Activity {
     locationHandler =
         new LocationHandler((LocationManager) getSystemService(Context.LOCATION_SERVICE));
 
+    userPrefs = new UserPrefs(getApplication());
     setDatabaseDownloaded((null != savedInstanceState && savedInstanceState
         .getBoolean(DATABASE_DOWNLOADED)));
 
@@ -89,7 +91,10 @@ public class FlightMap extends Activity {
       showDisclaimerView();
     } else { // disclaimer accepted.
       setDisclaimerAccepted(true);
-      downloadDatabase();
+      if(userPrefs.getAlwaysUpdate() || userPrefs.getNeedToUpdate())
+    	  downloadDatabase();
+      else
+    	  downloadDatabaseDone();
     }
   }
 
@@ -141,7 +146,11 @@ public class FlightMap extends Activity {
       @Override
       public void onClick(View v) {
         setDisclaimerAccepted(true);
-        downloadDatabase();
+        if(userPrefs.getAlwaysUpdate() || userPrefs.getNeedToUpdate())
+      	  downloadDatabase();
+        else
+          downloadDatabaseDone();
+        	
       }
     });
   }
@@ -190,6 +199,9 @@ public class FlightMap extends Activity {
 
     final FileUpdaterTask.Params params = new FileUpdaterTask.Params(localFile, url, workingDir);
     new FileUpdaterTask(dbUpdateListener).execute(params);
+    Time curr = new Time();
+    curr.setToNow();
+    userPrefs.setUpdateTime(curr.toMillis(true));
   }
 
   /**
@@ -201,7 +213,6 @@ public class FlightMap extends Activity {
   }
 
   private synchronized void initializeApplication() {
-    userPrefs = new UserPrefs(getApplication());
     aviationDbAdapter = new CachedAviationDbAdapter(new AndroidAviationDbAdapter(userPrefs));
     airportDirectory = new CachedAirportDirectory(new CustomGridAirportDirectory(aviationDbAdapter));
 
@@ -229,16 +240,16 @@ public class FlightMap extends Activity {
 
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
-    super.onCreateOptionsMenu(menu);
-    menu.add(0, MENU_SETTINGS, 0, "Settings");
-    return super.onCreateOptionsMenu(menu);
+	  MenuInflater inflater = getMenuInflater();
+	  inflater.inflate(R.menu.settings, menu);
+	  return super.onCreateOptionsMenu(menu);
   }
 
   @Override
   public boolean onOptionsItemSelected(MenuItem item) {
     super.onOptionsItemSelected(item);
     switch (item.getItemId()) {
-      case MENU_SETTINGS:
+      case R.id.display:
         Intent startIntent = new Intent(this, UserPrefsActivity.class);
         startActivity(startIntent);
         return true;
