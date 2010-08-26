@@ -201,7 +201,7 @@ public class FlightMap extends Activity {
   }
 
   private synchronized void initializeApplication() {
-    userPrefs = new UserPrefs(this);
+    userPrefs = new UserPrefs(getApplication());
     aviationDbAdapter = new CachedAviationDbAdapter(new AndroidAviationDbAdapter(userPrefs));
     airportDirectory = new CachedAirportDirectory(new CustomGridAirportDirectory(aviationDbAdapter));
 
