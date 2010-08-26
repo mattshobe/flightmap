@@ -17,6 +17,7 @@
 package com.google.flightmap.common;
 
 import com.google.flightmap.common.data.Airport;
+import com.google.flightmap.common.data.Comm;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -59,7 +60,7 @@ public class CachedAviationDbAdapter implements AviationDbAdapter {
   }
 
   @Override
-  public List<String> getAirportComms(final int airportId) {
+  public List<Comm> getAirportComms(final int airportId) {
     return cachedDbAdapter.getAirportComms(airportId);
   }
 

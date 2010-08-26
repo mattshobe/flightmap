@@ -17,6 +17,7 @@
 package com.google.flightmap.common;
 
 import com.google.flightmap.common.data.Airport;
+import com.google.flightmap.common.data.Comm;
 
 import java.util.Collection;
 import java.util.Map;
@@ -39,7 +40,7 @@ public interface AviationDbAdapter {
 
   public Map<String, String> getAirportProperties(int airportId);
 
-  public List<String> getAirportComms(int airportId);
+  public List<Comm> getAirportComms(int airportId);
 
   public Map<String, String> getRunwayEndProperties(int runwayEndId);
   

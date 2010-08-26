@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -288,18 +289,21 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
     }
   }
 
-  public LinkedList<String> getAirportComms(int airportId) {
+  public List<Comm> getAirportComms(int airportId) {
     try {
       if (getAirportCommsStmt == null) {
         getAirportCommsStmt = dbConn.prepareStatement(
-            "SELECT comm from airport_comm WHERE airport_id = ?");
+            "SELECT identifier, frequency, remarks from airport_comm WHERE airport_id = ?");
       }
 
       getAirportCommsStmt.setInt(1, airportId);
       ResultSet airportComms = getAirportCommsStmt.executeQuery();
-      final LinkedList<String> comms = new LinkedList<String>();
+      final List<Comm> comms = new LinkedList<Comm>();
       while (airportComms.next()) {
-        final String comm = airportComms.getString("comm");
+        final String identifier = airportComms.getString("identifier");
+        final String frequency = airportComms.getString("frequency");
+        final String remarks = airportComms.getString("remarks");
+        final Comm comm = new Comm(identifier, frequency, remarks);
         comms.add(comm);
       }
       return comms;

@@ -6,6 +6,7 @@ import android.util.Log;
 
 import com.google.flightmap.common.AviationDbAdapter;
 import com.google.flightmap.common.data.Airport;
+import com.google.flightmap.common.data.Comm;
 import com.google.flightmap.common.data.LatLng;
 import com.google.flightmap.common.data.Runway;
 import com.google.flightmap.common.data.RunwayEnd;
@@ -66,8 +67,11 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   private static final HashSet<String> INTEGER_AIRPORT_PROPERTIES;
   // airport_comm
   private static final String AIRPORT_COMM_TABLE = "airport_comm";
-  private static final String COMM_COLUMN = "comm";
-  private static final String[] COMM_COLUMNS = new String[] {COMM_COLUMN};
+  private static final String IDENTIFIER_COLUMN = "identifier";
+  private static final String FREQUENCY_COLUMN = "frequency";
+  private static final String REMARKS_COLUMN = "remarks";
+  private static final String[] COMM_COLUMNS =
+      new String[] {IDENTIFIER_COLUMN, FREQUENCY_COLUMN, REMARKS_COLUMN};
   // runways
   private static final String RUNWAYS_TABLE = "runways";
   private static final String RUNWAY_LETTERS_COLUMN = "letters";
@@ -301,7 +305,7 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
    * @return List of communication frequencies with description at given airport
    */
   @Override
-  public List<String> getAirportComms(int airportId) {
+  public List<Comm> getAirportComms(int airportId) {
     final String[] stringAirportId = {Integer.toString(airportId)};
     final Cursor airportCommsCursor = database.query(
         AIRPORT_COMM_TABLE, COMM_COLUMNS, AIRPORT_ID_WHERE, stringAirportId, null, null, null);
@@ -310,11 +314,16 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
         Log.e(TAG, "No airport comms for id =" + airportId);
         return null;
       }
-      final LinkedList<String> airportComms = new LinkedList<String>();
+      final List<Comm> airportComms = new LinkedList<Comm>();
 
       do {
-        final String comm =
-            airportCommsCursor.getString(airportCommsCursor.getColumnIndexOrThrow(COMM_COLUMN));
+        final String identifier = airportCommsCursor.getString(
+            airportCommsCursor.getColumnIndexOrThrow(IDENTIFIER_COLUMN));
+        final String frequency = airportCommsCursor.getString(
+            airportCommsCursor.getColumnIndexOrThrow(FREQUENCY_COLUMN));
+        final String remarks = airportCommsCursor.getString(
+            airportCommsCursor.getColumnIndexOrThrow(REMARKS_COLUMN));
+        final Comm comm = new Comm(identifier, frequency, remarks);
         airportComms.add(comm);
       } while (airportCommsCursor.moveToNext());
 
