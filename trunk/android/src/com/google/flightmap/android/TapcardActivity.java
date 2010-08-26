@@ -22,9 +22,16 @@ import android.util.Log;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import java.util.List;
+import java.util.Map;
+
 import com.google.flightmap.common.AviationDbAdapter;
 import com.google.flightmap.common.CachedAviationDbAdapter;
 import com.google.flightmap.common.data.Airport;
+import com.google.flightmap.common.data.Comm;
+import com.google.flightmap.common.data.Runway;
+import com.google.flightmap.common.data.RunwayEnd;
+
 
 /**
  * Shows details about an airport.
@@ -65,7 +72,73 @@ public class TapcardActivity extends Activity {
     TextView airportName = new TextView(this);
     airportName.setText(airport.name);
     tapcardLayout.addView(airportName);
+
+    final List<Comm> comms = aviationDbAdapter.getAirportComms(airportId);
+    if (comms != null) {
+      for (Comm comm: comms) {
+        final StringBuilder sb = new StringBuilder();
+        sb.append(comm.identifier);
+        sb.append(" ");
+        sb.append(comm.frequency);
+        if (comm.remarks != null) {
+          sb.append(" (");
+          sb.append(comm.remarks);
+          sb.append(")");
+        }
+        final TextView commText = new TextView(this);
+        commText.setText(sb.toString());
+        tapcardLayout.addView(commText);
+      }
+    }
+
+    final Map<String, String> airportProperties =
+        aviationDbAdapter.getAirportProperties(airport.id);
+    if (airportProperties != null) {
+      tapcardLayout.addView(getPropertiesTextView(airportProperties));
+    }
+
+    for (Runway runway: airport.runways) {
+      final StringBuilder sb = new StringBuilder();
+      sb.append("\n");
+      sb.append("Runway ");
+      sb.append(runway.letters);
+      sb.append(": ");
+      sb.append(runway.length);
+      sb.append("x");
+      sb.append(runway.width);
+      sb.append(" (");
+      sb.append(runway.surface);
+      sb.append(")");
+      final TextView runwayText = new TextView(this);
+      runwayText.setText(sb.toString());
+      tapcardLayout.addView(runwayText);
+
+      for (RunwayEnd runwayEnd: runway.runwayEnds) {
+        final TextView runwayEndText = new TextView(this);
+        runwayEndText.setText("Runway " + runwayEnd.letters + ":");
+        tapcardLayout.addView(runwayEndText);
+        final Map<String, String> runwayEndsProperties =
+            aviationDbAdapter.getRunwayEndProperties(runwayEnd.id);
+        if (runwayEndsProperties != null) {
+          tapcardLayout.addView(getPropertiesTextView(runwayEndsProperties));
+        }
+      }
+    }
+
     setContentView(tapcardLayout);
+  }
+
+  private TextView getPropertiesTextView(final Map<String, String> properties) {
+    final StringBuilder sb = new StringBuilder();
+    for (Map.Entry<String, String> property: properties.entrySet()) {
+      sb.append(property.getKey());
+      sb.append(":");
+      sb.append(property.getValue());
+      sb.append("\n");
+    }
+    final TextView propertiesView = new TextView(this);
+    propertiesView.setText(sb.toString());
+    return propertiesView;
   }
 
   @Override
