@@ -64,6 +64,10 @@ Here's an example of how to create an emulated device with SD card storage.
 $ android create avd --name droid --target android-7 --skin WVGA800 --sdcard 64M
 }}}
 
+*IMPORTANT* Set the correct time zone in your emulator so that FlightMap doesn't think you've got a very old GPS update. GPS locations more than 5 minutes old are ignored. Home > Settings > Date & time settings.
+  * Uncheck "Automatic"
+  * Set the correct time zone (which will probably fix the time).
+
 == Actual Device Set Up ==
 Details on how to connect your development device to your computer are [http://developer.android.com/guide/developing/device.html here]. Once you've connected your device via USB, you can test that it's working like this:
 {{{
