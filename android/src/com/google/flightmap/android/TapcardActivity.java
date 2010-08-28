@@ -17,13 +17,18 @@ package com.google.flightmap.android;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.Window;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.TableLayout;
+import android.widget.TableRow;
 import android.widget.TextView;
-
-import java.util.List;
-import java.util.Map;
 
 import com.google.flightmap.common.AviationDbAdapter;
 import com.google.flightmap.common.CachedAviationDbAdapter;
@@ -32,12 +37,23 @@ import com.google.flightmap.common.data.Comm;
 import com.google.flightmap.common.data.Runway;
 import com.google.flightmap.common.data.RunwayEnd;
 
+import java.util.List;
+import java.util.Map;
+import java.util.SortedSet;
 
 /**
  * Shows details about an airport.
  */
 public class TapcardActivity extends Activity {
   private static final String TAG = TapcardActivity.class.getSimpleName();
+
+  private static final int AIRPORT_NAME_COLOR = Color.WHITE;
+  private static final Paint ETE_TEXT_PAINT = new Paint();
+  private static final Paint NORMAL_TEXT_PAINT = new Paint();
+  private static final Paint BOLD_TEXT_PAINT = new Paint();
+  private static final Paint COMM_SMALL_TEXT_PAINT = new Paint();
+  private static final Paint RUNWAYS_TEXT_PAINT = new Paint();
+  private static boolean textSizesSet;
 
   // Keys used in the bundle passed to this activity.
   private static final String PACKAGE_NAME = TapcardActivity.class.getPackage().getName();
@@ -49,14 +65,22 @@ public class TapcardActivity extends Activity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    tapcardLayout = new LinearLayout(this);
-    tapcardLayout.setOrientation(LinearLayout.VERTICAL);
-
+    // Open database connection.
     UserPrefs userPrefs = new UserPrefs(getApplication());
-    aviationDbAdapter = new CachedAviationDbAdapter(new AndroidAviationDbAdapter(userPrefs));
-    // TODO: handle the case of this throwing when there's no database.
-    aviationDbAdapter.open();
+    try {
+      aviationDbAdapter = new CachedAviationDbAdapter(new AndroidAviationDbAdapter(userPrefs));
+      aviationDbAdapter.open();
+    } catch (Throwable t) {
+      Log.w(TAG, "Unable to open database", t);
+      finish();
+    }
 
+    // No title bar.
+    requestWindowFeature(Window.FEATURE_NO_TITLE);
+    // Set text sizes based on display density.
+    setTextSizes(getApplication().getResources().getDisplayMetrics().density);
+
+    // Find which airport to show.
     final Intent startingIntent = getIntent();
     int airportId = startingIntent.getIntExtra(AIRPORT_ID, -1);
     Airport airport = aviationDbAdapter.getAirport(airportId);
@@ -64,18 +88,79 @@ public class TapcardActivity extends Activity {
       Log.w(TAG, "Unable to get airport for id " + airportId);
       finish();
     }
+    displayTapcardUi(airport);
+  }
 
+  private void displayTapcardUi(Airport airport) {
+    tapcardLayout = new LinearLayout(this);
+    tapcardLayout.setOrientation(LinearLayout.VERTICAL);
+
+    // ICAO id and airport name.
+    addIcaoAndName(airport);
+
+    // TODO: Add airport pointer, dist, brg, ete here.
+
+    // Communication info
+    addCommInfo(aviationDbAdapter.getAirportComms(airport.id));
+
+    // Runway details
+    addRunways(airport.runways);
+
+    // General properties
+    // TODO: Don't show all of these. Just extract elevation.
+    final Map<String, String> airportProperties =
+        aviationDbAdapter.getAirportProperties(airport.id);
+    if (airportProperties != null) {
+      tapcardLayout.addView(getPropertiesTextView(airportProperties));
+    }
+
+    ScrollView scroller = new ScrollView(this);
+    scroller.addView(tapcardLayout);
+    setContentView(scroller);
+  }
+
+  /**
+   * Adds the ICAO and airport name to the tapcard. These are in a one-row
+   * table.
+   */
+  private void addIcaoAndName(Airport airport) {
+    TableLayout nameTable = new TableLayout(this);
+    nameTable.setColumnStretchable(1, true);
+    TableRow nameRow = new TableRow(this);
+    int nameBackground = airport.isTowered
+        ? UiConstants.TOWERED_PAINT.getColor() : UiConstants.NON_TOWERED_PAINT.getColor();
+    nameRow.setBackgroundColor(nameBackground);
+    nameRow.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
+
+    // ICAO
     TextView icaoText = new TextView(this);
     icaoText.setText(airport.icao);
-    tapcardLayout.addView(icaoText);
+    icaoText.setTypeface(Typeface.DEFAULT_BOLD);
+    // TODO: drop shadow for ICAO
+    icaoText.setTextSize(32);
+    icaoText.setTextColor(AIRPORT_NAME_COLOR);
+    icaoText.setPadding(5, 2, 5, 2);
+    nameRow.addView(icaoText);
 
+    // Name
     TextView airportName = new TextView(this);
     airportName.setText(airport.name);
-    tapcardLayout.addView(airportName);
+    airportName.setTypeface(Typeface.DEFAULT_BOLD);
+    airportName.setTextSize(18);
+    airportName.setTextColor(AIRPORT_NAME_COLOR);
+    airportName.setPadding(5, 2, 5, 2);
+    nameRow.addView(airportName);
 
-    final List<Comm> comms = aviationDbAdapter.getAirportComms(airportId);
+    nameTable.addView(nameRow);
+    tapcardLayout.addView(nameTable);
+  }
+
+  /**
+   * Adds communication frequencies to the tapcard.
+   */
+  private void addCommInfo(final List<Comm> comms) {
     if (comms != null) {
-      for (Comm comm: comms) {
+      for (Comm comm : comms) {
         final StringBuilder sb = new StringBuilder();
         sb.append(comm.identifier);
         sb.append(" ");
@@ -90,14 +175,13 @@ public class TapcardActivity extends Activity {
         tapcardLayout.addView(commText);
       }
     }
+  }
 
-    final Map<String, String> airportProperties =
-        aviationDbAdapter.getAirportProperties(airport.id);
-    if (airportProperties != null) {
-      tapcardLayout.addView(getPropertiesTextView(airportProperties));
-    }
-
-    for (Runway runway: airport.runways) {
+  /**
+   * Adds runway details to the tapcard.
+   */
+  private void addRunways(SortedSet<Runway> runways) {
+    for (Runway runway : runways) {
       final StringBuilder sb = new StringBuilder();
       sb.append("\n");
       sb.append("Runway ");
@@ -113,7 +197,7 @@ public class TapcardActivity extends Activity {
       runwayText.setText(sb.toString());
       tapcardLayout.addView(runwayText);
 
-      for (RunwayEnd runwayEnd: runway.runwayEnds) {
+      for (RunwayEnd runwayEnd : runway.runwayEnds) {
         final TextView runwayEndText = new TextView(this);
         runwayEndText.setText("Runway " + runwayEnd.letters + ":");
         tapcardLayout.addView(runwayEndText);
@@ -124,13 +208,14 @@ public class TapcardActivity extends Activity {
         }
       }
     }
-
-    setContentView(tapcardLayout);
   }
 
+  /**
+   * Returns text corresponding to {@code properties}.
+   */
   private TextView getPropertiesTextView(final Map<String, String> properties) {
     final StringBuilder sb = new StringBuilder();
-    for (Map.Entry<String, String> property: properties.entrySet()) {
+    for (Map.Entry<String, String> property : properties.entrySet()) {
       sb.append(property.getKey());
       sb.append(":");
       sb.append(property.getValue());
@@ -147,5 +232,21 @@ public class TapcardActivity extends Activity {
     if (aviationDbAdapter != null) {
       aviationDbAdapter.close();
     }
+  }
+
+  /**
+   * Scales text sizes based on screen density. See
+   * http://developer.android.com/guide/practices/screens_support.html#dips-pels
+   */
+  private synchronized static void setTextSizes(float density) {
+    if (textSizesSet) {
+      return;
+    }
+    textSizesSet = true;
+    ETE_TEXT_PAINT.setTextSize(14 * density);
+    NORMAL_TEXT_PAINT.setTextSize(18 * density);
+    BOLD_TEXT_PAINT.setTextSize(18 * density);
+    COMM_SMALL_TEXT_PAINT.setTextSize(15 * density);
+    RUNWAYS_TEXT_PAINT.setTextSize(22 * density);
   }
 }

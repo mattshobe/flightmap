@@ -62,18 +62,17 @@ public class MapView extends SurfaceView
 
   // Paints.
   private static final Paint ERROR_TEXT_PAINT = new Paint();
-  private static final Paint TOWERED_PAINT = new Paint();
-  private static final Paint NON_TOWERED_PAINT = new Paint();
   private static final Paint AIRPORT_TEXT_PAINT = new Paint();
-  private static final Paint AIRCRAFT_PAINT = new Paint();
   private static final Paint PANEL_BACKGROUND_PAINT = new Paint();
   private static final Paint PANEL_DIGITS_PAINT = new Paint();
   private static final Paint PANEL_UNITS_PAINT = new Paint();
+  private static boolean textSizesSet;
 
   // Zoom items.
   private static final int MIN_ZOOM = 4;
   private static final int MAX_ZOOM = 15;
   private static final float ZOOM_STEP = 0.5f;
+
   private ZoomButtonsController zoomController;
   private float zoom = 10;
 
@@ -147,18 +146,10 @@ public class MapView extends SurfaceView
     ERROR_TEXT_PAINT.setAntiAlias(true);
     ERROR_TEXT_PAINT.setColor(Color.WHITE);
     ERROR_TEXT_PAINT.setTextAlign(Paint.Align.CENTER);
-    TOWERED_PAINT.setAntiAlias(true);
-    TOWERED_PAINT.setARGB(0xff, 0x0, 0xcc, 0xff);
-    TOWERED_PAINT.setTextAlign(Paint.Align.CENTER);
-    NON_TOWERED_PAINT.setAntiAlias(true);
-    NON_TOWERED_PAINT.setARGB(0xff, 0xcc, 0x33, 0xcc);
-    NON_TOWERED_PAINT.setTextAlign(Paint.Align.CENTER);
     AIRPORT_TEXT_PAINT.setAntiAlias(true);
     AIRPORT_TEXT_PAINT.setARGB(0xff, 0xff, 0xff, 0xff);
     AIRPORT_TEXT_PAINT.setTypeface(Typeface.SANS_SERIF);
     AIRPORT_TEXT_PAINT.setTextAlign(Paint.Align.CENTER);
-    AIRCRAFT_PAINT.setColor(Color.GREEN);
-    AIRCRAFT_PAINT.setStrokeWidth(3);
     PANEL_BACKGROUND_PAINT.setARGB(0xee, 0x22, 0x22, 0x22);
     PANEL_DIGITS_PAINT.setAntiAlias(true);
     PANEL_DIGITS_PAINT.setColor(Color.WHITE);
@@ -181,7 +172,7 @@ public class MapView extends SurfaceView
     setFocusable(true); // make sure we get key events
     setKeepScreenOn(true);
     createZoomController();
-    setTextSizes();
+    setTextSizes(density);
 
     Resources res = flightMap.getResources();
 
@@ -203,7 +194,11 @@ public class MapView extends SurfaceView
    * Scales text sizes based on screen density. See
    * http://developer.android.com/guide/practices/screens_support.html#dips-pels
    */
-  private synchronized void setTextSizes() {
+  private static synchronized void setTextSizes(float density) {
+    if (textSizesSet) {
+      return;
+    }
+    textSizesSet = true;
     ERROR_TEXT_PAINT.setTextSize(15 * density);
     AIRPORT_TEXT_PAINT.setTextSize(16 * density);
     PANEL_DIGITS_PAINT.setTextSize(26 * density);
@@ -645,7 +640,7 @@ public class MapView extends SurfaceView
    * not.
    */
   private Paint getAirportPaint(Airport airport) {
-    return airport.isTowered ? TOWERED_PAINT : NON_TOWERED_PAINT;
+    return airport.isTowered ? UiConstants.TOWERED_PAINT : UiConstants.NON_TOWERED_PAINT;
   }
 
   /**
