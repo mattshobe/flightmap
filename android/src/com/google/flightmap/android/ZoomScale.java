@@ -1,12 +1,12 @@
 /*
  * Copyright (C) 2010 Google Inc.
- *
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- *
+ * 
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -74,7 +74,7 @@ public class ZoomScale {
 
   /**
    * Creates a ZoomScale.
-   *
+   * 
    * @param density screen density.
    */
   public ZoomScale(float density, UserPrefs userPrefs) {
@@ -86,7 +86,7 @@ public class ZoomScale {
 
   /**
    * Draws zoom scale.
-   *
+   * 
    * @param c canvas to draw on.
    * @param l current location.
    * @param zoom zoom level.
@@ -110,7 +110,7 @@ public class ZoomScale {
 
   /**
    * Returns the text to display above the zoom scale bar.
-   *
+   * 
    * @param location current location.
    * @param zoom zoom level.
    */
@@ -124,20 +124,21 @@ public class ZoomScale {
         return previousScaleText;
       }
     }
-    double mpp = MercatorProjection.getMetersPerPixel(zoom, //
-        LatLng.fromDouble(location.getLatitude(), location.getLongitude()));
+    double mpp =
+        MercatorProjection.getMetersPerPixel(zoom, LatLng.fromDouble(location.getLatitude(),
+            location.getLongitude()));
     double scaleInMeters = Math.round(mpp * PREFERRED_WIDTH * density);
 
     // Use user prefs to determine units to show.
     DistanceUnits distanceUnits = userPrefs.getDistanceUnits();
     String units = distanceUnits.distanceAbbreviation;
-    double scaleInUnits = scaleInMeters / distanceUnits.distanceMultiplier;
+    double scaleInUnits = scaleInMeters * distanceUnits.distanceMultiplier;
     String result = null;
     if (scaleInUnits > 0.1) {
       result = String.format("%.1f %s", scaleInUnits, units);
     } else {
       // Show scale in feet when nm is less useful.
-      double scaleInFeet = scaleInMeters / NavigationUtil.METERS_TO_FEET;
+      double scaleInFeet = scaleInMeters * NavigationUtil.METERS_TO_FEET;
       result = String.format("%.0f %s", scaleInFeet, "ft");
     }
     previousLocation = location;

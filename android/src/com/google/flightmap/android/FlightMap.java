@@ -136,7 +136,6 @@ public class FlightMap extends Activity {
     }
   }
 
-
   private void showDisclaimerView() {
     setContentView(R.layout.disclaimer);
 

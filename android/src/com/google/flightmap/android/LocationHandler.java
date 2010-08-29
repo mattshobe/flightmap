@@ -24,8 +24,6 @@ import android.util.Log;
 
 /**
  * Provides location information to the app.
- * 
- * @author Phil Verghese
  */
 public class LocationHandler implements LocationListener {
   private static final String TAG = LocationHandler.class.getSimpleName();
