@@ -48,6 +48,7 @@ public class TapcardActivity extends Activity {
   private static final String TAG = TapcardActivity.class.getSimpleName();
 
   private static final int AIRPORT_NAME_COLOR = Color.WHITE;
+  private static final int DROP_SHADOW_COLOR = Color.argb(0x80, 0x33, 0x33, 0x33);
   private static final Paint ETE_TEXT_PAINT = new Paint();
   private static final Paint NORMAL_TEXT_PAINT = new Paint();
   private static final Paint BOLD_TEXT_PAINT = new Paint();
@@ -136,7 +137,7 @@ public class TapcardActivity extends Activity {
     TextView icaoText = new TextView(this);
     icaoText.setText(airport.icao);
     icaoText.setTypeface(Typeface.DEFAULT_BOLD);
-    // TODO: drop shadow for ICAO
+    icaoText.setShadowLayer(1.2f, 3, 3, DROP_SHADOW_COLOR);
     icaoText.setTextSize(32);
     icaoText.setTextColor(AIRPORT_NAME_COLOR);
     icaoText.setPadding(5, 2, 5, 2);
@@ -145,8 +146,8 @@ public class TapcardActivity extends Activity {
     // Name
     TextView airportName = new TextView(this);
     airportName.setText(airport.name);
-    airportName.setTypeface(Typeface.DEFAULT_BOLD);
-    airportName.setTextSize(18);
+    airportName.setTypeface(Typeface.DEFAULT);
+    airportName.setTextSize(16);
     airportName.setTextColor(AIRPORT_NAME_COLOR);
     airportName.setPadding(5, 2, 5, 2);
     nameRow.addView(airportName);
