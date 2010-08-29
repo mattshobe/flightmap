@@ -9,6 +9,7 @@ import android.graphics.Paint;
  * Constants such as paints and fonts shared across multiple UI screens.
  */
 class UiConstants {
+  public static final String DEGREES_SYMBOL = "\u00b0";
   static final Paint AIRCRAFT_PAINT = new Paint();
   static final Paint NON_TOWERED_PAINT = new Paint();
   static final Paint TOWERED_PAINT = new Paint();

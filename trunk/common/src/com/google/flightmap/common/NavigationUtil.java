@@ -1,12 +1,12 @@
 /*
  * Copyright (C) 2010 Google Inc.
- *
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- *
+ * 
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -23,15 +23,15 @@ import com.google.flightmap.common.data.LatLng;
  */
 public class NavigationUtil {
   // Multiply meters by these constants to convert to other units.
-  public static final double METERS_TO_NM = 1852;
-  public static final double METERS_TO_MILE = 1609.344;
-  public static final double METERS_TO_KM = 1000;
+  public static final double METERS_TO_NM = 0.000539956803;
+  public static final double METERS_TO_MILE = 0.000621371192;
+  public static final double METERS_TO_KM = .001;
   public static final double METERS_TO_FEET = 3.2808399;
   // Multiply meters-per-second by these constants to convert to other units.
   public static final double METERS_PER_SEC_TO_KNOTS = 1.94384449;
   public static final double METERS_PER_SEC_TO_MPH = 2.23693629;
   public static final double METERS_PER_SEC_TO_KPH = 3.6;
-  
+
   /** Earth radius in meters. */
   public static final double EARTH_RADIUS = 6371009;
 
@@ -42,9 +42,9 @@ public class NavigationUtil {
   }
 
   public enum DistanceUnits {
-    MILES("mi", METERS_TO_MILE, "mph", METERS_PER_SEC_TO_MPH),
-    NAUTICAL_MILES("nm", METERS_TO_NM, "kts", METERS_PER_SEC_TO_KNOTS),
-    KILOMETERS("km", METERS_TO_KM, "kph", METERS_PER_SEC_TO_KPH);
+    MILES("mi", METERS_TO_MILE, "mph", METERS_PER_SEC_TO_MPH), NAUTICAL_MILES("nm", METERS_TO_NM,
+        "kts", METERS_PER_SEC_TO_KNOTS), KILOMETERS("km", METERS_TO_KM, "kph",
+        METERS_PER_SEC_TO_KPH);
     public final String distanceAbbreviation;
     public final String speedAbbreviation;
     public final double distanceMultiplier;
@@ -72,6 +72,18 @@ public class NavigationUtil {
     }
   }
 
+  /**
+   * Normalizes {@code bearing} to be in the range [0-360). Some Android SDK
+   * methods return negative bearings for what's normally 180-359 degrees.
+   * @param bearing degrees in the range (-180, 180).
+   */
+  public static double normalizeBearing(double bearing) {
+    double result = bearing;
+    if (result < 0) {
+      result += 360;
+    }
+    return result;
+  }
 
   /**
    * Returns the distance in meters between point1 and point2. Calculation is
@@ -102,17 +114,18 @@ public class NavigationUtil {
   public static double computeDistance(double lat1, double lng1, double lat2, double lng2) {
     final double dLat = lat2 - lat1;
     final double dLng = lng2 - lng1;
-    final double a = Math.pow(Math.sin(dLat / 2), 2) + Math.cos(lat1) * Math.cos(lat2)
-        * Math.pow(Math.sin(dLng / 2), 2);
+    final double a =
+        Math.pow(Math.sin(dLat / 2), 2) + Math.cos(lat1) * Math.cos(lat2)
+            * Math.pow(Math.sin(dLng / 2), 2);
     return EARTH_RADIUS * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
   /**
    * Computes the magnetic variation at a given position.
-   *
+   * 
    * @param position Latitude and longitude
    * @param height Height (meters)
-   *
+   * 
    * @return Magnetic variation (degrees). West positive, East negative.
    */
   public static double getMagneticVariation(final LatLng position, final double height) {

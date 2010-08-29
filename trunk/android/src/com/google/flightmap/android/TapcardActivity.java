@@ -1,12 +1,12 @@
 /*
  * Copyright (C) 2010 Google Inc.
- *
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- *
+ * 
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -15,12 +15,20 @@
  */
 package com.google.flightmap.android;
 
+import java.util.List;
+import java.util.Map;
+import java.util.SortedSet;
+
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.Typeface;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Window;
@@ -32,14 +40,13 @@ import android.widget.TextView;
 
 import com.google.flightmap.common.AviationDbAdapter;
 import com.google.flightmap.common.CachedAviationDbAdapter;
+import com.google.flightmap.common.NavigationUtil;
+import com.google.flightmap.common.NavigationUtil.DistanceUnits;
 import com.google.flightmap.common.data.Airport;
 import com.google.flightmap.common.data.Comm;
+import com.google.flightmap.common.data.LatLng;
 import com.google.flightmap.common.data.Runway;
 import com.google.flightmap.common.data.RunwayEnd;
-
-import java.util.List;
-import java.util.Map;
-import java.util.SortedSet;
 
 /**
  * Shows details about an airport.
@@ -47,14 +54,19 @@ import java.util.SortedSet;
 public class TapcardActivity extends Activity {
   private static final String TAG = TapcardActivity.class.getSimpleName();
 
+  // Colors.
   private static final int AIRPORT_NAME_COLOR = Color.WHITE;
   private static final int DROP_SHADOW_COLOR = Color.argb(0x80, 0x33, 0x33, 0x33);
-  private static final Paint ETE_TEXT_PAINT = new Paint();
-  private static final Paint NORMAL_TEXT_PAINT = new Paint();
-  private static final Paint BOLD_TEXT_PAINT = new Paint();
-  private static final Paint COMM_SMALL_TEXT_PAINT = new Paint();
-  private static final Paint RUNWAYS_TEXT_PAINT = new Paint();
-  private static boolean textSizesSet;
+  private static final int DEFAULT_BACKGROUND_COLOR = Color.WHITE;
+  private static final int DEFAULT_FOREGROUND_COLOR = Color.BLACK;
+
+  /**
+   * Milliseconds between screen updates. Note that the fastest I've seen GPS
+   * updates arrive is once per second.
+   */
+  private static long UPDATE_RATE = 100;
+  private boolean isRunning;
+  private UpdateHandler updater = new UpdateHandler();
 
   // Keys used in the bundle passed to this activity.
   private static final String PACKAGE_NAME = TapcardActivity.class.getPackage().getName();
@@ -62,12 +74,20 @@ public class TapcardActivity extends Activity {
 
   private LinearLayout tapcardLayout;
   private AviationDbAdapter aviationDbAdapter;
+  private LocationHandler locationHandler;
+  private UserPrefs userPrefs;
+
+  // Items for the navigation display.
+  private LatLng airportLatLng;
+  private TextView distanceText;
+  private TextView bearingText;
+  private TextView eteText;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     // Open database connection.
-    UserPrefs userPrefs = new UserPrefs(getApplication());
+    userPrefs = new UserPrefs(getApplication());
     try {
       aviationDbAdapter = new CachedAviationDbAdapter(new AndroidAviationDbAdapter(userPrefs));
       aviationDbAdapter.open();
@@ -76,10 +96,12 @@ public class TapcardActivity extends Activity {
       finish();
     }
 
+    // Get location updates
+    locationHandler =
+        new LocationHandler((LocationManager) getSystemService(Context.LOCATION_SERVICE));
+
     // No title bar.
     requestWindowFeature(Window.FEATURE_NO_TITLE);
-    // Set text sizes based on display density.
-    setTextSizes(getApplication().getResources().getDisplayMetrics().density);
 
     // Find which airport to show.
     final Intent startingIntent = getIntent();
@@ -95,11 +117,13 @@ public class TapcardActivity extends Activity {
   private void displayTapcardUi(Airport airport) {
     tapcardLayout = new LinearLayout(this);
     tapcardLayout.setOrientation(LinearLayout.VERTICAL);
+    tapcardLayout.setBackgroundColor(DEFAULT_BACKGROUND_COLOR);
 
     // ICAO id and airport name.
     addIcaoAndName(airport);
 
-    // TODO: Add airport pointer, dist, brg, ete here.
+    // Navigation info to airport
+    addNavigationInfo(airport);
 
     // Communication info
     addCommInfo(aviationDbAdapter.getAirportComms(airport.id));
@@ -128,8 +152,9 @@ public class TapcardActivity extends Activity {
     TableLayout nameTable = new TableLayout(this);
     nameTable.setColumnStretchable(1, true);
     TableRow nameRow = new TableRow(this);
-    int nameBackground = airport.isTowered
-        ? UiConstants.TOWERED_PAINT.getColor() : UiConstants.NON_TOWERED_PAINT.getColor();
+    int nameBackground =
+        airport.isTowered ? UiConstants.TOWERED_PAINT.getColor() : UiConstants.NON_TOWERED_PAINT
+            .getColor();
     nameRow.setBackgroundColor(nameBackground);
     nameRow.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
 
@@ -155,6 +180,42 @@ public class TapcardActivity extends Activity {
     nameTable.addView(nameRow);
     tapcardLayout.addView(nameTable);
   }
+
+  private void addNavigationInfo(Airport airport) {
+    airportLatLng = airport.location;
+
+    LinearLayout navLayout = new LinearLayout(this);
+    navLayout.setOrientation(LinearLayout.HORIZONTAL);
+    navLayout.setBackgroundColor(Color.BLACK);
+    navLayout.setPadding(5, 5, 5, 5);
+
+    // TODO: Replace with graphic airplane pointer
+    TextView airplanePlaceholder = new TextView(this);
+    airplanePlaceholder.setText("]-/-"); // That's my ASCII airplane :-)
+    setNavigationTextAttributes(airplanePlaceholder);
+    navLayout.addView(airplanePlaceholder);
+
+    // These will be updated by #updateNavigationDisplay.
+    distanceText = new TextView(this);
+    bearingText = new TextView(this);
+    eteText = new TextView(this);
+    setNavigationTextAttributes(distanceText);
+    setNavigationTextAttributes(bearingText);
+    setNavigationTextAttributes(eteText);
+    navLayout.addView(distanceText);
+    navLayout.addView(bearingText);
+    navLayout.addView(eteText);
+    tapcardLayout.addView(navLayout);
+
+    updateNavigationDisplay();
+  }
+
+  private void setNavigationTextAttributes(TextView text) {
+    text.setTextColor(Color.WHITE);
+    text.setTypeface(Typeface.DEFAULT_BOLD);
+    text.setTextSize(14);
+  }
+
 
   /**
    * Adds communication frequencies to the tapcard.
@@ -228,6 +289,21 @@ public class TapcardActivity extends Activity {
   }
 
   @Override
+  protected void onResume() {
+    super.onResume();
+    locationHandler.startListening();
+    setRunning(true);
+    update();
+  }
+
+  @Override
+  protected void onPause() {
+    super.onPause();
+    setRunning(false);
+    locationHandler.stopListening();
+  }
+
+  @Override
   protected void onDestroy() {
     super.onDestroy();
     if (aviationDbAdapter != null) {
@@ -236,18 +312,88 @@ public class TapcardActivity extends Activity {
   }
 
   /**
-   * Scales text sizes based on screen density. See
-   * http://developer.android.com/guide/practices/screens_support.html#dips-pels
+   * Updates the view every {@link #UPDATE_RATE} milliseconds using
+   * {@link UpdateHandler}.
    */
-  private synchronized static void setTextSizes(float density) {
-    if (textSizesSet) {
+  private void update() {
+    updater.scheduleUpdate(UPDATE_RATE);
+    if (!isRunning()) {
       return;
     }
-    textSizesSet = true;
-    ETE_TEXT_PAINT.setTextSize(14 * density);
-    NORMAL_TEXT_PAINT.setTextSize(18 * density);
-    BOLD_TEXT_PAINT.setTextSize(18 * density);
-    COMM_SMALL_TEXT_PAINT.setTextSize(15 * density);
-    RUNWAYS_TEXT_PAINT.setTextSize(22 * density);
+    updateNavigationDisplay();
+  }
+
+  /**
+   * Updates the pointer, distance, bearing and ETE to the selected airport.
+   */
+  private void updateNavigationDisplay() {
+    final Location location = locationHandler.getLocation();
+    if (null == location) {
+      distanceText.setText("Location unavailable");
+      bearingText.setText("");
+      eteText.setText("");
+      return;
+    }
+
+    // results[0]===distance, results[1]==bearing
+    float[] results = new float[2];
+    Location.distanceBetween(location.getLatitude(), location.getLongitude(), airportLatLng
+        .latDeg(), airportLatLng.lngDeg(), results);
+    float distanceMeters = results[0];
+    float bearingTo = (float) NavigationUtil.normalizeBearing(results[1]);
+
+    DistanceUnits distanceUnits = userPrefs.getDistanceUnits();
+    String distance =
+        String.format("      %.1f%s", distanceMeters * distanceUnits.distanceMultiplier,
+            distanceUnits.distanceAbbreviation);
+    distanceText.setText(distance);
+    bearingText.setText(String.format(" - %03.0f%s", bearingTo, UiConstants.DEGREES_SYMBOL));
+
+    final DistanceUnits nauticalUnits = DistanceUnits.NAUTICAL_MILES;
+    final double speedInKnots = nauticalUnits.getSpeed(location.getSpeed());
+    if (speedInKnots > 3) {
+      final float metersPerSecond = location.getSpeed();
+      float timeInSeconds = distanceMeters / metersPerSecond;
+      int hours = (int) (timeInSeconds / 60 / 60);
+      int minutes = (int) (timeInSeconds / 60) - (hours * 60);
+      int seconds = (int) (timeInSeconds - (hours * 60 * 60) - (minutes * 60));
+
+      // Normally hours will be 0, so omit if possible.
+      if (hours == 0) {
+        eteText.setText(String.format(" - %d:%02d", minutes, seconds));
+      } else {
+        eteText.setText(String.format(" - %d:%02d:%02d", hours, minutes, seconds));
+      }
+    } else {
+      eteText.setText("");
+    }
+  }
+
+  /**
+   * Updates the UI using a delayed message.
+   */
+  private class UpdateHandler extends Handler {
+    private static final int UPDATE_MESSAGE = 1;
+
+    @Override
+    public void handleMessage(Message msg) {
+      update();
+    }
+
+    /**
+     * Call {@link #update} after {@code delay} milliseconds.
+     */
+    public void scheduleUpdate(long delay) {
+      removeMessages(UPDATE_MESSAGE);
+      sendMessageDelayed(obtainMessage(UPDATE_MESSAGE), delay);
+    }
+  }
+
+  private synchronized boolean isRunning() {
+    return isRunning;
+  }
+
+  private synchronized void setRunning(boolean isRunning) {
+    this.isRunning = isRunning;
   }
 }
