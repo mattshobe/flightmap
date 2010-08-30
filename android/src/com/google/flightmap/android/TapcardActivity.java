@@ -40,6 +40,7 @@ import android.widget.TextView;
 
 import com.google.flightmap.common.AviationDbAdapter;
 import com.google.flightmap.common.CachedAviationDbAdapter;
+import com.google.flightmap.common.CachedMagneticVariation;
 import com.google.flightmap.common.NavigationUtil;
 import com.google.flightmap.common.NavigationUtil.DistanceUnits;
 import com.google.flightmap.common.data.Airport;
@@ -76,6 +77,8 @@ public class TapcardActivity extends Activity {
   private AviationDbAdapter aviationDbAdapter;
   private LocationHandler locationHandler;
   private UserPrefs userPrefs;
+  // Magnetic variation w/ caching.
+  private final CachedMagneticVariation magneticVariation = new CachedMagneticVariation();
 
   // Items for the navigation display.
   private LatLng airportLatLng;
@@ -335,12 +338,19 @@ public class TapcardActivity extends Activity {
       return;
     }
 
+    // Calculate distance and bearing to airport.
+    final double locationLat = location.getLatitude();
+    final double locationLng = location.getLongitude();
+    final LatLng locationLatLng = LatLng.fromDouble(locationLat, locationLng);
     // results[0]===distance, results[1]==bearing
     float[] results = new float[2];
-    Location.distanceBetween(location.getLatitude(), location.getLongitude(), airportLatLng
-        .latDeg(), airportLatLng.lngDeg(), results);
-    float distanceMeters = results[0];
-    float bearingTo = (float) NavigationUtil.normalizeBearing(results[1]);
+    Location.distanceBetween(locationLat, locationLng, airportLatLng.latDeg(), airportLatLng
+        .lngDeg(), results);
+    final float distanceMeters = results[0];
+    final float bearingTo =
+        (float) NavigationUtil.normalizeBearing(results[1])
+            + magneticVariation
+                .getMagneticVariation(locationLatLng, (float) location.getAltitude());
 
     DistanceUnits distanceUnits = userPrefs.getDistanceUnits();
     String distance =
