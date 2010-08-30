@@ -22,6 +22,7 @@ import java.util.SortedSet;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.location.Location;
@@ -30,8 +31,12 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.View;
 import android.view.Window;
+import android.view.ViewGroup.LayoutParams;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TableLayout;
@@ -57,7 +62,6 @@ public class TapcardActivity extends Activity {
 
   // Colors.
   private static final int AIRPORT_NAME_COLOR = Color.WHITE;
-  private static final int DROP_SHADOW_COLOR = Color.argb(0x80, 0x33, 0x33, 0x33);
   private static final int DEFAULT_BACKGROUND_COLOR = Color.WHITE;
   private static final int DEFAULT_FOREGROUND_COLOR = Color.BLACK;
 
@@ -89,6 +93,10 @@ public class TapcardActivity extends Activity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    // No title bar. This must be done before setContentView.
+    requestWindowFeature(Window.FEATURE_NO_TITLE);
+    setContentView(R.layout.tapcard);
+
     // Open database connection.
     userPrefs = new UserPrefs(getApplication());
     try {
@@ -103,9 +111,6 @@ public class TapcardActivity extends Activity {
     locationHandler =
         new LocationHandler((LocationManager) getSystemService(Context.LOCATION_SERVICE));
 
-    // No title bar.
-    requestWindowFeature(Window.FEATURE_NO_TITLE);
-
     // Find which airport to show.
     final Intent startingIntent = getIntent();
     int airportId = startingIntent.getIntExtra(AIRPORT_ID, -1);
@@ -114,181 +119,151 @@ public class TapcardActivity extends Activity {
       Log.w(TAG, "Unable to get airport for id " + airportId);
       finish();
     }
-    displayTapcardUi(airport);
+    initializeTapcardUi(airport, getResources());
   }
 
-  private void displayTapcardUi(Airport airport) {
-    tapcardLayout = new LinearLayout(this);
-    tapcardLayout.setOrientation(LinearLayout.VERTICAL);
-    tapcardLayout.setBackgroundColor(DEFAULT_BACKGROUND_COLOR);
+  private void initializeTapcardUi(Airport airport, Resources res) {
+    tapcardLayout = (LinearLayout) findViewById(R.id.tapcard_outer_layout);
 
     // ICAO id and airport name.
-    addIcaoAndName(airport);
+    setIcaoAndName(airport, res);
 
     // Navigation info to airport
-    addNavigationInfo(airport);
+    setNavigationInfo(airport, res);
 
     // Communication info
-    addCommInfo(aviationDbAdapter.getAirportComms(airport.id));
+    addCommInfo(aviationDbAdapter.getAirportComms(airport.id), res);
 
     // Runway details
-    addRunways(airport.runways);
+    addRunways(airport.runways, res);
 
-    // General properties
-    // TODO: Don't show all of these. Just extract elevation.
-    final Map<String, String> airportProperties =
-        aviationDbAdapter.getAirportProperties(airport.id);
-    if (airportProperties != null) {
-      tapcardLayout.addView(getPropertiesTextView(airportProperties));
-    }
-
-    ScrollView scroller = new ScrollView(this);
-    scroller.addView(tapcardLayout);
-    setContentView(scroller);
+    // Elevation
+    addElevation(airport);
   }
 
   /**
-   * Adds the ICAO and airport name to the tapcard. These are in a one-row
-   * table.
+   * Sets color for ICAO and name item at the top.
    */
-  private void addIcaoAndName(Airport airport) {
-    TableLayout nameTable = new TableLayout(this);
-    nameTable.setColumnStretchable(1, true);
-    TableRow nameRow = new TableRow(this);
+  private void setIcaoAndName(Airport airport, Resources res) {
+    TableRow nameRow = (TableRow) findViewById(R.id.tapcard_icao_and_name_row);
     int nameBackground =
-        airport.isTowered ? UiConstants.TOWERED_PAINT.getColor() : UiConstants.NON_TOWERED_PAINT
-            .getColor();
+        airport.isTowered ? res.getColor(R.color.ToweredAirport) : res
+            .getColor(R.color.NonToweredAirport);
     nameRow.setBackgroundColor(nameBackground);
-    nameRow.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
 
     // ICAO
-    TextView icaoText = new TextView(this);
+    TextView icaoText = (TextView) findViewById(R.id.tapcard_icao);
     icaoText.setText(airport.icao);
-    icaoText.setTypeface(Typeface.DEFAULT_BOLD);
-    icaoText.setShadowLayer(1.2f, 3, 3, DROP_SHADOW_COLOR);
-    icaoText.setTextSize(32);
-    icaoText.setTextColor(AIRPORT_NAME_COLOR);
-    icaoText.setPadding(5, 2, 5, 2);
-    nameRow.addView(icaoText);
 
     // Name
-    TextView airportName = new TextView(this);
+    TextView airportName = (TextView) findViewById(R.id.tapcard_airport_name);
     airportName.setText(airport.name);
-    airportName.setTypeface(Typeface.DEFAULT);
-    airportName.setTextSize(16);
-    airportName.setTextColor(AIRPORT_NAME_COLOR);
-    airportName.setPadding(5, 2, 5, 2);
-    nameRow.addView(airportName);
-
-    nameTable.addView(nameRow);
-    tapcardLayout.addView(nameTable);
   }
 
-  private void addNavigationInfo(Airport airport) {
+  private void setNavigationInfo(Airport airport, Resources res) {
     airportLatLng = airport.location;
-
-    LinearLayout navLayout = new LinearLayout(this);
-    navLayout.setOrientation(LinearLayout.HORIZONTAL);
-    navLayout.setBackgroundColor(Color.BLACK);
-    navLayout.setPadding(5, 5, 5, 5);
-
-    // TODO: Replace with graphic airplane pointer
-    TextView airplanePlaceholder = new TextView(this);
-    airplanePlaceholder.setText("]-/-"); // That's my ASCII airplane :-)
-    setNavigationTextAttributes(airplanePlaceholder);
-    navLayout.addView(airplanePlaceholder);
-
-    // These will be updated by #updateNavigationDisplay.
-    distanceText = new TextView(this);
-    bearingText = new TextView(this);
-    eteText = new TextView(this);
-    setNavigationTextAttributes(distanceText);
-    setNavigationTextAttributes(bearingText);
-    setNavigationTextAttributes(eteText);
-    navLayout.addView(distanceText);
-    navLayout.addView(bearingText);
-    navLayout.addView(eteText);
-    tapcardLayout.addView(navLayout);
-
+    distanceText = (TextView) findViewById(R.id.tapcard_distance);
+    bearingText = (TextView) findViewById(R.id.tapcard_bearing);
+    eteText = (TextView) findViewById(R.id.tapcard_ete);
     updateNavigationDisplay();
   }
 
-  private void setNavigationTextAttributes(TextView text) {
-    text.setTextColor(Color.WHITE);
-    text.setTypeface(Typeface.DEFAULT_BOLD);
-    text.setTextSize(14);
-  }
-
-
   /**
    * Adds communication frequencies to the tapcard.
+   * 
+   * @param res
    */
-  private void addCommInfo(final List<Comm> comms) {
-    if (comms != null) {
-      for (Comm comm : comms) {
-        final StringBuilder sb = new StringBuilder();
-        sb.append(comm.identifier);
-        sb.append(" ");
-        sb.append(comm.frequency);
-        if (comm.remarks != null) {
-          sb.append(" (");
-          sb.append(comm.remarks);
-          sb.append(")");
-        }
-        final TextView commText = new TextView(this);
-        commText.setText(sb.toString());
-        tapcardLayout.addView(commText);
+  private void addCommInfo(final List<Comm> comms, Resources res) {
+    if (comms == null) {
+      return;
+    }
+    final TableLayout commTable = (TableLayout) findViewById(R.id.tapcard_comm_table);
+    final LayoutParams rowLayout =
+        new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT);
+    final int textColor = res.getColor(R.color.TapcardForeground);
+    for (Comm comm : comms) {
+      TableRow commRow = new TableRow(this);
+      commRow.setLayoutParams(rowLayout);
+
+      // Identifier
+      TextView ident = new TextView(this);
+      ident.setText(comm.identifier);
+      ident.setTypeface(Typeface.SANS_SERIF);
+      ident.setTextColor(textColor);
+      ident.setTextSize(TypedValue.DENSITY_DEFAULT, 18);
+      ident.setPadding(5, 5, 25, 5);
+      commRow.addView(ident);
+
+      // Frequency
+      TextView frequency = new TextView(this);
+      frequency.setText(comm.frequency);
+      frequency.setTypeface(Typeface.SANS_SERIF, Typeface.BOLD);
+      frequency.setTextColor(textColor);
+      frequency.setTextSize(TypedValue.DENSITY_DEFAULT, 22);
+      frequency.setPadding(25, 5, 5, 5);
+      commRow.addView(frequency);
+
+      commTable.addView(commRow);
+
+      if (comm.remarks != null) {
+        commRow = new TableRow(this);
+        commRow.setLayoutParams(rowLayout);
+        TextView remarks = new TextView(this);
+        remarks.setText(comm.remarks);
+        remarks.setTypeface(Typeface.SANS_SERIF);
+        remarks.setTextColor(textColor);
+        remarks.setTextSize(TypedValue.DENSITY_DEFAULT, 15);
+        remarks.setPadding(5, 0, 0, 5);
+
+        commRow.addView(remarks);
+        commTable.addView(commRow);
       }
     }
   }
 
   /**
    * Adds runway details to the tapcard.
+   * 
+   * @param res
    */
-  private void addRunways(SortedSet<Runway> runways) {
-    for (Runway runway : runways) {
-      final StringBuilder sb = new StringBuilder();
-      sb.append("\n");
-      sb.append("Runway ");
-      sb.append(runway.letters);
-      sb.append(": ");
-      sb.append(runway.length);
-      sb.append("x");
-      sb.append(runway.width);
-      sb.append(" (");
-      sb.append(runway.surface);
-      sb.append(")");
-      final TextView runwayText = new TextView(this);
-      runwayText.setText(sb.toString());
-      tapcardLayout.addView(runwayText);
+  private void addRunways(SortedSet<Runway> runways, Resources res) {
+    final LinearLayout runwayLayout = (LinearLayout) findViewById(R.id.tapcard_runway_layout);
+    final int textColor = res.getColor(R.color.TapcardForeground);
 
-      for (RunwayEnd runwayEnd : runway.runwayEnds) {
-        final TextView runwayEndText = new TextView(this);
-        runwayEndText.setText("Runway " + runwayEnd.letters + ":");
-        tapcardLayout.addView(runwayEndText);
-        final Map<String, String> runwayEndsProperties =
-            aviationDbAdapter.getRunwayEndProperties(runwayEnd.id);
-        if (runwayEndsProperties != null) {
-          tapcardLayout.addView(getPropertiesTextView(runwayEndsProperties));
-        }
-      }
+    for (Runway runway : runways) {
+      TextView letters = new TextView(this);
+      letters.setText(runway.letters);
+      letters.setTypeface(Typeface.SANS_SERIF, Typeface.BOLD);
+      letters.setTextColor(textColor);
+      letters.setTextSize(TypedValue.DENSITY_DEFAULT, 22);
+      letters.setPadding(5, 5, 5, 5);
+      runwayLayout.addView(letters);
+
+      TextView size = new TextView(this);
+      size.setText(runway.length + "x" + runway.width + " " + runway.surface);
+      size.setTypeface(Typeface.SANS_SERIF);
+      size.setTextColor(textColor);
+      size.setTextSize(TypedValue.DENSITY_DEFAULT, 18);
+      size.setPadding(5, 5, 5, 10);
+      runwayLayout.addView(size);
     }
   }
 
   /**
-   * Returns text corresponding to {@code properties}.
+   * Adds airport elevation to the tapcard
    */
-  private TextView getPropertiesTextView(final Map<String, String> properties) {
-    final StringBuilder sb = new StringBuilder();
-    for (Map.Entry<String, String> property : properties.entrySet()) {
-      sb.append(property.getKey());
-      sb.append(":");
-      sb.append(property.getValue());
-      sb.append("\n");
+  private void addElevation(Airport airport) {
+    final Map<String, String> airportProperties =
+        aviationDbAdapter.getAirportProperties(airport.id);
+    if (airportProperties == null) {
+      return;
     }
-    final TextView propertiesView = new TextView(this);
-    propertiesView.setText(sb.toString());
-    return propertiesView;
+    String elevation = airportProperties.get("Elevation");
+    if (elevation == null) {
+      return;
+    }
+    TextView elevationText = (TextView) findViewById(R.id.tapcard_elevation);
+    elevationText.setText("ELEV " + elevation + "' MSL");
   }
 
   @Override
@@ -357,7 +332,7 @@ public class TapcardActivity extends Activity {
         String.format("      %.1f%s", distanceMeters * distanceUnits.distanceMultiplier,
             distanceUnits.distanceAbbreviation);
     distanceText.setText(distance);
-    bearingText.setText(String.format(" - %03.0f%s", bearingTo, UiConstants.DEGREES_SYMBOL));
+    bearingText.setText(String.format(" - %03.0f%s", bearingTo, MapView.DEGREES_SYMBOL));
 
     final DistanceUnits nauticalUnits = DistanceUnits.NAUTICAL_MILES;
     final double speedInKnots = nauticalUnits.getSpeed(location.getSpeed());

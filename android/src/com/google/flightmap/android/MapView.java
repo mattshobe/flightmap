@@ -53,6 +53,7 @@ import com.google.flightmap.common.data.LatLngRect;
 public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     OnSharedPreferenceChangeListener {
   private static final String TAG = MapView.class.getSimpleName();
+  public static final String DEGREES_SYMBOL = "\u00b0";
 
   // Saved instance state constants.
   private static final String ZOOM_LEVEL = "zoom-level";
@@ -67,6 +68,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   private static final Paint PANEL_DIGITS_PAINT = new Paint();
   private static final Paint PANEL_UNITS_PAINT = new Paint();
   private static boolean textSizesSet;
+  private Paint toweredPaint = new Paint();
+  private Paint nonToweredPaint = new Paint();
 
   // Zoom items.
   private static final int MIN_ZOOM = 4;
@@ -174,6 +177,10 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     setTextSizes(density);
 
     Resources res = flightMap.getResources();
+
+    // Set up paints from resource colors.
+    toweredPaint.setColor(res.getColor(R.color.ToweredAirport));
+    nonToweredPaint.setColor(res.getColor(R.color.NonToweredAirport));
 
     // Set up airplane image.
     airplaneImage = res.getDrawable(R.drawable.aircraft);
@@ -543,7 +550,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     if (null != topPanel) {
       c.drawPath(topPanel, PANEL_BACKGROUND_PAINT);
       String speed = "-";
-      String track = "-" + UiConstants.DEGREES_SYMBOL;
+      String track = "-" + DEGREES_SYMBOL;
       String altitude = "-";
       DistanceUnits distanceUnits = flightMap.userPrefs.getDistanceUnits();
       String speedUnits = " " + distanceUnits.speedAbbreviation;
@@ -552,7 +559,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         speed = String.format("%.0f", location.getSpeed() * distanceUnits.speedMultiplier);
       }
       if (location.hasBearing()) {
-        track = String.format(" %03.0f%s", location.getBearing(), UiConstants.DEGREES_SYMBOL);
+        track = String.format(" %03.0f%s", location.getBearing(), DEGREES_SYMBOL);
       }
       if (location.hasAltitude()) {
         // Round altitude to nearest 10 foot increment to avoid jitter.
@@ -639,7 +646,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    * not.
    */
   private Paint getAirportPaint(Airport airport) {
-    return airport.isTowered ? UiConstants.TOWERED_PAINT : UiConstants.NON_TOWERED_PAINT;
+    return airport.isTowered ? toweredPaint : nonToweredPaint;
   }
 
   /**
