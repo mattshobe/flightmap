@@ -100,8 +100,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   // Main class.
   private final FlightMap flightMap;
 
-  // Last known heading
-  private float lastHeading;
+  // Last known bearing
+  private float lastBearing;
 
   // Coordinates to draw the aircraft on the map.
   private int aircraftX;
@@ -495,16 +495,16 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     // Copy for thread safety.
     final boolean isTrackUp = !flightMap.userPrefs.isNorthUp();
 
-    // Update heading (if possible)
+    // Update bearing (if possible)
     if (location.hasBearing()) {
-      lastHeading = location.getBearing();
+      lastBearing = location.getBearing();
     }
 
     // Draw everything relative to the aircraft.
     c.translate(aircraftX, aircraftY);
     if (isTrackUp) {
       // Rotate to make track up (no rotation = north up).
-      c.rotate(360 - lastHeading);
+      c.rotate(360 - lastBearing);
     }
 
     // Get location pixel coordinates. Then set translation so everything is
@@ -517,7 +517,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     final int width = c.getWidth();
 
     // Set orientation to North or last known bearing
-    final float orientation = isTrackUp ? lastHeading : 0;
+    final float orientation = isTrackUp ? lastBearing : 0;
 
     final LatLngRect screenArea = getScreenRectangle(zoomCopy, orientation, locationPoint);
     airportsOnScreen =
@@ -531,11 +531,11 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       // Undo, then redo the track-up rotation so the labels are always at the
       // top for track up.
       if (isTrackUp) {
-        c.rotate(lastHeading, airportPoint.x, airportPoint.y);
+        c.rotate(lastBearing, airportPoint.x, airportPoint.y);
       }
       c.drawText(airport.icao, airportPoint.x, airportPoint.y - 20, AIRPORT_TEXT_PAINT);
       if (isTrackUp) {
-        c.rotate(360 - lastHeading, airportPoint.x, airportPoint.y);
+        c.rotate(360 - lastBearing, airportPoint.x, airportPoint.y);
       }
     }
 
@@ -544,12 +544,12 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     // Rotate no matter what. If track up, this will make the airplane point to
     // the top of the screen. If north up, this will point the airplane at the
     // current track.
-    c.rotate(lastHeading);
+    c.rotate(lastBearing);
     airplaneImage.draw(c);
 
     // Undo to-track rotation for north up.
     if (!isTrackUp) {
-      c.rotate(360 - lastHeading);
+      c.rotate(360 - lastBearing);
     }
 
     // Draw items that are in fixed locations. Set origin to top-left corner.
