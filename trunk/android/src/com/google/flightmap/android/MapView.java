@@ -361,6 +361,19 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     this.prefsChanged = prefsChanged;
   }
 
+  private synchronized void createTopPanelPath(int width) {
+    final float center = width / 2.0f;
+    topPanel = new Path();
+    topPanel.moveTo(0, 0);
+    topPanel.lineTo(width, 0);
+    topPanel.lineTo(width, PANEL_HEIGHT);
+    topPanel.lineTo(center + PANEL_NOTCH_WIDTH, PANEL_HEIGHT);
+    topPanel.lineTo(center, PANEL_HEIGHT - PANEL_NOTCH_HEIGHT);
+    topPanel.lineTo(center - PANEL_NOTCH_WIDTH, PANEL_HEIGHT);
+    topPanel.lineTo(0, PANEL_HEIGHT);
+    topPanel.close();
+  }
+
   /**
    * Surface dimensions changed.
    */
@@ -386,19 +399,6 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     screenCorners[2].y = height - 1;
     screenCorners[3].y = height - 1;
     createTopPanelPath(width);
-  }
-
-  private synchronized void createTopPanelPath(int width) {
-    final float center = width / 2.0f;
-    topPanel = new Path();
-    topPanel.moveTo(0, 0);
-    topPanel.lineTo(width, 0);
-    topPanel.lineTo(width, PANEL_HEIGHT);
-    topPanel.lineTo(center + PANEL_NOTCH_WIDTH, PANEL_HEIGHT);
-    topPanel.lineTo(center, PANEL_HEIGHT - PANEL_NOTCH_HEIGHT);
-    topPanel.lineTo(center - PANEL_NOTCH_WIDTH, PANEL_HEIGHT);
-    topPanel.lineTo(0, PANEL_HEIGHT);
-    topPanel.close();
   }
 
   @Override
