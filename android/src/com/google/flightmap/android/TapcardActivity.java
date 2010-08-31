@@ -26,6 +26,7 @@ import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
@@ -78,6 +79,7 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
 
   // Items for the navigation display.
   private LatLng airportLatLng;
+  private Drawable airplaneImage;
   private SurfaceView miniMap;
   private SurfaceHolder holder;
   private TextView distanceText;
@@ -155,6 +157,8 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
 
   private void setNavigationInfo(Airport airport, Resources res) {
     airportLatLng = airport.location;
+    airplaneImage = MapView.centerImage(res.getDrawable(R.drawable.aircraft));
+    airplaneImage.setFilterBitmap(true); // Improves rendering quality.
     miniMap = (SurfaceView) findViewById(R.id.tapcard_minimap);
     holder = miniMap.getHolder();
     holder.addCallback(this);
@@ -334,9 +338,13 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
       }
       c = holder.lockCanvas();
       synchronized (holder) {
-        int fakeColor = (int) ((System.currentTimeMillis() / 10) % 255);
+        int fakeTrack = (int) ((System.currentTimeMillis() / 100) % 360);
         if (c != null) {
-          c.drawColor(Color.argb(0xff, fakeColor, 255 - fakeColor, (fakeColor * 2) % 255));
+          c.drawColor(Color.BLACK);
+          c.translate(c.getWidth() / 2, c.getHeight() / 2);
+          c.scale(0.8f, 0.8f);
+          c.rotate(fakeTrack);
+          airplaneImage.draw(c);
         }
       }
     } finally {
