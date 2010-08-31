@@ -14,9 +14,7 @@
     <!-- Navigation row -->
     <LinearLayout android:id="@+id/tapcard_navigation"
       style="@style/TapcardNavigation">
-      <!-- This is a placeholder for the real airplane pointer. -->
-      <!-- It's an ASCII-art airplane rather than a SurfaceView for now. -->
-      <TextView android:text="]-/-" style="@style/TapcardNavigationText" />
+      <SurfaceView android:id="@+id/tapcard_minimap" style="@style/TapcardNavigationMap" />
       <TextView android:id="@+id/tapcard_distance" style="@style/TapcardNavigationText" />
       <TextView android:id="@+id/tapcard_bearing" style="@style/TapcardNavigationText" />
       <TextView android:id="@+id/tapcard_ete" style="@style/TapcardNavigationText" />

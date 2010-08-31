@@ -23,6 +23,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.location.Location;
@@ -32,13 +33,11 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.util.TypedValue;
-import android.view.Gravity;
-import android.view.LayoutInflater;
-import android.view.View;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.Window;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -52,18 +51,12 @@ import com.google.flightmap.common.data.Airport;
 import com.google.flightmap.common.data.Comm;
 import com.google.flightmap.common.data.LatLng;
 import com.google.flightmap.common.data.Runway;
-import com.google.flightmap.common.data.RunwayEnd;
 
 /**
  * Shows details about an airport.
  */
-public class TapcardActivity extends Activity {
+public class TapcardActivity extends Activity implements SurfaceHolder.Callback {
   private static final String TAG = TapcardActivity.class.getSimpleName();
-
-  // Colors.
-  private static final int AIRPORT_NAME_COLOR = Color.WHITE;
-  private static final int DEFAULT_BACKGROUND_COLOR = Color.WHITE;
-  private static final int DEFAULT_FOREGROUND_COLOR = Color.BLACK;
 
   /**
    * Milliseconds between screen updates. Note that the fastest I've seen GPS
@@ -77,7 +70,6 @@ public class TapcardActivity extends Activity {
   private static final String PACKAGE_NAME = TapcardActivity.class.getPackage().getName();
   public static final String AIRPORT_ID = PACKAGE_NAME + "AirportId";
 
-  private LinearLayout tapcardLayout;
   private AviationDbAdapter aviationDbAdapter;
   private LocationHandler locationHandler;
   private UserPrefs userPrefs;
@@ -86,9 +78,12 @@ public class TapcardActivity extends Activity {
 
   // Items for the navigation display.
   private LatLng airportLatLng;
+  private SurfaceView miniMap;
+  private SurfaceHolder holder;
   private TextView distanceText;
   private TextView bearingText;
   private TextView eteText;
+
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -123,8 +118,6 @@ public class TapcardActivity extends Activity {
   }
 
   private void initializeTapcardUi(Airport airport, Resources res) {
-    tapcardLayout = (LinearLayout) findViewById(R.id.tapcard_outer_layout);
-
     // ICAO id and airport name.
     setIcaoAndName(airport, res);
 
@@ -162,6 +155,9 @@ public class TapcardActivity extends Activity {
 
   private void setNavigationInfo(Airport airport, Resources res) {
     airportLatLng = airport.location;
+    miniMap = (SurfaceView) findViewById(R.id.tapcard_minimap);
+    holder = miniMap.getHolder();
+    holder.addCallback(this);
     distanceText = (TextView) findViewById(R.id.tapcard_distance);
     bearingText = (TextView) findViewById(R.id.tapcard_bearing);
     eteText = (TextView) findViewById(R.id.tapcard_ete);
@@ -290,6 +286,23 @@ public class TapcardActivity extends Activity {
   }
 
   /**
+   * Surface dimensions changed.
+   */
+  @Override
+  public synchronized void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+  }
+
+  @Override
+  public synchronized void surfaceCreated(SurfaceHolder holder) {
+    this.holder = holder;
+  }
+
+  @Override
+  public void surfaceDestroyed(SurfaceHolder holder) {
+    this.holder = null;
+  }
+
+  /**
    * Updates the view every {@link #UPDATE_RATE} milliseconds using
    * {@link UpdateHandler}.
    */
@@ -306,6 +319,37 @@ public class TapcardActivity extends Activity {
    */
   private void updateNavigationDisplay() {
     final Location location = locationHandler.getLocation();
+    updateNavigationMiniMap(location);
+    updateNavigationTextItems(location);
+  }
+
+  /**
+   * Updates the mini map pointing to the airport.
+   */
+  private void updateNavigationMiniMap(Location location) {
+    Canvas c = null;
+    try {
+      if (null == holder) {
+        return;
+      }
+      c = holder.lockCanvas();
+      synchronized (holder) {
+        int fakeColor = (int) ((System.currentTimeMillis() / 10) % 255);
+        if (c != null) {
+          c.drawColor(Color.argb(0xff, fakeColor, 255 - fakeColor, (fakeColor * 2) % 255));
+        }
+      }
+    } finally {
+      if (c != null) {
+        holder.unlockCanvasAndPost(c);
+      }
+    }
+  }
+
+  /**
+   * Updates the distance, bearing and ete text items.
+   */
+  private void updateNavigationTextItems(final Location location) {
     if (null == location) {
       distanceText.setText("Location unavailable");
       bearingText.setText("");
@@ -332,7 +376,7 @@ public class TapcardActivity extends Activity {
         String.format("      %.1f%s", distanceMeters * distanceUnits.distanceMultiplier,
             distanceUnits.distanceAbbreviation);
     distanceText.setText(distance);
-    bearingText.setText(String.format(" - %03.0f%s", bearingTo, MapView.DEGREES_SYMBOL));
+    bearingText.setText(String.format(" - %03.0f%s BRG", bearingTo, MapView.DEGREES_SYMBOL));
 
     final DistanceUnits nauticalUnits = DistanceUnits.NAUTICAL_MILES;
     final double speedInKnots = nauticalUnits.getSpeed(location.getSpeed());
