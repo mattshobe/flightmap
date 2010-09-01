@@ -1,12 +1,12 @@
 /*
  * Copyright (C) 2010 Google Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -15,16 +15,15 @@
  */
 package com.google.flightmap.android;
 
-import java.util.List;
-import java.util.Map;
-import java.util.SortedSet;
-
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Paint.Style;
+import android.graphics.Path;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
@@ -36,8 +35,8 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.Window;
 import android.view.ViewGroup.LayoutParams;
+import android.view.Window;
 import android.widget.LinearLayout;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -52,6 +51,10 @@ import com.google.flightmap.common.data.Airport;
 import com.google.flightmap.common.data.Comm;
 import com.google.flightmap.common.data.LatLng;
 import com.google.flightmap.common.data.Runway;
+
+import java.util.List;
+import java.util.Map;
+import java.util.SortedSet;
 
 /**
  * Shows details about an airport.
@@ -71,21 +74,34 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
   private static final String PACKAGE_NAME = TapcardActivity.class.getPackage().getName();
   public static final String AIRPORT_ID = PACKAGE_NAME + "AirportId";
 
+  // Dimensions of the "to" pointer in pixels
+  private static final float POINTER_LENGTH = 12;
+  private static final float POINTER_WIDTH = 10;
+
   private AviationDbAdapter aviationDbAdapter;
   private LocationHandler locationHandler;
   private UserPrefs userPrefs;
+
+  // Screen density
+  private float density;
+
   // Magnetic variation w/ caching.
   private final CachedMagneticVariation magneticVariation = new CachedMagneticVariation();
+
+  // Last known bearing
+  private float lastBearing;
 
   // Items for the navigation display.
   private LatLng airportLatLng;
   private Drawable airplaneImage;
+  private Path pointerPath = new Path();
   private SurfaceView miniMap;
   private SurfaceHolder holder;
   private TextView distanceText;
   private TextView bearingText;
   private TextView eteText;
-
+  private Paint airplanePaint = new Paint();
+  private float[] distanceBearingResult = new float[2];
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -104,6 +120,9 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
       finish();
     }
 
+    // Screen density. Scale pixel sizes up based on this.
+    density = getResources().getDisplayMetrics().density;
+
     // Get location updates
     locationHandler =
         new LocationHandler((LocationManager) getSystemService(Context.LOCATION_SERVICE));
@@ -119,6 +138,9 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
     initializeTapcardUi(airport, getResources());
   }
 
+  /**
+   * Initializes the tapcard UI. Should only be called once from onCreate().
+   */
   private void initializeTapcardUi(Airport airport, Resources res) {
     // ICAO id and airport name.
     setIcaoAndName(airport, res);
@@ -141,9 +163,8 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
    */
   private void setIcaoAndName(Airport airport, Resources res) {
     TableRow nameRow = (TableRow) findViewById(R.id.tapcard_icao_and_name_row);
-    int nameBackground =
-        airport.isTowered ? res.getColor(R.color.ToweredAirport) : res
-            .getColor(R.color.NonToweredAirport);
+    int nameBackground = airport.isTowered ? res.getColor(R.color.ToweredAirport) : res.getColor(
+        R.color.NonToweredAirport);
     nameRow.setBackgroundColor(nameBackground);
 
     // ICAO
@@ -155,23 +176,33 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
     airportName.setText(airport.name);
   }
 
+  /**
+   * Sets up the static parts of the navigation display.
+   */
   private void setNavigationInfo(Airport airport, Resources res) {
     airportLatLng = airport.location;
     airplaneImage = MapView.centerImage(res.getDrawable(R.drawable.aircraft));
     airplaneImage.setFilterBitmap(true); // Improves rendering quality.
+    airplanePaint.setColor(res.getColor(R.color.AircraftPaint));
+    airplanePaint.setStrokeWidth(1.5f);
+    airplanePaint.setAntiAlias(true);
+
+    // Create path for the pointer.
+    pointerPath.lineTo(POINTER_WIDTH / 2f, 0);
+    pointerPath.lineTo(0, -POINTER_LENGTH);
+    pointerPath.lineTo(-POINTER_WIDTH / 2f, 0);
+    pointerPath.close();
+
     miniMap = (SurfaceView) findViewById(R.id.tapcard_minimap);
     holder = miniMap.getHolder();
     holder.addCallback(this);
     distanceText = (TextView) findViewById(R.id.tapcard_distance);
     bearingText = (TextView) findViewById(R.id.tapcard_bearing);
     eteText = (TextView) findViewById(R.id.tapcard_ete);
-    updateNavigationDisplay();
   }
 
   /**
    * Adds communication frequencies to the tapcard.
-   * 
-   * @param res
    */
   private void addCommInfo(final List<Comm> comms, Resources res) {
     if (comms == null) {
@@ -190,7 +221,7 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
       ident.setText(comm.identifier);
       ident.setTypeface(Typeface.SANS_SERIF);
       ident.setTextColor(textColor);
-      ident.setTextSize(TypedValue.DENSITY_DEFAULT, 18);
+      ident.setTextSize(TypedValue.DENSITY_DEFAULT, 18 * density);
       ident.setPadding(5, 5, 25, 5);
       commRow.addView(ident);
 
@@ -199,7 +230,7 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
       frequency.setText(comm.frequency);
       frequency.setTypeface(Typeface.SANS_SERIF, Typeface.BOLD);
       frequency.setTextColor(textColor);
-      frequency.setTextSize(TypedValue.DENSITY_DEFAULT, 22);
+      frequency.setTextSize(TypedValue.DENSITY_DEFAULT, 22 * density);
       frequency.setPadding(25, 5, 5, 5);
       commRow.addView(frequency);
 
@@ -212,7 +243,7 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
         remarks.setText(comm.remarks);
         remarks.setTypeface(Typeface.SANS_SERIF);
         remarks.setTextColor(textColor);
-        remarks.setTextSize(TypedValue.DENSITY_DEFAULT, 15);
+        remarks.setTextSize(TypedValue.DENSITY_DEFAULT, 15 * density);
         remarks.setPadding(5, 0, 0, 5);
 
         commRow.addView(remarks);
@@ -223,7 +254,7 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
 
   /**
    * Adds runway details to the tapcard.
-   * 
+   *
    * @param res
    */
   private void addRunways(SortedSet<Runway> runways, Resources res) {
@@ -235,16 +266,16 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
       letters.setText(runway.letters);
       letters.setTypeface(Typeface.SANS_SERIF, Typeface.BOLD);
       letters.setTextColor(textColor);
-      letters.setTextSize(TypedValue.DENSITY_DEFAULT, 22);
-      letters.setPadding(5, 5, 5, 5);
+      letters.setTextSize(TypedValue.DENSITY_DEFAULT, 22 * density);
+      letters.setPadding(5, 5, 5, 0);
       runwayLayout.addView(letters);
 
       TextView size = new TextView(this);
       size.setText(runway.length + "x" + runway.width + " " + runway.surface);
       size.setTypeface(Typeface.SANS_SERIF);
       size.setTextColor(textColor);
-      size.setTextSize(TypedValue.DENSITY_DEFAULT, 18);
-      size.setPadding(5, 5, 5, 10);
+      size.setTextSize(TypedValue.DENSITY_DEFAULT, 18 * density);
+      size.setPadding(5, 0, 5, 10);
       runwayLayout.addView(size);
     }
   }
@@ -320,17 +351,43 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
 
   /**
    * Updates the pointer, distance, bearing and ETE to the selected airport.
+   * This is called repeatedly by {@link #update()}.
    */
   private void updateNavigationDisplay() {
     final Location location = locationHandler.getLocation();
-    updateNavigationMiniMap(location);
-    updateNavigationTextItems(location);
+    float magneticConversion = 0;
+    if (location != null) {
+      final LatLng locationLatLng =
+          LatLng.fromDouble(location.getLatitude(), location.getLongitude());
+      magneticConversion =
+          magneticVariation.getMagneticVariation(locationLatLng, (float) location.getAltitude());
+    }
+
+    setDistanceBearingResult(location, magneticConversion);
+    updateNavigationMiniMap(location, magneticConversion);
+    updateNavigationTextItems(location, magneticConversion);
+  }
+
+  /**
+   * Stores the distance and bearing from {@code location} to {@code
+   * airportLatLng} in distanceBearingResult[]. Index 0 will be the distance in
+   * meters, index 1 will be the bearing in magnetic degrees.
+   */
+  private synchronized void setDistanceBearingResult(Location location, float magneticConversion) {
+    // Calculate distance and bearing to airport.
+    final double locationLat = location.getLatitude();
+    final double locationLng = location.getLongitude();
+    // results[0]===distance, results[1]==bearing
+    Location.distanceBetween(locationLat, locationLng, airportLatLng.latDeg(),
+        airportLatLng.lngDeg(), distanceBearingResult);
+    distanceBearingResult[1] =
+        (float) NavigationUtil.normalizeBearing(distanceBearingResult[1]) + magneticConversion;
   }
 
   /**
    * Updates the mini map pointing to the airport.
    */
-  private void updateNavigationMiniMap(Location location) {
+  private synchronized void updateNavigationMiniMap(Location location, float magneticConversion) {
     Canvas c = null;
     try {
       if (null == holder) {
@@ -338,13 +395,53 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
       }
       c = holder.lockCanvas();
       synchronized (holder) {
-        int fakeTrack = (int) ((System.currentTimeMillis() / 100) % 360);
         if (c != null) {
           c.drawColor(Color.BLACK);
+          if (location == null) {
+            return;
+          }
+
+          // Update bearing (if possible)
+          if (location.hasBearing()) {
+            lastBearing = location.getBearing() + magneticConversion;
+          }
+
+          // Center everythng on the canvas.
           c.translate(c.getWidth() / 2, c.getHeight() / 2);
-          c.scale(0.8f, 0.8f);
-          c.rotate(fakeTrack);
+          // Scale the image down based on the size of the canvas.
+          final int width = c.getWidth();
+          final float imageScale = width / 150f;
+          c.save();
+          c.scale(imageScale, imageScale);
+
+          // Rotate the airplane, then draw it.
+          // For north-up, rotate the airplane to its current track.
+          // Do nothing for track-up (the airplane pointing up is right).
+          if (userPrefs.isNorthUp()) {
+            c.rotate(lastBearing);
+          }
           airplaneImage.draw(c);
+
+          // Undo the downscaling and rotation for the airplane.
+          c.restore();
+
+          // Draw a circle around the airplane.
+          airplanePaint.setStyle(Style.STROKE);
+          float radius = (width / 2f) - POINTER_LENGTH;
+          c.drawCircle(0, 0, radius, airplanePaint);
+
+          // Calculate pointer direction. If in north-up mode, the it's just
+          // bearingTo, otherwise it's the relative bearing to.
+          float bearingTo = distanceBearingResult[1];
+          if (!userPrefs.isNorthUp()) {
+            bearingTo = (float) NavigationUtil.normalizeBearing(bearingTo - lastBearing);
+          }
+
+          // Rotate the pointer and draw it.
+          c.rotate(bearingTo);
+          c.translate(0, -radius);
+          airplanePaint.setStyle(Style.FILL);
+          c.drawPath(pointerPath, airplanePaint);
         }
       }
     } finally {
@@ -357,7 +454,8 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
   /**
    * Updates the distance, bearing and ete text items.
    */
-  private void updateNavigationTextItems(final Location location) {
+  private synchronized void updateNavigationTextItems(
+      final Location location, float magneticConversion) {
     if (null == location) {
       distanceText.setText("Location unavailable");
       bearingText.setText("");
@@ -365,19 +463,8 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
       return;
     }
 
-    // Calculate distance and bearing to airport.
-    final double locationLat = location.getLatitude();
-    final double locationLng = location.getLongitude();
-    final LatLng locationLatLng = LatLng.fromDouble(locationLat, locationLng);
-    // results[0]===distance, results[1]==bearing
-    float[] results = new float[2];
-    Location.distanceBetween(locationLat, locationLng, airportLatLng.latDeg(), airportLatLng
-        .lngDeg(), results);
-    final float distanceMeters = results[0];
-    final float bearingTo =
-        (float) NavigationUtil.normalizeBearing(results[1])
-            + magneticVariation
-                .getMagneticVariation(locationLatLng, (float) location.getAltitude());
+    final float distanceMeters = distanceBearingResult[0];
+    final float bearingTo = distanceBearingResult[1];
 
     DistanceUnits distanceUnits = userPrefs.getDistanceUnits();
     String distance =
