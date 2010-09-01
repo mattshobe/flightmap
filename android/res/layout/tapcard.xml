@@ -20,7 +20,7 @@
       <TextView android:id="@+id/tapcard_ete" style="@style/TapcardNavigationText" />
     </LinearLayout>
     <!--  Communications Table -->
-    <TableLayout android:id="@+id/tapcard_comm_table" style="@style/FillWidth" />
+    <TableLayout android:id="@+id/tapcard_comm_table" style="@style/TapcardComms" />
     <!-- Runway List -->
     <LinearLayout android:id="@+id/tapcard_runway_layout"
       style="@style/TapcardRunwayLayout" />

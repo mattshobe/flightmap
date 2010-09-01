@@ -507,7 +507,7 @@ public class MapView extends SurfaceView
     if (location.hasBearing()) {
       lastBearing = location.getBearing();
     }
-
+    
     // Draw everything relative to the aircraft.
     c.translate(aircraftX, aircraftY);
     if (isTrackUp) {
