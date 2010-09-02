@@ -1,0 +1,17 @@
+#summary For developers. How to work on the trunk and branches.
+
+= Introduction =
+
+Most development happens on the main trunk, and the [http://code.google.com/p/flightmap/source/checkout code checkout instructions] tell you how to check out that code.
+
+This page will tell you how to switch between the `trunk` and other branches. It also tells you how to work with tags.
+
+= Branches =
+
+We create branches for each release. These are typically short-lived, just for release-related details that don't belong on the main trunk (such as setting the version number, or making a quick release-specific fix).
+
+= One Working Directory =
+
+Once you've done the EclipseSetup, you don't want to repeat that for each branch you work on. The recommended way of development is to have one working directory for all your development, and use the `svn switch` command to switch between them. That way you can keep Eclipse pointed at the one working directory.
+
+These instructions will assume your working directory is `~/src/flightmap`. Adjust appropriately if you've chosen a different working directory.
