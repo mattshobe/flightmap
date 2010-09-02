@@ -21,7 +21,7 @@
       android:key="Show_Soft" android:defaultValue="true" />
 
     <CheckBoxPreference android:title="Show Private Airports"
-      android:key="Show_Private" android:defaultValue="true" />
+      android:key="Show_Private" android:defaultValue="false" />
 
     <CheckBoxPreference android:title="Show Heliports"
       android:key="Show_Heli" android:defaultValue="false" />
