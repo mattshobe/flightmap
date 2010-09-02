@@ -1,6 +1,5 @@
 #summary Flight Map v0.5 Release Notes
 
-
 =Flight Map v0.5 - Google Bazaar Dogfood Edition - Release Notes=
 
 ==Intro==
@@ -13,13 +12,20 @@ FlightMap offers these features in v0.5:
   *  Pilot-controlled settings for north/track up orientation, facility types to display
   *  Automatic facility database download and updating (data currently provided from official FAA sources; others are being considered)
 
-In future releases, we're planning for the following features:
-  *  Ability to record and save in-flight GPS tracks using the Android MyTracks application, if installed
+We plan to add the following features in future releases:
+  *  Record and save in-flight GPS tracks using the Android MyTracks application, if installed
   *  Multitouch pan and zoom of the display map
   *  Terrain and water detail layers in 2D mode
   *  Separate Airport/Facility database browse and search
-…and the big one: a Sky Map-like augmented reality view through the device camera that can help reveal airports. See https://sites.google.com/a/google.com/blackbox/home/user-experience for a conceptual screenshot. 
+…and the big one: a Sky Map-like augmented reality view through the device camera that can help reveal airports. Here is a [https://sites.google.com/a/google.com/blackbox/home/user-experience conceptual screenshot]. 
+
+==Find bugs? Awesome. Tell us everything.==
+Please file a bug using our official [http://code.google.com/p/flightmap/issues/list issues list] on the Google code site. (There are multiple bugs filed already – be sure to double-check for duplicates).
+
+Also, you should consider joining the Flight Map [http://g/flightmap mailing list]. The development team will monitor this list for discussion and provide updates on development plans and launch timetables through it.
 
 ==Known Issues: v0.5==
-  *  GPS-derived altitude reads 100 feet low on Nexus One (this inaccuracy may occur on other hardware, too)
-  *  Facility database download continues in the background even if the application is closed prior to completion
+  * Communication frequency data for various airports (especially Bay Area facilities) is widely incomplete/inconsistent. This is our #1 motivator for a better data source.
+  *  GPS-derived altitude reads 100 feet low on Nexus One (this inaccuracy may occur on other hardware, too).
+  *  Facility database download continues in the background even if the application is closed prior to completion.
+  * Map view when standing still or moving slowly (e.g., walking, or taxiing very slowly) is a bit erratic. The view may shift position unexpectedly until you are moving at a more consistent speed.
