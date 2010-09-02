@@ -24,13 +24,13 @@ All the examples below use `https` which provides read-write access to subversio
 
 See the [http://code.google.com/p/flightmap/source/checkout code checkout instructions].
 
-== Work on the main trunk ==
+== Switch your working directory to trunk ==
 {{{
 cd ~/src/flightmap
 svn switch https://flightmap.googlecode.com/svn/trunk/
 }}}
 
-== Work on a branch ==
+== Switch your working directory to a branch ==
 {{{
 cd ~/src/flightmap
 svn switch https://flightmap.googlecode.com/svn/branches/the-branch-name
