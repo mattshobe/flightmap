@@ -56,3 +56,8 @@ Now the changes from r42424242 are pending changes in your working directory. Yo
 {{{
 svn ci -m"Merged fix for issue 62 to release branch (from trunk r257)"
 }}}
+
+== Merge a change from a branch to the trunk ==
+*This is not a normal operation for a release branch.* For a release branch, it's much better to make the change on the trunk then merge it down.
+
+The steps are basically the same as merging the other way. Substitute as needed in the merge trunk to branch instructions above.
