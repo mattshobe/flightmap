@@ -54,12 +54,20 @@ public class Runway implements Comparable<Runway> {
 
   @Override
   public int compareTo(Runway o) {
+    if (airportId != o.airportId) {
+      throw new IllegalArgumentException("Cannot compare runways from different airports");
+    }
+
     final int lengthDiff = length - o.length;
     if (lengthDiff != 0) {
       return lengthDiff;
     }
     final int widthDiff = width - o.width;
-    return widthDiff;
+    if (widthDiff != 0) {
+      return widthDiff;
+    }
+    final int lettersDiff = letters.compareTo(o.letters);
+    return lettersDiff;
   }
 
   @Override
@@ -68,7 +76,7 @@ public class Runway implements Comparable<Runway> {
     if ( !(obj instanceof Runway)) return false;
 
     Runway other = (Runway)obj;
-    return letters.equals(other.letters) && (airportId == other.airportId);
+    return (airportId == other.airportId) && letters.equals(other.letters);
   }
 
   @Override
