@@ -1,13 +1,25 @@
-#summary One-sentence summary of this page.
-
-= Introduction =
-
-Add your content here.
+#summary Flight Map v0.5 Release Notes
 
 
-= Details =
+=Flight Map v0.5 - Google Bazaar Dogfood Edition - Release Notes=
 
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
+==Intro==
+Flight Map is an Android application created by Googler pilots who wanted to build a fun, simple-to-use aid to navigation and fair-weather pilotage. It is in its absolute earliest stages of development/feature maturity, but it's ready for pilots and other interested parties to dogfood in flight.
+
+FlightMap offers these features in v0.5:
+  *  Current heading, speed, and altitude
+  *  GPS-plotted position on a moving, zoom-able map with nearby airport display
+  *  Detailed airport/facility information available by tapping on airports shown on screen 
+  *  Pilot-controlled settings for north/track up orientation, facility types to display
+  *  Automatic facility database download and updating (data currently provided from official FAA sources; others are being considered)
+
+In future releases, we're planning for the following features:
+  *  Ability to record and save in-flight GPS tracks using the Android MyTracks application, if installed
+  *  Multitouch pan and zoom of the display map
+  *  Terrain and water detail layers in 2D mode
+  *  Separate Airport/Facility database browse and search
+…and the big one: a Sky Map-like augmented reality view through the device camera that can help reveal airports. See https://sites.google.com/a/google.com/blackbox/home/user-experience for a conceptual screenshot. 
+
+==Known Issues: v0.5==
+  *  GPS-derived altitude reads 100 feet low on Nexus One (this inaccuracy may occur on other hardware, too)
+  *  Facility database download continues in the background even if the application is closed prior to completion
