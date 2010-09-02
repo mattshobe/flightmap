@@ -5,7 +5,7 @@
 ==Intro==
 Flight Map is an Android application created by Googler pilots who wanted to build a fun, simple-to-use aid to navigation and fair-weather pilotage. It is in its absolute earliest stages of development/feature maturity, but it's ready for pilots and other interested parties to dogfood in flight.
 
-FlightMap offers these features in v0.5:
+Flight Map offers these features in v0.5:
   *  Current heading, speed, and altitude
   *  GPS-plotted position on a moving, zoom-able map with nearby airport display
   *  Detailed airport/facility information available by tapping on airports shown on screen 
