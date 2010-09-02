@@ -16,7 +16,7 @@ These instructions will assume your working directory is `~/src/flightmap`. Adju
 
 We create branches for each release. These are typically short-lived, just for release-related details that don't belong on the main trunk (such as setting the version number, or making a quick release-specific fix).
 
-= How To's =
+= How To... =
 
 All the examples below use `https` which provides read-write access to subversion. If you're not on the commiters list, and therefore only have read-only access, change the `https` to `http`.
 
