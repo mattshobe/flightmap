@@ -31,10 +31,6 @@
       android:key="Runway_Length" android:defaultValue="2"
       android:entries="@array/lengths" android:entryValues="@array/lengths_values" />
 
-    <CheckBoxPreference android:title="Keypad sets heading"
-      android:summary="For application testing, change heading with the directional-pad keys"
-      android:key="Fake_Heading" android:defaultValue="false" />
-
   </PreferenceCategory>
   <PreferenceCategory android:title="Update Settings">
     <CheckBoxPreference android:title="Database Updates"
