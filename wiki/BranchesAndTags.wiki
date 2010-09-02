@@ -41,3 +41,18 @@ svn switch https://flightmap.googlecode.com/svn/branches/the-branch-name
 cd ~/src/flightmap
 svn info | grep URL:
 }}}
+
+== Merge a change from trunk to a branch ==
+Typically this down to cherry pick one specific revision's change down to a release branch.
+
+  # Ensure you have no pending changes. `svn status` reports nothing pending.
+  # *switch your working dir to the branch* as described above.
+  # Now let's say r42424242 was a change on the trunk that you want to merge to the branch. Do the following:
+{{{
+svn merge -c42424242 https://flightmap.googlecode.com/svn/trunk
+}}}
+
+Now the changes from r42424242 are pending changes in your working directory. You can edit them as needed. When you're ready to commit them to the branch, then submit with a comment that identifies the source of the change. For example, r258 was a merge from trunk to a release branch. Here's the command used to submit it.
+{{{
+svn ci -m"Merged fix for issue 62 to release branch (from trunk r257)"
+}}}
