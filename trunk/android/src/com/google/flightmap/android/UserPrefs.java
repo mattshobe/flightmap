@@ -81,7 +81,7 @@ public class UserPrefs {
   }
 
   public synchronized boolean showSoft() {
-    return sharedPrefs.getBoolean(SHOW_SOFT, false);
+    return sharedPrefs.getBoolean(SHOW_SOFT, true);
   }
 
   public synchronized boolean showPrivate() {
