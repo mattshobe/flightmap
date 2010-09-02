@@ -75,14 +75,17 @@ public class NavigationUtil {
   /**
    * Normalizes {@code bearing} to be in the range [0-360). Some Android SDK
    * methods return negative bearings for what's normally 180-359 degrees.
-   * @param bearing degrees in the range (-180, 180).
+   *
+   * @param bearing bearing in degrees.
    */
   public static double normalizeBearing(double bearing) {
-    double result = bearing;
-    if (result < 0) {
-      result += 360;
+    while (bearing > 360) {
+      bearing -= 360;
     }
-    return result;
+    while (bearing < 0) {
+      bearing += 360;
+    }
+    return bearing;
   }
 
   /**
