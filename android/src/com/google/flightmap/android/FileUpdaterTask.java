@@ -27,7 +27,9 @@ import com.google.flightmap.common.net.FileUpdater;
 // FileUpdaterTask is an android specific asynchronous task, and is hence package scoped. 
 class FileUpdaterTask extends AsyncTask<FileUpdaterTask.Params, Integer, Boolean> implements
     ProgressListener {
-  final ProgressListener listener;
+  // HACK: downloadStarted used to avoid displaying an error if isUpdateNeeded() fails.
+  private boolean downloadStarted;
+  private final ProgressListener listener;
 
   FileUpdaterTask(final ProgressListener listener) {
     this.listener = listener;
@@ -35,20 +37,26 @@ class FileUpdaterTask extends AsyncTask<FileUpdaterTask.Params, Integer, Boolean
 
   @Override
   protected Boolean doInBackground(Params... params) {
+    final Params param = params[0];
     try {
-      final Params param = params[0];
       final FileUpdater updater = new FileUpdater(param.file, param.url, param.workingDir);
+//      // Checking before calling update to avoid progress notification
+      if (!updater.isUpdateNeeded()) {  
+        return Boolean.TRUE;
+      }
       updater.addProgressListener(this);
+//        hasProgressed(0);
       updater.update();
       return Boolean.TRUE;
     } catch (IOException ex) {
       ex.printStackTrace();
-      return Boolean.FALSE;
+      return downloadStarted ? Boolean.FALSE : Boolean.TRUE;
     }
   }
 
   @Override
   public void hasProgressed(int percent) {
+    downloadStarted = percent > 0;
     publishProgress(percent);
   }
 
