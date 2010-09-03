@@ -16,7 +16,7 @@ Flight Map offers these features in v0.5:
 We plan to add the following features in future releases:
   *  Record and save in-flight GPS tracks using the Android MyTracks application, if installed
   *  Multitouch pan and zoom of the display map
-  *  Terrain and water detail layers in 2D mode
+  *  Terrain, airspace, road, and water detail layers in 2D mode
   *  Separate Airport/Facility database browse and search
 …and the big one: a Sky Map-like augmented reality view through the device camera that can help reveal airports. Here is a [https://sites.google.com/a/google.com/blackbox/home/user-experience conceptual screenshot]. 
 
