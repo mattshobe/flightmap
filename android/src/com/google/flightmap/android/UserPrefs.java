@@ -38,7 +38,6 @@ public class UserPrefs {
   private static final String SHOW_PRIVATE = "Show_Private";
   private static final String SHOW_HELIPORT = "Show_Heliports";
   private static final String RUNWAY_LENGTH = "Runway_Length";
-  private static final String FAKE_HEADING = "Fake_Heading";
   private static final String ALWAYS_UPDATE = "Always_Update";
   private static final String LAST_UPDATED = "Last_Updated";
 
@@ -106,15 +105,15 @@ public class UserPrefs {
   public synchronized boolean getAlwaysUpdate() {
     return sharedPrefs.getBoolean(ALWAYS_UPDATE, true);
   }
-  
+
   /**
    * Set database update time.
    */
   public synchronized boolean setUpdateTime(long time) {
-	  SharedPreferences.Editor editor = sharedPrefs.edit();
-	  editor.putLong(LAST_UPDATED, time);
-	  editor.commit();
-	  return true;
+    SharedPreferences.Editor editor = sharedPrefs.edit();
+    editor.putLong(LAST_UPDATED, time);
+    editor.commit();
+    return true;
   }
 
   /**
@@ -122,25 +121,16 @@ public class UserPrefs {
    * preference is set to always update.
    */
   public synchronized boolean getNeedToUpdate() {
-	  long updateTime = sharedPrefs.getLong(LAST_UPDATED, 0);
-	  if(updateTime == 0)
-		  return true;
-	  else {
-		  Time curr = new Time();
-		  curr.setToNow();
-		  long now = curr.toMillis(true);
-		  return (now - updateTime > 86400000);
-	  }
+    long updateTime = sharedPrefs.getLong(LAST_UPDATED, 0);
+    if(updateTime == 0)
+      return true;
+    else {
+      Time curr = new Time();
+      curr.setToNow();
+      long now = curr.toMillis(true);
+      return (now - updateTime > 86400000);
+    }
   }
-
-  /**
-   * True if hitting the directional-pad arrow keys controls the heading instead
-   * of using the heading from the GPS location.
-   */
-  public synchronized boolean controlHeadingWithKeys() {
-    return sharedPrefs.getBoolean(FAKE_HEADING, false);
-  }
-
 
   public void registerOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener listener) {
     sharedPrefs.registerOnSharedPreferenceChangeListener(listener);
