@@ -31,7 +31,6 @@ import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -86,13 +85,6 @@ public class MapView extends SurfaceView
   private static final float PANEL_NOTCH_WIDTH = 10;
   private static final float PANEL_TEXT_BASELINE =
       PANEL_HEIGHT - PANEL_NOTCH_HEIGHT - PANEL_TEXT_MARGIN;
-
-  /**
-   * This stores the fake heading used when UserPrefs.controlHeadingWithKeys()
-   * is true. This allow d-pad arrow keys to change heading for testing purposes
-   * only.
-   */
-  private int headingForTesting;
 
   // Rectangle with a notch that's the background for the top panel area.
   private Path topPanel;
@@ -219,40 +211,6 @@ public class MapView extends SurfaceView
     AIRPORT_TEXT_PAINT.setTextSize(16 * density);
     PANEL_DIGITS_PAINT.setTextSize(26 * density);
     PANEL_UNITS_PAINT.setTextSize(18 * density);
-  }
-
-  /**
-   * Forces a heading change, for testing purposes only.
-   */
-  @Override
-  public boolean onKeyDown(int keyCode, KeyEvent event) {
-    if (!flightMap.userPrefs.controlHeadingWithKeys()) {
-      return false;
-    }
-    synchronized (this) {
-      switch (keyCode) {
-        case KeyEvent.KEYCODE_DPAD_CENTER:
-          headingForTesting = 0;
-          previousLocation = null;
-          return true;
-
-        case KeyEvent.KEYCODE_DPAD_LEFT:
-          headingForTesting -= 20;
-          if (headingForTesting < 0) {
-            headingForTesting += 360;
-          }
-          previousLocation = null;
-          return true;
-
-        case KeyEvent.KEYCODE_DPAD_RIGHT:
-          headingForTesting = (headingForTesting + 20) % 360;
-          previousLocation = null;
-          return true;
-
-        default:
-          return false;
-      }
-    }
   }
 
   @Override
@@ -489,12 +447,6 @@ public class MapView extends SurfaceView
       return;
     }
 
-    // Override bearing if the user pref to control heading with the direction
-    // pad is set.
-    if (flightMap.userPrefs.controlHeadingWithKeys()) {
-      location.setBearing(headingForTesting);
-    }
-
     LatLng locationLatLng = LatLng.fromDouble(location.getLatitude(), location.getLongitude());
 
     // Convert bearing from true to magnetic.
@@ -507,7 +459,7 @@ public class MapView extends SurfaceView
     if (location.hasBearing()) {
       lastBearing = location.getBearing();
     }
-    
+
     // Draw everything relative to the aircraft.
     c.translate(aircraftX, aircraftY);
     if (isTrackUp) {
