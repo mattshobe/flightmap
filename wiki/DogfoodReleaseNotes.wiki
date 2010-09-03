@@ -30,5 +30,5 @@ Also, you should consider joining the Flight Map [http://g/flightmap mailing lis
   *  GPS-derived altitude reads 100 feet low on Nexus One (this inaccuracy may occur on other hardware, too).
   *  GPS-derived ground speed is sometimes very wrong, especially when changing altitude.
   *  Facility database download continues in the background even if the application is closed prior to completion.
-  * Map view when standing still or moving slowly (e.g., walking, or taxiing very slowly) is a bit erratic. The view may shift position unexpectedly until you are moving at a more consistent speed.
+  * Map view when standing still or moving slowly (e.g., walking or taxiing very slowly) is a bit erratic. The view may shift position unexpectedly until you are moving at a more consistent speed.
   * Military airport information is inaccurate and they are sometimes listed as private airports.
