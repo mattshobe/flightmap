@@ -61,3 +61,11 @@ svn ci -m"Merged fix for issue 62 to release branch (from trunk r257)"
 *This is not a normal operation for a release branch.* For a release branch, it's much better to make the change on the trunk then merge it down.
 
 The steps are basically the same as merging the other way. Substitute as needed in the merge trunk to branch instructions above.
+
+== Tag a release ==
+This is normally done by copying a release branch to the tags directory at a specific revision.
+
+Example:
+{{{
+svn cp -r268 https://flightmap.googlecode.com/svn/branches/release-0.5-dogfood https://flightmap.googlecode.com/svn/tags/release-0.5-dogfood
+}}}
