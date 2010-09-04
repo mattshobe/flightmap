@@ -381,7 +381,7 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
     Location.distanceBetween(locationLat, locationLng, airportLatLng.latDeg(),
         airportLatLng.lngDeg(), distanceBearingResult);
     distanceBearingResult[1] =
-        (float) NavigationUtil.normalizeBearing(distanceBearingResult[1]) + magneticConversion;
+        (float) NavigationUtil.normalizeBearing(distanceBearingResult[1] + magneticConversion);
   }
 
   /**
