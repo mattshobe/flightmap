@@ -16,6 +16,24 @@ These instructions will assume your working directory is `~/src/flightmap`. Adju
 
 We create branches for each release. These are typically short-lived, just for release-related details that don't belong on the main trunk (such as setting the version number, or making a quick release-specific fix).
 
+= Tags =
+Tags are made for each release. These are kept forever.
+
+= Naming Scheme for release Branches and Tags =
+The integer `versionCode` in android/AndroidManifest.xml is an important number. It must be incremented for the Android system to detect your code has been updated. The `versionName` in that file is what we typically talk about (version 0.5.1, 1.0.0, etc.). It's shown to the user, but has no significance to the updating system.
+
+Given how important the `versionCode` is, our naming scheme for release branches and tags emphasizes that by putting the `versionCode` first.
+
+{{{
+<4-digit-versionCode>-release-<versionName>
+}}}
+Example:
+The release named "0.5" had `versionCode` 5, and the release named "0.5.1" had `versionCode` 6. Here's the branch/tag names for those releases
+{{{
+0005-release-0.5
+0006-release-0.5.1
+}}}
+
 = How To... =
 
 All the examples below use `https` which provides read-write access to subversion. If you're not on the commiters list, and therefore only have read-only access, change the `https` to `http`.
