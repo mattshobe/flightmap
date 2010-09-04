@@ -20,10 +20,6 @@ limitations under the License.
   <property file="build.properties"/>
   <property name="common.dist.name" value="flightmap-common" />
 
-  <!-- can be overridden at the command line with -Dversion=
-       or in IDEA, in the ant properties dialog -->
-  <property name="version" value="0.5"/>
-
   <target name="compile" description="Compile Java source.">
     <mkdir dir="${build.dir}/classes"/>
     <javac
@@ -95,8 +91,8 @@ limitations under the License.
   </target>
 
   <target name="jar" depends="compile" description="Build jars.">
-    <mkdir dir="${build.dir}/dist/${common.dist.name}-${version}"/>
-    <jar jarfile="${build.dir}/dist/${common.dist.name}-${version}/${common.dist.name}-${version}.jar">
+    <mkdir dir="${build.dir}/dist/${common.dist.name}"/>
+    <jar jarfile="${build.dir}/dist/${common.dist.name}/${common.dist.name}.jar">
       <fileset dir="${build.dir}/classes"/>
     </jar>
   </target>
@@ -104,13 +100,13 @@ limitations under the License.
   <target name="release" depends="jar" description="Create a released version">
       <mkdir dir="${release.dir}" />
       <copy
-          file="${build.dir}/dist/${common.dist.name}-${version}/${common.dist.name}-${version}.jar"
+          file="${build.dir}/dist/${common.dist.name}/${common.dist.name}.jar"
           todir="${release.dir}" />
   </target>
 
   <target name="jarsrc" description="Build jar of source.">
-    <mkdir dir="${build.dir}/dist/${common.dist.name}-${version}"/>
-    <jar jarfile="${build.dir}/dist/${common.dist.name}-${version}/src-${version}.zip">
+    <mkdir dir="${build.dir}/dist/${common.dist.name}"/>
+    <jar jarfile="${build.dir}/dist/${common.dist.name}/src.zip">
       <fileset dir="${src.dir}"/>
     </jar>
   </target>
@@ -118,12 +114,12 @@ limitations under the License.
 <!--
   <target name="dist" depends="jar, jarsrc, javadoc"
        description="Build entire distribution.">
-    <copy toDir="${build.dir}/dist/${common.dist.name}-${version}" file="COPYING"/>
-    <copy toDir="${build.dir}/dist/${common.dist.name}-${version}">
+    <copy toDir="${build.dir}/dist/${common.dist.name}" file="COPYING"/>
+    <copy toDir="${build.dir}/dist/${common.dist.name}">
       <fileset dir="${build.dir}" includes="javadoc/**/*"/>
     </copy>
 
-    <zip destfile="${build.dir}/${common.dist.name}-${version}.zip"
+    <zip destfile="${build.dir}/${common.dist.name}.zip"
       basedir="${build.dir}/dist"/>
   </target>
 -->
@@ -137,7 +133,7 @@ limitations under the License.
          use="true"
          author="true"
          protected="true"
-         windowtitle="Flight Map ${version}">
+         windowtitle="Flight Map common">
       <sourcepath>
         <pathelement location="${src.dir}"/>
         <pathelement location="${env.JAVA_HOME}/src"/>
