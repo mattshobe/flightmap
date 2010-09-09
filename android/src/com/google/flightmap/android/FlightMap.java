@@ -176,23 +176,34 @@ public class FlightMap extends Activity {
     final ProgressDialog dialog = new ProgressDialog(this);
     dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
     dialog.setMessage(this.getString(R.string.updating_database));
-    dialog.show();
+//    dialog.show();
 
     final ProgressListener dbUpdateListener = new ProgressListener() {
       @Override
       public void hasCompleted(boolean success) {
-        dialog.dismiss();
-        Log.i(TAG, "Download completed.  Success: " + success);
-        if (!success) {
-          showDialog(DOWNLOAD_FAILED);
-          Log.e(TAG, "Download failed");
+        try {
+          dialog.dismiss();
+          Log.i(TAG, "Download completed.  Success: " + success);
+          if (!success) {
+            showDialog(DOWNLOAD_FAILED);
+            Log.e(TAG, "Download failed");
+          }
+        } catch (RuntimeException rEx) {
+          // HACK: Avoid crash if back button is touched before download is complete.
+          rEx.printStackTrace(); 
         }
         downloadDatabaseDone();
       }
 
       @Override
       public void hasProgressed(int percent) {
-        dialog.setProgress(percent);
+        try {
+          dialog.show();
+          dialog.setProgress(percent);
+        } catch (RuntimeException rEx) {
+          // HACK: Avoid crash if back button is touched before download is complete.
+          rEx.printStackTrace(); 
+        }
       }
     };
 

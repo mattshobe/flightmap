@@ -188,7 +188,7 @@ public class FileUpdater {
     } catch (IOException e) {
       workingFile.delete();
       workingInfoFile.delete();
-      throw e;
+      e.printStackTrace();
     }
   }
 
