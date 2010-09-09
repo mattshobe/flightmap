@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="agree">I Agree</string>
+  <string name="app_name">Flight Map</string>
+  <string name="disclaimer_heading">WARNING</string>
+  <string name="disclaimer_text">Flight Map does not replace flight navigation
+    charts.\n\nUse Flight Map for VFR flight only.\n\nFlight Map does
+    not include terrain data.\n\nFlight Map does not include Notices to
+    Airmen (NOTAMs).\n\nFlight Map does not include information released
+    since you last updated Flight Map.\n\nFlight Map is an aid for
+    sitational awareness. It is not a substitute for good judgment and
+    experience.\n\nBy clicking "I Agree", you agree to assume all risk
+    and responsibility associated with using Flight Map and to release
+    Google from any liability associated with your use of Flight Map.
+  </string>
+  <string name="download_failed">Database download failed.</string>
+  <string name="no_airports">No airports found</string>
+  <string name="old_location">Searching for GPS...</string>
+  <string name="preferences_from_xml">Settings...</string>
+  <string name="tapcard_activity">Airport Details</string>
+  <string name="updating_database">Updating database...</string>
+</resources>
