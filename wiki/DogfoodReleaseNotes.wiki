@@ -1,6 +1,6 @@
-#summary Flight Map v0.5 Release Notes
+#summary Flight Map Release Notes
 
-=Flight Map v0.5 - Google Dogfood Edition - Release Notes=
+=Flight Map v0.5.x - Google Dogfood Edition - Release Notes=
 
 ==Intro==
 Flight Map is an Android application created by Googler pilots who wanted to build a fun, simple-to-use aid to navigation and fair-weather pilotage. It is in its absolute earliest stages of development/feature maturity, but it's ready for pilots and other interested parties to dogfood in flight.
@@ -31,3 +31,6 @@ Also, you should consider joining the Flight Map [http://g/flightmap mailing lis
   *  GPS-derived ground speed is sometimes very wrong, especially when changing altitude.
   *  Facility database download continues in the background even if the application is closed prior to completion.
   * Map view when standing still or moving slowly (e.g., walking or taxiing very slowly) is a bit erratic. The view may shift position unexpectedly until you are moving at a more consistent speed.
+
+==Update: v0.5.1==
+  * Solves reported issue:  "Database update failed" error dialog would appear even though download completed successfully.
