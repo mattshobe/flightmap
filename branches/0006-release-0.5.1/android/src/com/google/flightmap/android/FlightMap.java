@@ -181,11 +181,16 @@ public class FlightMap extends Activity {
     final ProgressListener dbUpdateListener = new ProgressListener() {
       @Override
       public void hasCompleted(boolean success) {
-        dialog.dismiss();
-        Log.i(TAG, "Download completed.  Success: " + success);
-        if (!success) {
-          showDialog(DOWNLOAD_FAILED);
-          Log.e(TAG, "Download failed");
+        try {
+          dialog.dismiss();
+          Log.i(TAG, "Download completed.  Success: " + success);
+          if (!success) {
+            showDialog(DOWNLOAD_FAILED);
+            Log.e(TAG, "Download failed");
+          }
+        } catch (RuntimeException rEx) {
+          // HACK: Avoid crash if back button is touched before download is complete.
+          rEx.printStackTrace(); 
         }
         downloadDatabaseDone();
       }
