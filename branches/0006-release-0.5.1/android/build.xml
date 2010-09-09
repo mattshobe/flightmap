@@ -87,7 +87,7 @@ limitations under the License.
         <pathelement location="${source.dir}"/>
       </sourcepath>
       <classpath>
-        <pathelement location="libs/flightmap-common-0.5.jar" />
+        <pathelement location="libs/flightmap-common.jar" />
         <pathelement location="${sdk.dir}/tools/lib/sdklib.jar" />
         <pathelement location="${sdk.dir}/platforms/android-7/android.jar" />
         <pathelement location="${sdk.dir}/platforms/android-7/android.jar" />
