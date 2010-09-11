@@ -130,6 +130,11 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    * bottom-left corner. These are set in {@link #surfaceChanged}
    */
   private final Point[] screenCorners = new Point[4];
+  /**
+   * Scratchpad point. Not guaranteed to hold the same value between method
+   * calls.
+   */
+  private final Point temporaryPoint = new Point();
 
   // Magnetic variation w/ caching.
   private final CachedMagneticVariation magneticVariation = new CachedMagneticVariation();
@@ -219,8 +224,12 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       return false;
     }
     // See if an airport was tapped.
-    Collection<Airport> airportsNearTap =
-        getAirportsNearScreenPoint(new Point(Math.round(event.getX()), Math.round(event.getY())));
+    Collection<Airport> airportsNearTap;
+    synchronized (this) {
+      temporaryPoint.x = Math.round(event.getX());
+      temporaryPoint.y = Math.round(event.getY());
+      airportsNearTap = getAirportsNearScreenPoint(temporaryPoint);
+    }
     if (!airportsNearTap.isEmpty()) {
       for (Airport airport : airportsNearTap) {
         Log.i(TAG, "Airport near tap: " + airport);
@@ -291,18 +300,18 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    * Returns a rectangle that is enclosed by a circle of {@code radius} pixels
    * centered on {@code point}.
    */
-  private LatLngRect createRectangleAroundPoint(final Point point, final int radius) {
+  private synchronized LatLngRect createRectangleAroundPoint(final Point point, final int radius) {
     LatLngRect result = new LatLngRect();
-    Point corner = new Point();
-    corner.x = point.x - radius;
-    corner.y = point.y - radius;
-    result.add(getLocationForPoint(corner));
-    corner.x = point.x + radius;
-    result.add(getLocationForPoint(corner));
-    corner.y = point.y + radius;
-    result.add(getLocationForPoint(corner));
-    corner.x = point.x - radius;
-    result.add(getLocationForPoint(corner));
+    // Set temporaryPoint to each corner of a square with sides 2 * radius.
+    temporaryPoint.x = point.x - radius;
+    temporaryPoint.y = point.y - radius;
+    result.add(getLocationForPoint(temporaryPoint));
+    temporaryPoint.x = point.x + radius;
+    result.add(getLocationForPoint(temporaryPoint));
+    temporaryPoint.y = point.y + radius;
+    result.add(getLocationForPoint(temporaryPoint));
+    temporaryPoint.x = point.x - radius;
+    result.add(getLocationForPoint(temporaryPoint));
     return result;
   }
 
@@ -710,8 +719,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     screenPoints[0] = screenPoint.x;
     screenPoints[1] = screenPoint.y;
     screenMatrix.mapPoints(screenPoints);
-    Point mercatorPoint = new Point(Math.round(screenPoints[0]), Math.round(screenPoints[1]));
-    LatLng result = MercatorProjection.fromPoint(zoom, mercatorPoint);
+    temporaryPoint.x = Math.round(screenPoints[0]);
+    temporaryPoint.y = Math.round(screenPoints[1]);
+    LatLng result = MercatorProjection.fromPoint(zoom, temporaryPoint);
     return result;
   }
 
