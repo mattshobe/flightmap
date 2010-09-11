@@ -650,14 +650,12 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    * @param locationPoint pixel coordinates of current location (as returned by
    *        {@link MercatorProjection#toPoint}
    */
-  private LatLngRect getScreenRectangle(final float zoom, final float orientation,
+  private synchronized LatLngRect getScreenRectangle(final float zoom, final float orientation,
       final Point locationPoint) {
     // Make rectangle that encloses the 4 screen corners.
     LatLngRect result = new LatLngRect();
-    synchronized (screenCorners) {
-      for (int i = 0; i < 4; i++) {
-        result.add(getLocationForPoint(zoom, orientation, locationPoint, screenCorners[i]));
-      }
+    for (int i = 0; i < 4; i++) {
+      result.add(getLocationForPoint(zoom, orientation, locationPoint, screenCorners[i]));
     }
     return result;
   }
