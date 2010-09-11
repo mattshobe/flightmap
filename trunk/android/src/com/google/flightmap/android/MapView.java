@@ -60,6 +60,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   /** Position is considered "old" after this many milliseconds. */
   private static final long MAX_LOCATION_AGE = 300000; // 5 minutes.
 
+  /** Radius in screen pixels to search around touch location. */
+  private static final int TOUCH_PIXEL_RADIUS = 30;
+
   // Paints.
   private static final Paint ERROR_TEXT_PAINT = new Paint();
   private static final Paint AIRPORT_TEXT_PAINT = new Paint();
@@ -285,9 +288,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       return result;
     }
 
-    // Make a rectangle enclosed by a 30-pixel circle around {@code
+    // Make a rectangle enclosed by a TOUCH_PIXEL_RADIUS circle around {@code
     // screenPoint}. Test if any airports are contained by that rectangle.
-    LatLngRect touchRect = createRectangleAroundPoint(screenPoint, 30);
+    LatLngRect touchRect = createRectangleAroundPoint(screenPoint, TOUCH_PIXEL_RADIUS);
     for (Airport airport : airportsOnScreen) {
       if (touchRect.contains(airport.location)) {
         result.add(airport);
