@@ -15,6 +15,10 @@
  */
 package com.google.flightmap.android;
 
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.concurrent.ExecutionException;
+
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
@@ -38,19 +42,17 @@ import android.widget.ZoomButtonsController;
 
 import com.google.flightmap.common.CachedMagneticVariation;
 import com.google.flightmap.common.NavigationUtil;
+import com.google.flightmap.common.ProgressListener;
 import com.google.flightmap.common.NavigationUtil.DistanceUnits;
 import com.google.flightmap.common.data.Airport;
 import com.google.flightmap.common.data.LatLng;
 import com.google.flightmap.common.data.LatLngRect;
 
-import java.util.Collection;
-import java.util.LinkedList;
-
 /**
  * View for the moving map.
  */
 public class MapView extends SurfaceView implements SurfaceHolder.Callback,
-    OnSharedPreferenceChangeListener {
+    OnSharedPreferenceChangeListener, ProgressListener {
   private static final String TAG = MapView.class.getSimpleName();
   public static final String DEGREES_SYMBOL = "\u00b0";
 
@@ -96,7 +98,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   private final FlightMap flightMap;
 
   // Last known bearing
-  private float lastBearing;
+  private float lastBearing = -1;
 
   // Coordinates to draw the aircraft on the map.
   private int aircraftX;
@@ -120,7 +122,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   // Caching. Values from the last time the map was drawn.
   private Location previousLocation;
   private float previousZoom;
-  private boolean prefsChanged;
+  private boolean redrawNeeded;
 
   // Performance optimization. Create these objects only once since they are
   // used in rendering.
@@ -134,16 +136,19 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    */
   private final Point[] screenCorners = new Point[4];
   /**
-   * Scratchpad point. Not guaranteed to hold the same value between method
-   * calls.
+   * Reused Point object in Mercator pixel space.
    */
-  private final Point temporaryPoint = new Point();
+  private final Point mercatorPoint = new Point();
 
   // Magnetic variation w/ caching.
   private final CachedMagneticVariation magneticVariation = new CachedMagneticVariation();
 
-  // Airports currently on the screen.
+  // Airports currently on the screen. This collection is updated by a
+  // background task.
   private Collection<Airport> airportsOnScreen;
+
+  // Populates airportsOnScreen in a background thread.
+  private GetAirportsInRectangleTask getAirportsTask;
 
   // Static initialization.
   static {
@@ -228,11 +233,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     }
     // See if an airport was tapped.
     Collection<Airport> airportsNearTap;
-    synchronized (this) {
-      temporaryPoint.x = Math.round(event.getX());
-      temporaryPoint.y = Math.round(event.getY());
-      airportsNearTap = getAirportsNearScreenPoint(temporaryPoint);
-    }
+    airportsNearTap =
+        getAirportsNearScreenPoint(new Point(Math.round(event.getX()), Math.round(event.getY())));
     if (!airportsNearTap.isEmpty()) {
       for (Airport airport : airportsNearTap) {
         Log.i(TAG, "Airport near tap: " + airport);
@@ -303,18 +305,19 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    * Returns a rectangle that is enclosed by a circle of {@code radius} pixels
    * centered on {@code point}.
    */
-  private synchronized LatLngRect createRectangleAroundPoint(final Point point, final int radius) {
+  private LatLngRect createRectangleAroundPoint(final Point point, final int radius) {
     LatLngRect result = new LatLngRect();
-    // Set temporaryPoint to each corner of a square with sides 2 * radius.
-    temporaryPoint.x = point.x - radius;
-    temporaryPoint.y = point.y - radius;
-    result.add(getLocationForPoint(temporaryPoint));
-    temporaryPoint.x = point.x + radius;
-    result.add(getLocationForPoint(temporaryPoint));
-    temporaryPoint.y = point.y + radius;
-    result.add(getLocationForPoint(temporaryPoint));
-    temporaryPoint.x = point.x - radius;
-    result.add(getLocationForPoint(temporaryPoint));
+    // Set cornerPoint to each corner of a square with sides 2 * radius.
+    Point cornerPoint = new Point();
+    cornerPoint.x = point.x - radius;
+    cornerPoint.y = point.y - radius;
+    result.add(getLocationForPoint(cornerPoint));
+    cornerPoint.x = point.x + radius;
+    result.add(getLocationForPoint(cornerPoint));
+    cornerPoint.y = point.y + radius;
+    result.add(getLocationForPoint(cornerPoint));
+    cornerPoint.x = point.x - radius;
+    result.add(getLocationForPoint(cornerPoint));
     return result;
   }
 
@@ -326,16 +329,16 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   }
 
   @Override
-  public synchronized void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-    setPrefsChanged(true);
+  public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+    setRedrawNeeded(true);
   }
 
-  private synchronized boolean isPrefsChanged() {
-    return prefsChanged;
+  private synchronized boolean isRedrawNeeded() {
+    return redrawNeeded;
   }
 
-  private synchronized void setPrefsChanged(boolean prefsChanged) {
-    this.prefsChanged = prefsChanged;
+  private synchronized void setRedrawNeeded(boolean redrawNeeded) {
+    this.redrawNeeded = redrawNeeded;
   }
 
   private synchronized void createTopPanelPath(int width) {
@@ -381,7 +384,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   @Override
   public synchronized void surfaceCreated(SurfaceHolder holder) {
     this.holder = holder;
-    previousLocation = null;
+    setRedrawNeeded(true);
     // Set up listener to changes to SharedPreferences.
     flightMap.userPrefs.registerOnSharedPreferenceChangeListener(this);
   }
@@ -421,12 +424,11 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         return;
       }
       synchronized (this) {
-        if (!hasMoved(location) && zoom == previousZoom && !isPrefsChanged()) {
+        if (!hasMoved(location) && !isRedrawNeeded() && zoom == previousZoom) {
           return;
         }
-        if (isPrefsChanged()) {
-          // We're now redrawing to reflect new preferences.
-          setPrefsChanged(false);
+        if (isRedrawNeeded()) {
+          setRedrawNeeded(false);
         }
         previousLocation = location;
         previousZoom = zoom;
@@ -460,15 +462,21 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
 
     LatLng locationLatLng = LatLng.fromDouble(location.getLatitude(), location.getLongitude());
 
-    // Convert bearing from true to magnetic.
-    location = convertToMagneticBearing(location, locationLatLng);
-
     // Copy for thread safety.
     final boolean isTrackUp = !flightMap.userPrefs.isNorthUp();
 
     // Update bearing (if possible)
     if (location.hasBearing()) {
-      lastBearing = location.getBearing();
+      lastBearing =
+          getMagneticBearing(location.getBearing(), locationLatLng, (float) location.getAltitude());
+    } else {
+      if (lastBearing == -1) {
+        // Special case for testing on the emulator.
+        // TODO: Remove this once we've got a simulator.
+        lastBearing =
+            getMagneticBearing(location.getBearing(), locationLatLng, (float) location
+                .getAltitude());
+      }
     }
 
     // Draw everything relative to the aircraft.
@@ -491,25 +499,27 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     final float orientation = isTrackUp ? lastBearing : 0;
 
     final LatLngRect screenArea = getScreenRectangle(zoomCopy, orientation, locationPoint);
-    airportsOnScreen =
-        flightMap.airportDirectory.getAirportsInRectangle(screenArea,
-            getMinimumAirportRank(zoomCopy));
-    for (Airport airport : airportsOnScreen) {
-      final Paint airportPaint = getAirportPaint(airport);
-      Point airportPoint = MercatorProjection.toPoint(zoomCopy, airport.location);
-      c.drawCircle(airportPoint.x, airportPoint.y, 15, airportPaint);
+    updateAirportsOnScreen(screenArea, getMinimumAirportRank(zoomCopy));
 
-      // Undo, then redo the track-up rotation so the labels are always at the
-      // top for track up.
-      if (isTrackUp) {
-        c.rotate(lastBearing, airportPoint.x, airportPoint.y);
-      }
-      c.drawText(airport.icao, airportPoint.x, airportPoint.y - 20, AIRPORT_TEXT_PAINT);
-      if (isTrackUp) {
-        c.rotate(360 - lastBearing, airportPoint.x, airportPoint.y);
+    // airportsOnScreen could be null if the background task hasn't finished
+    // yet.
+    if (airportsOnScreen != null) {
+      for (Airport airport : airportsOnScreen) {
+        final Paint airportPaint = getAirportPaint(airport);
+        Point airportPoint = MercatorProjection.toPoint(zoomCopy, airport.location);
+        c.drawCircle(airportPoint.x, airportPoint.y, 15, airportPaint);
+
+        // Undo, then redo the track-up rotation so the labels are always at the
+        // top for track up.
+        if (isTrackUp) {
+          c.rotate(lastBearing, airportPoint.x, airportPoint.y);
+        }
+        c.drawText(airport.icao, airportPoint.x, airportPoint.y - 20, AIRPORT_TEXT_PAINT);
+        if (isTrackUp) {
+          c.rotate(360 - lastBearing, airportPoint.x, airportPoint.y);
+        }
       }
     }
-
     // Draw airplane.
     c.translate(locationPoint.x, locationPoint.y);
     // Rotate no matter what. If track up, this will make the airplane point to
@@ -541,7 +551,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         speed = String.format("%.0f", location.getSpeed() * distanceUnits.speedMultiplier);
       }
       if (location.hasBearing()) {
-        track = String.format(" %03.0f%s", location.getBearing(), DEGREES_SYMBOL);
+        track =
+            String.format(" %03.0f%s", getMagneticBearing(location.getBearing(), locationLatLng,
+                (float) location.getAltitude()), DEGREES_SYMBOL);
       }
       if (location.hasAltitude()) {
         // Round altitude to nearest 10 foot increment to avoid jitter.
@@ -573,20 +585,16 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   }
 
   /**
-   * Returns {@code location} with the bearing converted from true to magnetic.
-   * Does not modify {@code location} if location.hasBearing() is false.
+   * Returns {@code bearing} with magnetic variation applied. Result will be
+   * relative to magnetic north.
    * 
-   * @param locationLatLng
+   * @param trueBearing in degrees relative to true north.
+   * @param location location for magnetic variation conversion.
+   * @param altitude altitude in meters above mean sea level.
    */
-  private Location convertToMagneticBearing(Location location, LatLng locationLatLng) {
-    if (!location.hasBearing()) {
-      return location;
-    }
-
-    float magneticBearing = location.getBearing() // relative to true north.
-        + magneticVariation.getMagneticVariation(locationLatLng, (float) location.getAltitude());
-    location.setBearing(magneticBearing);
-    return location;
+  private float getMagneticBearing(float trueBearing, LatLng location, float altitude) {
+    return (float) NavigationUtil.normalizeBearing(trueBearing
+        + magneticVariation.getMagneticVariation(location, altitude));
   }
 
   /**
@@ -688,7 +696,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     final LatLng location =
         LatLng.fromDouble(previousLocation.getLatitude(), previousLocation.getLongitude());
     final Point locationPoint = MercatorProjection.toPoint(getZoom(), location);
-    final float orientation = flightMap.userPrefs.isNorthUp() ? 0 : previousLocation.getBearing();
+    final float orientation =
+        flightMap.userPrefs.isNorthUp() ? 0 : getMagneticBearing(previousLocation.getBearing(),
+            location, (float) previousLocation.getAltitude());
     return getLocationForPoint(getZoom(), orientation, locationPoint, screenPoint);
   }
 
@@ -722,9 +732,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     screenPoints[0] = screenPoint.x;
     screenPoints[1] = screenPoint.y;
     screenMatrix.mapPoints(screenPoints);
-    temporaryPoint.x = Math.round(screenPoints[0]);
-    temporaryPoint.y = Math.round(screenPoints[1]);
-    LatLng result = MercatorProjection.fromPoint(zoom, temporaryPoint);
+    mercatorPoint.x = Math.round(screenPoints[0]);
+    mercatorPoint.y = Math.round(screenPoints[1]);
+    LatLng result = MercatorProjection.fromPoint(zoom, mercatorPoint);
     return result;
   }
 
@@ -743,5 +753,65 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       return;
     }
     setZoom(savedInstanceState.getFloat(ZOOM_LEVEL));
+  }
+
+  private synchronized void updateAirportsOnScreen(LatLngRect screenArea, int minimumAirportRank) {
+    // If there's a current query in progress with different QueryParams, cancel
+    // it. We don't need the answer anymore.
+    //
+    // TODO: Find a way to actually cancel a database query in progress.
+    if (getAirportsTask != null) {
+      GetAirportsInRectangleTask.QueryParams queryInProgress =
+          getAirportsTask.getInProgressQueryParams();
+      if (queryInProgress != null) {
+        // <TODO> Figure out a more efficient way to do the next test. I think
+        // what we really want to do is test whether the one cell id that covers
+        // screenArea has changed.
+        //
+        // When moving, the screenArea rectangle will always be different, so
+        // we're going to make a lot more queries than we really need to. The
+        // test below is really only useful when absolutely stationary.
+        //
+        // Need a method like CustomGrilUtil.getCellCovering(LatLngRect) which
+        // returns exactly one cell id. Also need documentation for
+        // CustomGridUtil so I could write that method.
+        // </TODO>
+        if (screenArea.equals(queryInProgress.rectangle)
+            && minimumAirportRank == queryInProgress.minRank) {
+          // The query we want is already in progress. Let it finish.
+          // Right now, this will only happen when not moving (see above TODO).
+          return;
+        }
+      }
+      // Cancel the in progress task. It's working on an answer we no longer
+      // need.
+      getAirportsTask.cancel(true);
+    }
+    // Have to make a new task here. Can't call execute again on an active task.
+    getAirportsTask = new GetAirportsInRectangleTask(flightMap.airportDirectory, this);
+    getAirportsTask.execute(new GetAirportsInRectangleTask.QueryParams(screenArea,
+        minimumAirportRank));
+  }
+
+  /**
+   * {@inheritDoc} Called when {@link GetAirportsInRectangleTask} completes.
+   */
+  @Override
+  public synchronized void hasCompleted(boolean success) {
+    if (success && getAirportsTask != null) {
+      try {
+        airportsOnScreen = getAirportsTask.get();
+        setRedrawNeeded(true);
+      } catch (InterruptedException e) {
+        Log.i(TAG, "Interrupted while getting airports on screen", e);
+      } catch (ExecutionException e) {
+        Log.w(TAG, "Execution failed getting airports on screen", e);
+      }
+    }
+  }
+
+  @Override
+  public void hasProgressed(int unused) {
+    // GetAirportsInRectangleTask does not give intermediate progress.
   }
 }
