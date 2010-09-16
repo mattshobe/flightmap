@@ -81,7 +81,6 @@ Now it's time to resolve the dependencies that are causing the !FlightMap-Androi
 
 To resolve these dependencies, we just need to let Eclipse know that the !FlightMap-Android and !FlightMap-Preprocessing projects depend on the !FlightMap-Common project.
 
-=== Add direct project dependency on common ===
   # Right-click on the newly-created !FlightMap-Android project in the Package Explorer window on the left side.
   # Build Path > Configure Build Path
   # Click on the "Projects" tab
