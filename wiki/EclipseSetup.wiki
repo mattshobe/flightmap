@@ -34,7 +34,7 @@ Depending on what part of the project you are working on, you may not actually n
 
 You'll notice that the first two projects created depend on the code in `flightmap/common`.
 
-If you make any changes to code in the *common* project, you'll need to re-generate the above `common/release/flightmap-common-VERSION.jar` file (which is checked in to subversion). Please use `ant` to do that as follows:
+If you make any changes to code in the *common* project, you'll need to re-generate the above `common/release/flightmap-common.jar` file (which is checked in to subversion). Please use `ant` to do that as follows:
 {{{
   cd common
   ant release
@@ -42,8 +42,7 @@ If you make any changes to code in the *common* project, you'll need to re-gener
 
 After doing the above, there are two more things to do:
   # Refresh the `android` and `preprocessing` projects (right-click on the project > Refresh).
-    * That's needed for Eclipse to know that the jar file changed.
-  # Check in the updated flightmap-common-VERSION.jar file.
+  # Check in the updated flightmap-common.jar file.
 
 == Android Project (1 of 3) ==
 
@@ -80,10 +79,9 @@ Create a project for the common code.
 == Add dependency on common code ==
 Now it's time to resolve the dependencies that are causing the !FlightMap-Android and !FlightMap-Preprocessing projects to have build errors. Both these projects depend on code that's in the !FlightMap-Common project.
 
-There are two ways to resolve these dependencies. Typically !FlightMap developers have to change common code as well as other code, so it's often better to make a project dependency. If you'll *rarely* change code in the common tree, you can just add the common jar to the build path. 
+To resolve these dependencies, we just need to let Eclipse know that the !FlightMap-Android and !FlightMap-Preprocessing projects depend on the !FlightMap-Common project.
 
-Both of these options are described below. *You only need to do one of these two options.*
-=== Option 1: Add direct project dependency ===
+=== Add direct project dependency on common ===
   # Right-click on the newly-created !FlightMap-Android project in the Package Explorer window on the left side.
   # Build Path > Configure Build Path
   # Click on the "Projects" tab
@@ -91,13 +89,6 @@ Both of these options are described below. *You only need to do one of these two
   # Under Select projects to add: choose !FlightMap-Common
   # Repeat the above steps for !FlightMap-Preprocessing project
   
-=== Option 2: Add common jar to build path ===
-  # Right-click on the newly-created !FlightMap-Android project in the Package Explorer window on the left side.
-  # Build Path > Add External Archives...
-  # Browse to common/release/flightmap-common-VERSION.jar, select that
-  # You should see flightmap-common-VERSION.jar listed under the "Referenced Libraries" area of the !FlightMap-Android project.
-  # Repeat the above steps for !FlightMap-Preprocessing project
-
 == Confirm dependencies are resolved ==
 Now the little red X should be gone from the !FlightMap-Android and !FlightMap-Preprocessing projects.
 
