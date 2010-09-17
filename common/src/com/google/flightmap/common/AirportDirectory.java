@@ -24,11 +24,15 @@ import com.google.flightmap.common.data.LatLngRect;
 import java.util.Collection;
 import java.util.SortedSet;
 
+/**
+ * High level interface to the airport database.
+ */
 public interface AirportDirectory {
   /**
    * Returns airports within {@code radius} meters of {@code position}.
-   * The airport rank will be at least {@code minRank}. Results will be sorted
-   * in order of increasing distance from {@code position}.
+   * <p>
+   * The airport ranks must be at least {@code minRank}.<br />
+   * Results must be sorted in order of increasing distance from {@code position}.
    * @param position  Center of radius search
    * @param radius    Radius of search [meters]
    * @param minRank   Minimum airport rank to return
@@ -38,13 +42,28 @@ public interface AirportDirectory {
 
   /**
    * Returns airports in {@code area}.
-   * The returned collection is in fact a set: no airport can be included more than once.
+   * <p>
+   * The returned collection must in fact be a set: no airport can be included more than once.
+   * The return value is kept as a {@link java.util.Collection Collection} for performance reasons:
+   * membership tests in {@link java.util.Set Set} implementations can be unecessarily costly.
+   *
    * @param area      Area of search
    * @param minRank   Minimum airport rank to return
    */
   public Collection<Airport> getAirportsInRectangle(final LatLngRect area, final int minRank);
 
+  /**
+   * Prepares this object for future calls.
+   * <p>
+   * This method must be called prior to any other call
+   */
   public void open();
 
+  /**
+   * Closes this object.
+   * <p>
+   * This method must be called after all other calls.  No other method should be called on this
+   * without calling {@link AirportDirectory#open} first.
+   */
   public void close();
 }

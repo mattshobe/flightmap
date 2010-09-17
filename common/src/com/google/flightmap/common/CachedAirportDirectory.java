@@ -22,13 +22,69 @@ import com.google.flightmap.common.data.LatLngRect;
 
 import java.util.Collection;
 
+/**
+ * Caches access to {@link AirportDirectory} for improved performance.
+ * <p>
+ * Area searches are cached by rerieving all airports within a larger area than requested, and
+ * keeping the results in memory.  Subsequent requests are served from memory, as long as the
+ * requested area is included in the cached area.
+ * <p>
+ * Requesting a search area that is not included in the cached area results in clearing the cache
+ * and starting all over.  Results needed to build the cache are obtained by querying an underlying
+ * {@code AirportDirectory}.
+ * <p>
+ * The following figures illustrate this process.
+ * <p align="center">
+ * <a href="doc-files/CachedAirportDirectory-0.png" target="_blank">
+ * <img src="doc-files/CachedAirportDirectory-0.png" width="40%" />
+ * </a>
+ * <p align="center">
+ * A first area search is performed: a larger area is cached.
+ * <p align="center">
+ * <a href="doc-files/CachedAirportDirectory-1.png" target="_blank">
+ * <img src="doc-files/CachedAirportDirectory-1.png" width="40%" />
+ * </a>
+ * <p align="center">
+ * All subsequent area searches that fall within the cached area are served from memory.
+ * <p align="center">
+ * <a href="doc-files/CachedAirportDirectory-2.png" target="_blank">
+ * <img src="doc-files/CachedAirportDirectory-2.png" width="40%" />
+ * </a>
+ * <p align="center">
+ * When an area search falls outside of the cached area (cache miss), the latter is cleared.
+ * <p align="center">
+ * <a href="doc-files/CachedAirportDirectory-3.png" target="_blank">
+ * <img src="doc-files/CachedAirportDirectory-3.png" width="40%" />
+ * </a>
+ * <p align="center">
+ * A new cached area is then retrieved for the following requests.
+ */
 public class CachedAirportDirectory extends AbstractAirportDirectory {
+  /**
+   * Underlying AirportDirectory.
+   */
   private final AirportDirectory airportDirectory;
 
+  /**
+   * Latest cached area.
+   */
   private LatLngRect cachedArea;
+
+  /**
+   * Minimum rank of latest cached airports.
+   */
   private int cachedMinRank;
+
+  /**
+   * Retrieved airports for latest cached area.
+   */
   private Collection<Airport> cachedAirports;
 
+  /**
+   * Creates decorator for underlying {@code airportDirectory}.
+   *
+   * @see <a href="http://en.wikipedia.org/wiki/Decorator_pattern">Decorator pattern</a>
+   */
   public CachedAirportDirectory(final AirportDirectory airportDirectory) {
     this.airportDirectory = airportDirectory;
   }

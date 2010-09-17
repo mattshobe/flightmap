@@ -132,7 +132,7 @@ limitations under the License.
          destdir="${build.dir}/javadoc"
          use="true"
          author="true"
-         protected="true"
+         access="private"
          windowtitle="Flight Map common">
       <sourcepath>
         <pathelement location="${src.dir}"/>

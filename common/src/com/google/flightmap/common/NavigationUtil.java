@@ -22,22 +22,52 @@ import com.google.flightmap.common.data.LatLng;
  * Utility class for navigation calculations such as distance, bearing, etc.
  */
 public class NavigationUtil {
-  // Multiply meters by these constants to convert to other units.
+  /**
+   * Multiply meters by this constant to obtain nautical miles.
+   */
   public static final double METERS_TO_NM = 0.000539956803;
+
+  /**
+   * Multiply meters by this constant to obtain statute miles.
+   */
   public static final double METERS_TO_MILE = 0.000621371192;
+
+  /**
+   * Multiply meters by this constant to obtain kilometers.
+   */
   public static final double METERS_TO_KM = .001;
+
+  /**
+   * Multiply meters by this constant to obtain feet.
+   */
   public static final double METERS_TO_FEET = 3.2808399;
-  // Multiply meters-per-second by these constants to convert to other units.
+
+  /**
+   * Multiply meters-per-second by this constant to obtain knots.
+   */
   public static final double METERS_PER_SEC_TO_KNOTS = 1.94384449;
+
+  /**
+   * Multiply meters-per-second by this constant to obtain (statute) miles per hour.
+   */
   public static final double METERS_PER_SEC_TO_MPH = 2.23693629;
+
+  /**
+   * Multiply meters-per-second by this constant to obtain kilometers per hour.
+   */
   public static final double METERS_PER_SEC_TO_KPH = 3.6;
 
   /** Earth radius in meters. */
   public static final double EARTH_RADIUS = 6371009;
 
+  /**
+   * Session timestamp for caching purposes.
+   */
   private static final long SESSION_TIME_MILLIS = System.currentTimeMillis();
 
-  // No public constructors for utility class.
+  /**
+   * Utility class: default and only constructor is private.
+   */
   private NavigationUtil() {
   }
 
@@ -89,8 +119,9 @@ public class NavigationUtil {
   }
 
   /**
-   * Returns the distance in meters between point1 and point2. Calculation is
-   * done by the Haversine Formula.
+   * Returns the distance in meters between {@code point1} and {@code point2}.
+   *
+   * @see NavigationUtil#computeDistance(double, double, double, double) 
    */
   public static double computeDistance(LatLng point1, LatLng point2) {
     final double lat1 = point1.latRad();
@@ -101,6 +132,12 @@ public class NavigationUtil {
     return computeDistance(lat1, lng1, lat2, lng2);
   }
 
+  /**
+   * Returns the distance in meters between ({@code lat1E6}, {@code lng1E6})  and
+   * ({@code lat2E6}, {@code lng2E6}).
+   *
+   * @see NavigationUtil#computeDistance(double, double, double, double) 
+   */
   public static double computeDistance(int lat1E6, int lng1E6, int lat2E6, int lng2E6) {
     final double lat1 = Math.toRadians(lat1E6 * 1e-6);
     final double lng1 = Math.toRadians(lng1E6 * 1e-6);
@@ -110,10 +147,29 @@ public class NavigationUtil {
     return computeDistance(lat1, lng1, lat2, lng2);
   }
 
+  /**
+   * Returns the distance in meters between {@code point1}  and ({@code lat2E6}, {@code lng2E6}).
+   *
+   * @see NavigationUtil#computeDistance(double, double, double, double) 
+   */
   public static double computeDistance(LatLng point1, int lat2E6, int lng2E6) {
     return computeDistance(point1.lat, point1.lng, lat2E6, lng2E6);
   }
 
+  /**
+   * Returns the distance in meters between ({@code lat1}, {@code lng1})  and
+   * ({@code lat2}, {@code lng2}).
+   * <p>
+   * Calculation is done by the Haversine Formula.
+   *
+   * @param lat1  Latitude of first point, in radians
+   * @param lng1  Longitude of first point, in radians
+   * @param lat2  Latitude of second point, in radians
+   * @param lng2  Longitude of second point, in radians
+   *
+   * @see <a href="http://en.wikipedia.org/wiki/Haversine_formula" target="_parent">
+   * Haversine formula</a>
+   */
   public static double computeDistance(double lat1, double lng1, double lat2, double lng2) {
     final double dLat = lat2 - lat1;
     final double dLng = lng2 - lng1;

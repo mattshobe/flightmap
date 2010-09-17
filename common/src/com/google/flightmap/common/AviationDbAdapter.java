@@ -27,10 +27,24 @@ import java.util.List;
  * Low level interface to database entities.
  */
 public interface AviationDbAdapter {
+  /**
+   * Prepares this object for future calls.
+   * <p>
+   * This method must be called prior to any other call
+   */
   public void open();
 
+  /**
+   * Closes this object.
+   * <p>
+   * This method must be called after all other calls.  No other method should be called on this
+   * without calling {@link AviationDbAdapter#open} first.
+   */
   public void close();
 
+  /**
+   * Returns {@link Airport} with given id.
+   */
   public Airport getAirport(int airportId);
 
   /**
@@ -38,11 +52,23 @@ public interface AviationDbAdapter {
    */
   public Collection<Airport> getAirportsInCells(int startCell, int endCell, int minRank);
 
+  /**
+   * Returns non-essential properties for an airport.
+   */
   public Map<String, String> getAirportProperties(int airportId);
 
+  /**
+   * Returns airport communication data for an airport.
+   */
   public List<Comm> getAirportComms(int airportId);
 
+  /**
+   * Returns non-essential properties for a runway end.
+   */
   public Map<String, String> getRunwayEndProperties(int runwayEndId);
   
+  /**
+   * Returns constant string.
+   */
   public String getConstant(int constantId);
 }

@@ -28,8 +28,14 @@ public class CachedMagneticVariation {
    */
   private static final int MOVED_DELTA = (int) (1 * 1E6); // 1 degree
 
-  // Caching.
+  /**
+   * Location of last computed magnetic variation.
+   */
   private LatLng previousLocation;
+
+  /**
+   * Last computed magnetic variation
+   */
   private float previousVariation;
 
   /**
