@@ -7,15 +7,120 @@ import java.util.LinkedList;
 import com.google.flightmap.common.data.LatLng;
 import com.google.flightmap.common.data.LatLngRect;
 
-
+/**
+ * Provides utility functions for spatial indexing of geographical data using a basic grid
+ * algorithm.
+ * <p>
+ * <b>Concept</b>
+ * <p>
+ * Geographical coordinates are mapped on a two dimensional space, with latitude and longitude as
+ * axes.  The cell corresponding to a coordinate is determined by recursively dividing the area
+ * into quadrants and appending a corresponding number to the cell id.  The following figure
+ * illustrates the first two steps of this process.
+ * <p align="center">
+ * <a href="doc-files/CustomGridUtil-0.png" target="_blank">
+ * <img src="doc-files/CustomGridUtil-0.png" width="40%" />
+ * </a>
+ * <p>
+ * The number of iterations is limited by the size of integers.  For a typical size of 32 bits,
+ * there can be 16 iterations, resulting in cells of 611 m. of longitude
+ * by 305 m. of latitude on Earth's equator.
+ * <p>
+ * <b>Area Search</b>
+ * A common geographical operation consists of retrieving elements situated within a certain area.
+ * With spatial indexing, this can be done easily if the set of cells covering the area is
+ * available.  The {@link CustomGridUtil#getCellsInRectangle getCellsInRectangle} method does that
+ * by defining a coverage threshold (currently 70%) and doing the following recursively,
+ * starting from the entire world:
+ * <ol>
+ * <li>If the area does not cover any part of the current cell, return nothing.</li>
+ * <li>If the surface of the cell covered by the area is greater than the threshold:</li>
+ * return current cell.
+ * <li>If the current cell cannot be split further, return the current cell.</li>
+ * <li>Otherwise, split the current cell into quadrants (sub-cells), and apply algorithm to each
+ * one.  Return cells obtained by those calls.</li>
+ * </ol>
+ * This process is illustrated in the following figures. Notes:
+ * <ul>
+ * <li>Coverage threshold is set to 50% for this example.</li>
+ * <li>Lightly filled box illustrates the searched area.</li>
+ * <li>Continuous black lines represent the virtual border of cells.</li>
+ * <li>Oblique discontinuous lines cover the cells returned by the algorithm.</li>
+ * </ul>
+ * <p align="center">
+ * <a href="doc-files/CustomGridUtil-1.png" target="_blank">
+ * <img src="doc-files/CustomGridUtil-1.png" width="40%" />
+ * </a>
+ * <p>
+ * The area does not cover enough of the entire world (or "level 0 cell"), so a first split is done
+ * (step 4 of the algorithm).<br />
+ * Both eastern level 1 cells (NE and SE) do not intersect the searched area: they are
+ * ignored (step 1).
+ * <p align="center">
+ * <a href="doc-files/CustomGridUtil-2.png" target="_blank">
+ * <img src="doc-files/CustomGridUtil-2.png" width="40%" />
+ * </a>
+ * <p>
+ * None of the western level 1 cells are covered enough, so a second split occurs.  The coverage in
+ * two level 2 cells is now above the threshold: they are added to the set of covering cells.
+ * <p align="center">
+ * <a href="doc-files/CustomGridUtil-3.png" target="_blank">
+ * <img src="doc-files/CustomGridUtil-3.png" width="40%" />
+ * </a>
+ * <p>
+ * The algorithm continues until either the maximum level of splits has occured (step 3, depends on
+ * the number of bits in an integer) or all cells intersecting with the area have sufficient
+ * coverage (step 4).
+ * <p align="center">
+ * <a href="doc-files/CustomGridUtil-4.png" target="_blank">
+ * <img src="doc-files/CustomGridUtil-4.png" width="40%" />
+ * </a>
+ * <p>
+ * Reducing the threshold results in less splits but the returned set of cells would
+ * cover a (much) larger area than the searched area.  Inversely, a greater threshold would
+ * reduce the difference between the covered and searched areas at the cost of additional splits
+ * (and increased runtime).
+ */
 public class CustomGridUtil {
+  /**
+   * Maximum number of iterations for grid algorithm (see class description)
+   */
   static private final int MAX_LEVEL = (int)(Math.log(Integer.MAX_VALUE)/Math.log(4));
 
+  /**
+   * Label for North-Western quadrant of split
+   */
   static private final Integer NW = 0;
+
+  /**
+   * Label for North-Eastern quadrant of split
+   */
   static private final Integer NE = 1;
+
+  /**
+   * Label for South-Western quadrant of split
+   */
   static private final Integer SW = 2;
+
+  /**
+   * Label for South-Eastern quadrant of split
+   */
   static private final Integer SE = 3;
 
+  /**
+   *  Utility class: default and only constructor is private.
+   */
+  private CustomGridUtil() { }
+
+  /**
+   * Represents a cell that can potentially be split into quadrants.
+   * <p>
+   * A partial cell is represented by a {@code partialCellId}, that represents the cell id prefix
+   * of all cells of the next level included in the same area.  For instance, all cell ids
+   * North-West of the latitude, longitude origin will start with the value
+   * {@link CustomGridUtil#NW}.  The id of the corresponding level 1 partial cell is therefore 
+   * {@link CustomGridUtil#NW}.
+   */
   private static class PartialCell {
     final int partialCellId;
     final int level;
@@ -35,6 +140,12 @@ public class CustomGridUtil {
     }
   }
 
+  /**
+   * Returns the length of the intersection of segments ({@code a}, {@code b}) and
+   * ({@code A}, {@code B}).
+   * <p>
+   * If {@code a} > {@code b} or {@code A} > {@code B}, the values are swapped accordingly.
+   */
   static private long intersectRange(long a, long b, long A, long B) {
     if (a > b) {
       long temp = a;
@@ -54,10 +165,21 @@ public class CustomGridUtil {
     return Math.min(b,B) - Math.max(a,A);
   }
 
+  /**
+   * Returns the id of the (maximum level) cell that contains {@code position}.
+   * See class description.
+   */
   public static int getCellId(final LatLng position) {
     return getCellId(position.lat, position.lng);
   }
 
+  /**
+   * Returns the id of the (maximum level) cell that contains the point at
+   * {@code latE6}, {@code lngE6}.
+   *
+   * @param latE6 Latitude, in E6 format (decimal degrees * 1E6)
+   * @param lngE6 Longitude, in E6 format (decimal degrees * 1E6)
+   */
   public static int getCellId(final int latE6, final int lngE6) {
     int northLatE6 = (int)+90E6;
     int southLatE6 = (int)-90E6;

@@ -11,8 +11,24 @@ import com.google.flightmap.common.data.LatLngRect;
 import java.util.Collection;
 import java.util.TreeSet;
 
+/**
+ * Abstract class provides a naive implementation of
+ * {@link AirportDirectory#getAirportsWithinRadius getAirportsWithinRadius}.
+ */
 public abstract class AbstractAirportDirectory implements AirportDirectory {
 
+  /**
+   * Returns airports within {@code radius} meters of {@code position}.
+   * <p>
+   * Retrieves all airports in a rectangular region bouding the search area using
+   * {@link AirportDirectory#getAirportsInRectangle}, and then filters out outliers.
+   * <p>
+   * Airport ranks are at least {@code minRank}. <br />
+   * Results are sorted in order of increasing distance from {@code position}.
+   * @param position  Center of radius search
+   * @param radius    Radius of search [meters]
+   * @param minRank   Minimum airport rank to return
+   */
   @Override
   public TreeSet<AirportDistance> getAirportsWithinRadius(final LatLng position,
       final double radius, final int minRank) {

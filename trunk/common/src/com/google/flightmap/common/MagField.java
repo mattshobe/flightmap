@@ -178,7 +178,15 @@ public class MagField {
     }
   }
 
+  /**
+   * Time of latest retrieved magnetic variation (milliseconds since Epoch)
+   */
   private static Long previousTime = null;
+
+  /**
+   * Utility class: default and only constructor is private.
+   */
+  private MagField() { }
 
   /**
    * Computes magnetic variation.
