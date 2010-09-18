@@ -125,7 +125,7 @@ public class ZoomScale {
       }
     }
     double mpp =
-        MercatorProjection.getMetersPerPixel(zoom, LatLng.fromDouble(location.getLatitude(),
+        AndroidMercatorProjection.getMetersPerPixel(zoom, LatLng.fromDouble(location.getLatitude(),
             location.getLongitude()));
     double scaleInMeters = Math.round(mpp * PREFERRED_WIDTH * density);
 
