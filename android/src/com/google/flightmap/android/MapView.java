@@ -489,7 +489,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     // Get location pixel coordinates. Then set translation so everything is
     // drawn relative to the current location.
     final float zoomCopy = getZoom(); // copy for thread safety.
-    Point locationPoint = MercatorProjection.toPoint(zoomCopy, locationLatLng);
+    Point locationPoint = AndroidMercatorProjection.toPoint(zoomCopy, locationLatLng);
     c.translate(-locationPoint.x, -locationPoint.y);
 
     // Draw airports.
@@ -506,7 +506,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     if (airportsOnScreen != null) {
       for (Airport airport : airportsOnScreen) {
         final Paint airportPaint = getAirportPaint(airport);
-        Point airportPoint = MercatorProjection.toPoint(zoomCopy, airport.location);
+        Point airportPoint = AndroidMercatorProjection.toPoint(zoomCopy, airport.location);
         c.drawCircle(airportPoint.x, airportPoint.y, 15, airportPaint);
 
         // Undo, then redo the track-up rotation so the labels are always at the
@@ -668,7 +668,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    *        center of the screen. Will be 0 when north-up, and the current track
    *        when track-up.
    * @param locationPoint pixel coordinates of current location (as returned by
-   *        {@link MercatorProjection#toPoint}
+   *        {@link AndroidMercatorProjection#toPoint}
    */
   private synchronized LatLngRect getScreenRectangle(final float zoom, final float orientation,
       final Point locationPoint) {
@@ -695,7 +695,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     }
     final LatLng location =
         LatLng.fromDouble(previousLocation.getLatitude(), previousLocation.getLongitude());
-    final Point locationPoint = MercatorProjection.toPoint(getZoom(), location);
+    final Point locationPoint = AndroidMercatorProjection.toPoint(getZoom(), location);
     final float orientation =
         flightMap.userPrefs.isNorthUp() ? 0 : getMagneticBearing(previousLocation.getBearing(),
             location, (float) previousLocation.getAltitude());
@@ -710,7 +710,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    *        center of the screen. Will be 0 when north-up, and the current track
    *        when track-up.
    * @param locationPoint pixel coordinates of current location (in Mercator
-   *        pixel space as returned by {@link MercatorProjection#toPoint}
+   *        pixel space as returned by {@link AndroidMercatorProjection#toPoint}
    * @param screenPoint coordinates in screen pixel space (such as from a touch
    *        event).
    */
@@ -734,7 +734,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     screenMatrix.mapPoints(screenPoints);
     mercatorPoint.x = Math.round(screenPoints[0]);
     mercatorPoint.y = Math.round(screenPoints[1]);
-    LatLng result = MercatorProjection.fromPoint(zoom, mercatorPoint);
+    LatLng result = AndroidMercatorProjection.fromPoint(zoom, mercatorPoint);
     return result;
   }
 
