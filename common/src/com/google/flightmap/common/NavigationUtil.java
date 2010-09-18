@@ -48,7 +48,8 @@ public class NavigationUtil {
   public static final double METERS_PER_SEC_TO_KNOTS = 1.94384449;
 
   /**
-   * Multiply meters-per-second by this constant to obtain (statute) miles per hour.
+   * Multiply meters-per-second by this constant to obtain (statute) miles per
+   * hour.
    */
   public static final double METERS_PER_SEC_TO_MPH = 2.23693629;
 
@@ -71,13 +72,20 @@ public class NavigationUtil {
   private NavigationUtil() {
   }
 
+  /**
+   * Simplifies display of distances and speeds in various units.
+   */
   public enum DistanceUnits {
     MILES("mi", METERS_TO_MILE, "mph", METERS_PER_SEC_TO_MPH), NAUTICAL_MILES("nm", METERS_TO_NM,
         "kts", METERS_PER_SEC_TO_KNOTS), KILOMETERS("km", METERS_TO_KM, "kph",
         METERS_PER_SEC_TO_KPH);
+    /** Distance abbreviation such as mi or nm. */
     public final String distanceAbbreviation;
+    /** Speed abbreviation such as mph or kts. */
     public final String speedAbbreviation;
+    /** Multiply meters by this value to convert to this unit distance. */
     public final double distanceMultiplier;
+    /** Multiply meters per second by this value to convert to this unit speed. */
     public final double speedMultiplier;
 
     /**
@@ -95,6 +103,13 @@ public class NavigationUtil {
     }
 
     /**
+     * Returns {@code meters} convert to this unit's distance.
+     */
+    public double getDistance(double meters) {
+      return meters * distanceMultiplier;
+    }
+
+    /**
      * Returns {@code metersPerSecond} converted to this unit's speed.
      */
     public double getSpeed(double metersPerSecond) {
@@ -105,7 +120,7 @@ public class NavigationUtil {
   /**
    * Normalizes {@code bearing} to be in the range [0-360). Some Android SDK
    * methods return negative bearings for what's normally 180-359 degrees.
-   *
+   * 
    * @param bearing bearing in degrees.
    */
   public static double normalizeBearing(double bearing) {
@@ -120,8 +135,8 @@ public class NavigationUtil {
 
   /**
    * Returns the distance in meters between {@code point1} and {@code point2}.
-   *
-   * @see NavigationUtil#computeDistance(double, double, double, double) 
+   * 
+   * @see NavigationUtil#computeDistance(double, double, double, double)
    */
   public static double computeDistance(LatLng point1, LatLng point2) {
     final double lat1 = point1.latRad();
@@ -133,10 +148,10 @@ public class NavigationUtil {
   }
 
   /**
-   * Returns the distance in meters between ({@code lat1E6}, {@code lng1E6})  and
+   * Returns the distance in meters between ({@code lat1E6}, {@code lng1E6}) and
    * ({@code lat2E6}, {@code lng2E6}).
-   *
-   * @see NavigationUtil#computeDistance(double, double, double, double) 
+   * 
+   * @see NavigationUtil#computeDistance(double, double, double, double)
    */
   public static double computeDistance(int lat1E6, int lng1E6, int lat2E6, int lng2E6) {
     final double lat1 = Math.toRadians(lat1E6 * 1e-6);
@@ -148,27 +163,28 @@ public class NavigationUtil {
   }
 
   /**
-   * Returns the distance in meters between {@code point1}  and ({@code lat2E6}, {@code lng2E6}).
-   *
-   * @see NavigationUtil#computeDistance(double, double, double, double) 
+   * Returns the distance in meters between {@code point1} and ({@code lat2E6},
+   * {@code lng2E6}).
+   * 
+   * @see NavigationUtil#computeDistance(double, double, double, double)
    */
   public static double computeDistance(LatLng point1, int lat2E6, int lng2E6) {
     return computeDistance(point1.lat, point1.lng, lat2E6, lng2E6);
   }
 
   /**
-   * Returns the distance in meters between ({@code lat1}, {@code lng1})  and
-   * ({@code lat2}, {@code lng2}).
+   * Returns the distance in meters between ({@code lat1}, {@code lng1}) and (
+   * {@code lat2}, {@code lng2}).
    * <p>
    * Calculation is done by the Haversine Formula.
-   *
-   * @param lat1  Latitude of first point, in radians
-   * @param lng1  Longitude of first point, in radians
-   * @param lat2  Latitude of second point, in radians
-   * @param lng2  Longitude of second point, in radians
-   *
-   * @see <a href="http://en.wikipedia.org/wiki/Haversine_formula" target="_parent">
-   * Haversine formula</a>
+   * 
+   * @param lat1 Latitude of first point, in radians
+   * @param lng1 Longitude of first point, in radians
+   * @param lat2 Latitude of second point, in radians
+   * @param lng2 Longitude of second point, in radians
+   * 
+   * @see <a href="http://en.wikipedia.org/wiki/Haversine_formula"
+   *      target="_parent"> Haversine formula</a>
    */
   public static double computeDistance(double lat1, double lng1, double lat2, double lng2) {
     final double dLat = lat2 - lat1;
