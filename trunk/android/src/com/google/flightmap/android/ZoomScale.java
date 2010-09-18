@@ -132,7 +132,7 @@ public class ZoomScale {
     // Use user prefs to determine units to show.
     DistanceUnits distanceUnits = userPrefs.getDistanceUnits();
     String units = distanceUnits.distanceAbbreviation;
-    double scaleInUnits = scaleInMeters * distanceUnits.distanceMultiplier;
+    double scaleInUnits = distanceUnits.getDistance(scaleInMeters);
     String result = null;
     if (scaleInUnits > 0.1) {
       result = String.format("%.1f %s", scaleInUnits, units);

@@ -468,7 +468,7 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
 
     DistanceUnits distanceUnits = userPrefs.getDistanceUnits();
     String distance =
-        String.format("      %.1f%s", distanceMeters * distanceUnits.distanceMultiplier,
+        String.format("      %.1f%s", distanceUnits.getDistance(distanceMeters),
             distanceUnits.distanceAbbreviation);
     distanceText.setText(distance);
     bearingText.setText(String.format(" - %03.0f%s BRG", bearingTo, MapView.DEGREES_SYMBOL));
