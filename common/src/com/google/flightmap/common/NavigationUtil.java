@@ -109,7 +109,7 @@ public class NavigationUtil {
    * @param bearing bearing in degrees.
    */
   public static double normalizeBearing(double bearing) {
-    while (bearing > 360) {
+    while (bearing >= 360) {
       bearing -= 360;
     }
     while (bearing < 0) {

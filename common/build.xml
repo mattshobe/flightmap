@@ -34,25 +34,6 @@ limitations under the License.
     </javac>
   </target>
 
-  <!-- Uncomment when tests are added
-  <target name="testfw" description="Compile test framework.">
-    <mkdir dir="${build.dir}/testfwclasses"/>
-    <javac
-      srcdir="${testfw.dir}"
-      destdir="${build.dir}/testfwclasses"
-      debug="on"
-      target="1.5"
-      bootclasspath="${env.JAVA5_HOME}/lib/rt.jar"
-      extdirs=""
-    >
-      <compilerarg value="-Xlint:all"/>
-      <classpath>
-        <pathelement location="${lib.dir}/junit.jar"/>
-      </classpath>
-    </javac>
-  </target>
- -->
-
   <target name="test.compile"
       depends="compile"
       description="Compile test source.">
@@ -72,17 +53,17 @@ limitations under the License.
   <target name="test"
       depends="test.compile"
       description="Execute JUnit tests.">
-    <java fork="true"
-        classname="junit.textui.TestRunner"
-        failonerror="true"
-        taskname="junit">
+    <junit>
       <classpath>
         <pathelement location="${build.dir}/test"/>
         <pathelement location="${build.dir}/classes"/>
         <pathelement location="${lib.dir}/junit.jar"/>
       </classpath>
-      <arg value="com.google.flightmap.common.data.LatLngRectTest"/>
-    </java>
+      <batchtest fork="yes">
+        <fileset dir="${test.dir}" includes="**/*Test.java" />
+        <formatter type="brief" usefile="false" />
+      </batchtest>
+    </junit>
   </target>
 
   <target name="clean"
