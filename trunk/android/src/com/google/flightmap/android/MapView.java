@@ -95,7 +95,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   private Path topPanel;
 
   // Main class.
-  private final FlightMap flightMap;
+  private final MainActivity mainActivity;
 
   // Last known bearing
   private float lastBearing = -1;
@@ -170,11 +170,11 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     PANEL_UNITS_PAINT.setTypeface(Typeface.SANS_SERIF);
   }
 
-  public MapView(FlightMap flightMap) {
-    super(flightMap);
-    this.flightMap = flightMap;
-    this.density = flightMap.getResources().getDisplayMetrics().density;
-    this.zoomScale = new ZoomScale(density, flightMap.userPrefs);
+  public MapView(MainActivity mainActivity) {
+    super(mainActivity);
+    this.mainActivity = mainActivity;
+    this.density = mainActivity.getResources().getDisplayMetrics().density;
+    this.zoomScale = new ZoomScale(density, mainActivity.userPrefs);
     for (int i = 0; i < 4; i++) {
       screenCorners[i] = new Point();
     }
@@ -184,7 +184,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     createZoomController();
     setTextSizes(density);
 
-    Resources res = flightMap.getResources();
+    Resources res = mainActivity.getResources();
 
     // Set up paints from resource colors.
     toweredPaint.setColor(res.getColor(R.color.ToweredAirport));
@@ -269,9 +269,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    * Shows tapcard for an airport.
    */
   private void showTapcard(Airport airport) {
-    Intent tapcardIntent = new Intent(flightMap, TapcardActivity.class);
+    Intent tapcardIntent = new Intent(mainActivity, TapcardActivity.class);
     tapcardIntent.putExtra(TapcardActivity.AIRPORT_ID, airport.id);
-    flightMap.startActivity(tapcardIntent);
+    mainActivity.startActivity(tapcardIntent);
   }
 
   private synchronized void showZoomController() {
@@ -359,7 +359,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    */
   @Override
   public synchronized void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-    if (flightMap.userPrefs.isNorthUp()) {
+    if (mainActivity.userPrefs.isNorthUp()) {
       // Center the aircraft on the screen.
       aircraftX = width / 2;
       aircraftY = height / 2;
@@ -386,13 +386,13 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     this.holder = holder;
     setRedrawNeeded(true);
     // Set up listener to changes to SharedPreferences.
-    flightMap.userPrefs.registerOnSharedPreferenceChangeListener(this);
+    mainActivity.userPrefs.registerOnSharedPreferenceChangeListener(this);
   }
 
   @Override
   public void surfaceDestroyed(SurfaceHolder holder) {
     this.holder = null;
-    flightMap.userPrefs.unregisterOnSharedPreferenceChangeListener(this);
+    mainActivity.userPrefs.unregisterOnSharedPreferenceChangeListener(this);
   }
 
   private void createZoomController() {
@@ -455,7 +455,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
 
     // Display message about no current location and return.
     if (null == location || System.currentTimeMillis() - location.getTime() > MAX_LOCATION_AGE) {
-      c.drawText(flightMap.getText(R.string.old_location).toString(), c.getWidth() / 2, //
+      c.drawText(mainActivity.getText(R.string.old_location).toString(), c.getWidth() / 2, //
           c.getHeight() / 2, ERROR_TEXT_PAINT);
       return;
     }
@@ -463,7 +463,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     LatLng locationLatLng = LatLng.fromDouble(location.getLatitude(), location.getLongitude());
 
     // Copy for thread safety.
-    final boolean isTrackUp = !flightMap.userPrefs.isNorthUp();
+    final boolean isTrackUp = !mainActivity.userPrefs.isNorthUp();
 
     // Update bearing (if possible)
     if (location.hasBearing()) {
@@ -544,7 +544,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       String speed = "-";
       String track = "-" + DEGREES_SYMBOL;
       String altitude = "-";
-      DistanceUnits distanceUnits = flightMap.userPrefs.getDistanceUnits();
+      DistanceUnits distanceUnits = mainActivity.userPrefs.getDistanceUnits();
       String speedUnits = " " + distanceUnits.speedAbbreviation;
 
       if (location.hasSpeed()) {
@@ -697,7 +697,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         LatLng.fromDouble(previousLocation.getLatitude(), previousLocation.getLongitude());
     final Point locationPoint = AndroidMercatorProjection.toPoint(getZoom(), location);
     final float orientation =
-        flightMap.userPrefs.isNorthUp() ? 0 : getMagneticBearing(previousLocation.getBearing(),
+        mainActivity.userPrefs.isNorthUp() ? 0 : getMagneticBearing(previousLocation.getBearing(),
             location, (float) previousLocation.getAltitude());
     return getLocationForPoint(getZoom(), orientation, locationPoint, screenPoint);
   }
@@ -725,7 +725,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     // c.translate(-locationPoint.x, -locationPoint.y);
     screenMatrix.reset();
     screenMatrix.postTranslate(-aircraftX, -aircraftY);
-    if (!flightMap.userPrefs.isNorthUp()) {
+    if (!mainActivity.userPrefs.isNorthUp()) {
       screenMatrix.postRotate(orientation);
     }
     screenMatrix.postTranslate(locationPoint.x, locationPoint.y);
@@ -788,7 +788,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       getAirportsTask.cancel(true);
     }
     // Have to make a new task here. Can't call execute again on an active task.
-    getAirportsTask = new GetAirportsInRectangleTask(flightMap.airportDirectory, this);
+    getAirportsTask = new GetAirportsInRectangleTask(mainActivity.airportDirectory, this);
     getAirportsTask.execute(new GetAirportsInRectangleTask.QueryParams(screenArea,
         minimumAirportRank));
   }

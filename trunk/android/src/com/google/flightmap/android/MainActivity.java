@@ -46,8 +46,8 @@ import com.google.flightmap.common.CachedAviationDbAdapter;
 import com.google.flightmap.common.CustomGridAirportDirectory;
 import com.google.flightmap.common.ProgressListener;
 
-public class FlightMap extends Activity {
-  private static final String TAG = FlightMap.class.getSimpleName();
+public class MainActivity extends Activity {
+  private static final String TAG = MainActivity.class.getSimpleName();
   /**
    * Milliseconds between screen updates. Note that the fastest I've seen GPS
    * updates arrive is once per second.
