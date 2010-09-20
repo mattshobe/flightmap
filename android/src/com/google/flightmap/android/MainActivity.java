@@ -39,6 +39,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 
+import com.google.flightmap.android.location.LocationHandler;
+import com.google.flightmap.android.location.LocationHandler.Source;
 import com.google.flightmap.common.AirportDirectory;
 import com.google.flightmap.common.AviationDbAdapter;
 import com.google.flightmap.common.CachedAirportDirectory;
@@ -79,7 +81,11 @@ public class MainActivity extends Activity {
     super.onCreate(savedInstanceState);
     flightMap = (FlightMap) getApplication();
     flightMap.setLocationHandler(new LocationHandler(
-        (LocationManager) getSystemService(Context.LOCATION_SERVICE)));
+        (LocationManager) getSystemService(Context.LOCATION_SERVICE), flightMap));
+    
+//    TODO: Add a UI control or UI preference to switch this on/off. 
+//    flightMap.getLocationHandler().setLocationSource(LocationHandler.Source.SIMULATED);
+    
     userPrefs = new UserPrefs(flightMap);
     setDatabaseDownloaded((null != savedInstanceState && savedInstanceState
         .getBoolean(DATABASE_DOWNLOADED)));

@@ -44,6 +44,7 @@ import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 
+import com.google.flightmap.android.location.LocationHandler;
 import com.google.flightmap.common.AviationDbAdapter;
 import com.google.flightmap.common.CachedAviationDbAdapter;
 import com.google.flightmap.common.CachedMagneticVariation;
