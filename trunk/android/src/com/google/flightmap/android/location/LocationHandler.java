@@ -13,8 +13,9 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.flightmap.android;
+package com.google.flightmap.android.location;
 
+import android.content.Context;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
@@ -23,7 +24,10 @@ import android.os.Bundle;
 import android.util.Log;
 
 /**
- * Provides location information to the app.
+ * Provides location information to the application. The source of location
+ * information may be real or simulated.
+ * <p>
+ * Simulated locations are provided by the LocationSimulator class.
  */
 public class LocationHandler implements LocationListener {
   private static final String TAG = LocationHandler.class.getSimpleName();
@@ -31,25 +35,105 @@ public class LocationHandler implements LocationListener {
   private static final long COARSE_LOCATION_TIME = 300000; // 5 minutes.
   private static final float COARSE_LOCATION_DIST = 1000; // 1 km.
   private final LocationManager locationManager;
+  private final LocationSimulator locationSimulator;
   private Location location;
+  private Source locationSource;
 
-  public LocationHandler(LocationManager locationManager) {
+  /**
+   * Creates an instance using real location data (as opposed to simulated).
+   */
+  public LocationHandler(LocationManager locationManager, Context context) {
     this.locationManager = locationManager;
-    // Seed with last known coarse location.
-    Criteria criteria = new Criteria();
-    criteria.setAccuracy(Criteria.ACCURACY_COARSE);
-    location =
-        locationManager.getLastKnownLocation(locationManager.getBestProvider(criteria, true));
+    locationSimulator = new LocationSimulator(context);
+    locationSource = Source.REAL;
+  }
+
+  /**
+   * Source of location information.
+   */
+  public enum Source {
+    /** Real data based on GPS, network, etc. */
+    REAL,
+    /** Simulated data from {@link LocationSimulator}. */
+    SIMULATED;
   }
 
   /**
    * Returns current location or null if not available.
    */
   public synchronized Location getLocation() {
+    if (location == null && !isLocationSimulated()) {
+      // Seed location with last known coarse location.
+      Criteria criteria = new Criteria();
+      criteria.setAccuracy(Criteria.ACCURACY_COARSE);
+      location =
+          locationManager.getLastKnownLocation(locationManager.getBestProvider(criteria, true));
+    }
     return location;
   }
 
+  /**
+   * Returns true if the location is simulated (as opposed to the real physical
+   * location). This convenience method gives the same result as {@code
+   * getLocationSource() == Source.SIMULATED}.
+   */
+  public boolean isLocationSimulated() {
+    return getLocationSource() == Source.SIMULATED;
+  }
+
+  public void setLocationSource(Source locationSource) {
+    if (locationSource == this.locationSource) {
+      return;
+    }
+    // Switch between simulator and actual LocationProvider.
+    if (isLocationSimulated()) {
+      stopSimulator();
+      startRealLocationUpdates();
+    } else {
+      stopRealLocationUpdates();
+      startSimulator();
+    }
+    this.locationSource = locationSource;
+  }
+
+  public Source getLocationSource() {
+    return locationSource;
+  }
+
   public void startListening() {
+    if (isLocationSimulated()) {
+      startSimulator();
+    } else {
+      startRealLocationUpdates();
+    }
+  }
+  
+  public void stopListening() {
+    if (isLocationSimulated()) {
+      stopSimulator();
+    } else {
+      stopRealLocationUpdates();
+    }
+  }
+
+  /**
+   * Starts the simulator.
+   */
+  private void startSimulator() {
+    locationSimulator.start(this);
+  }
+
+  /**
+   * Stops the simulator.
+   */
+  private void stopSimulator() {
+    locationSimulator.stop();
+  }
+
+  /**
+   * Requests updates on real location.
+   */
+  private void startRealLocationUpdates() {
     Log.d(TAG, "requesting location updates");
     // Get fine (GPS) updates as frequently as possible.
     Criteria criteria = new Criteria();
@@ -62,7 +146,10 @@ public class LocationHandler implements LocationListener {
         COARSE_LOCATION_TIME, COARSE_LOCATION_DIST, this);
   }
 
-  public void stopListening() {
+  /**
+   * Stops getting real location updates.
+   */
+  private void stopRealLocationUpdates() {
     Log.d(TAG, "no longer listening for location updates");
     locationManager.removeUpdates(this);
   }

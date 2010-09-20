@@ -15,6 +15,8 @@
  */
 package com.google.flightmap.android;
 
+import com.google.flightmap.android.location.LocationHandler;
+
 import android.app.Application;
 
 /**
