@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-  android:id="@+id/tapcard_scroll_view" style="@style/FillParent" android:fillViewport="true">
+  android:id="@+id/tapcard_scroll_view" style="@style/FillParent"
+  android:fillViewport="true" android:keepScreenOn="true">
   <LinearLayout android:id="@+id/tapcard_outer_layout"
     style="@style/TapcardOuterLayout">
     <!-- ICAO and airport name -->
