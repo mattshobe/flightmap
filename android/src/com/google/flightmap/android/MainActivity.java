@@ -66,21 +66,21 @@ public class MainActivity extends Activity {
   private boolean disclaimerAccepted;
   private boolean isRunning;
   private UpdateHandler updater = new UpdateHandler();
-  private LocationHandler locationHandler;
   private MapView mapView;
+  private boolean initializationDone;
+  private boolean databaseDownloaded;
+  private FlightMap flightMap;
   AviationDbAdapter aviationDbAdapter;
   AirportDirectory airportDirectory;
   UserPrefs userPrefs;
-  private boolean initializationDone;
-  private boolean databaseDownloaded;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    locationHandler =
-        new LocationHandler((LocationManager) getSystemService(Context.LOCATION_SERVICE));
-
-    userPrefs = new UserPrefs(getApplication());
+    flightMap = (FlightMap) getApplication();
+    flightMap.setLocationHandler(new LocationHandler(
+        (LocationManager) getSystemService(Context.LOCATION_SERVICE)));
+    userPrefs = new UserPrefs(flightMap);
     setDatabaseDownloaded((null != savedInstanceState && savedInstanceState
         .getBoolean(DATABASE_DOWNLOADED)));
 
@@ -91,10 +91,10 @@ public class MainActivity extends Activity {
       showDisclaimerView();
     } else { // disclaimer accepted.
       setDisclaimerAccepted(true);
-      if(userPrefs.getAlwaysUpdate() || userPrefs.getNeedToUpdate())
-    	  downloadDatabase();
+      if (userPrefs.getAlwaysUpdate() || userPrefs.getNeedToUpdate())
+        downloadDatabase();
       else
-    	  downloadDatabaseDone();
+        downloadDatabaseDone();
     }
   }
 
@@ -145,11 +145,11 @@ public class MainActivity extends Activity {
       @Override
       public void onClick(View v) {
         setDisclaimerAccepted(true);
-        if(userPrefs.getAlwaysUpdate() || userPrefs.getNeedToUpdate())
-      	  downloadDatabase();
+        if (userPrefs.getAlwaysUpdate() || userPrefs.getNeedToUpdate())
+          downloadDatabase();
         else
           downloadDatabaseDone();
-        	
+
       }
     });
   }
@@ -213,7 +213,8 @@ public class MainActivity extends Activity {
 
   private synchronized void initializeApplication() {
     aviationDbAdapter = new CachedAviationDbAdapter(new AndroidAviationDbAdapter(userPrefs));
-    airportDirectory = new CachedAirportDirectory(new CustomGridAirportDirectory(aviationDbAdapter));
+    airportDirectory =
+        new CachedAirportDirectory(new CustomGridAirportDirectory(aviationDbAdapter));
 
     // TODO: handle the case of this throwing when there's no database.
     airportDirectory.open();
@@ -239,9 +240,9 @@ public class MainActivity extends Activity {
 
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
-	  MenuInflater inflater = getMenuInflater();
-	  inflater.inflate(R.menu.settings, menu);
-	  return super.onCreateOptionsMenu(menu);
+    MenuInflater inflater = getMenuInflater();
+    inflater.inflate(R.menu.settings, menu);
+    return super.onCreateOptionsMenu(menu);
   }
 
   @Override
@@ -259,7 +260,7 @@ public class MainActivity extends Activity {
   @Override
   protected void onResume() {
     super.onResume();
-    locationHandler.startListening();
+    flightMap.getLocationHandler().startListening();
     setRunning(isInitializationDone());
     update();
   }
@@ -268,7 +269,7 @@ public class MainActivity extends Activity {
   protected void onPause() {
     super.onPause();
     setRunning(false);
-    locationHandler.stopListening();
+    flightMap.getLocationHandler().stopListening();
   }
 
   @Override
@@ -296,7 +297,7 @@ public class MainActivity extends Activity {
     if (!isDisclaimerAccepted()) {
       return;
     }
-    Location location = locationHandler.getLocation();
+    Location location = flightMap.getLocationHandler().getLocation();
     map.drawMap(location);
   }
 
