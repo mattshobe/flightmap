@@ -37,9 +37,12 @@ import android.util.Log;
  * able to learn it while moving. Portable aviation GPS units have built in
  * simulator modes for the same reason.
  */
-
 class LocationSimulator {
   private static final String TAG = LocationSimulator.class.getSimpleName();
+  /**
+   * Milliseconds between position updates. This matches the rate from the real
+   * GPS provider.
+   */
   private static final long UPDATE_RATE = 1000;
   private boolean isRunning;
   private final PositionUpdater updater = new PositionUpdater();
@@ -49,12 +52,6 @@ class LocationSimulator {
   // Reused for distance and bearing calculations.
   private float results[] = new float[2];
   private LocationHandler locationHandler;
-
-  /**
-   * Milliseconds between position updates.
-   * 
-   * @param context
-   */
 
   LocationSimulator(Context context) {
     this.context = context;
@@ -172,9 +169,8 @@ class LocationSimulator {
         Location
             .distanceBetween(location.getLatitude(), location.getLongitude(), lat, lng, results);
         float meters = results[0];
-        float seconds = (newLocation.getTime() - location.getTime()) / 1000;
-        double speed = meters / seconds;
-        if (!Double.isInfinite(speed)) {
+        float seconds = (newLocation.getTime() - location.getTime()) / 1000.0f;
+        if (seconds > 0) {
           newLocation.setSpeed(meters / seconds);
         }
         newLocation.setBearing(results[1]);
@@ -183,7 +179,6 @@ class LocationSimulator {
       locationHandler.onLocationChanged(newLocation);
     }
   }
-
 
   /**
    * Updates the simulated position using a delayed message.
