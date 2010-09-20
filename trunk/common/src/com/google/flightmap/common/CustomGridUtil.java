@@ -22,6 +22,16 @@ import com.google.flightmap.common.data.LatLngRect;
  * <img src="doc-files/CustomGridUtil-0.png" width="40%" />
  * </a>
  * <p>
+ * Values 0, 1, 2, 3 are attributed to the NW, NE, SW, SE quadrants respectively: each level of
+ * recursion adds two bits to the previous id.  In base 4 notation, the id of the four level 2
+ * cells of the north-western quadrant of the world are: 00, 01, 02, 03. Going one level deeper in
+ * the last cell would give the following level 3 cells: 030, 031, 032 and 033, as shown in the
+ * following figure.
+ * <p align="center">
+ * <a href="doc-files/CustomGridUtil-0a.png" target="_blank">
+ * <img src="doc-files/CustomGridUtil-0a.png" width="40%" />
+ * </a>
+ * <p>
  * The number of iterations is limited by the size of integers.  For a typical size of 32 bits,
  * there can be 16 iterations, resulting in cells of 611 m. of longitude
  * by 305 m. of latitude on Earth's equator.
@@ -45,15 +55,15 @@ import com.google.flightmap.common.data.LatLngRect;
  * <li>Coverage threshold is set to 50% for this example.</li>
  * <li>Lightly filled box illustrates the searched area.</li>
  * <li>Continuous black lines represent the virtual border of cells.</li>
- * <li>Oblique discontinuous lines cover the cells returned by the algorithm.</li>
+ * <li>Angled dashed lines cover the cells returned by the algorithm.</li>
  * </ul>
  * <p align="center">
  * <a href="doc-files/CustomGridUtil-1.png" target="_blank">
  * <img src="doc-files/CustomGridUtil-1.png" width="40%" />
  * </a>
  * <p>
- * The area does not cover enough of the entire world (or "level 0 cell"), so a first split is done
- * (step 4 of the algorithm).<br />
+ * The area does not cover more than 50% of the entire world (or "level 0 cell"), so a first split
+ * is done (step 4 of the algorithm).<br />
  * Both eastern level 1 cells (NE and SE) do not intersect the searched area: they are
  * ignored (step 1).
  * <p align="center">
@@ -62,7 +72,7 @@ import com.google.flightmap.common.data.LatLngRect;
  * </a>
  * <p>
  * None of the western level 1 cells are covered enough, so a second split occurs.  The coverage in
- * two level 2 cells is now above the threshold: they are added to the set of covering cells.
+ * two level 2 cells is now above the 50% threshold: they are added to the set of covering cells.
  * <p align="center">
  * <a href="doc-files/CustomGridUtil-3.png" target="_blank">
  * <img src="doc-files/CustomGridUtil-3.png" width="40%" />
@@ -141,10 +151,23 @@ public class CustomGridUtil {
   }
 
   /**
-   * Returns the length of the intersection of segments ({@code a}, {@code b}) and
-   * ({@code A}, {@code B}).
+   * Returns the length of the intersection of ({@code a}, {@code b}) and ({@code A}, {@code B}).
    * <p>
-   * If {@code a} > {@code b} or {@code A} > {@code B}, the values are swapped accordingly.
+   * This is a mathematical utility method: no particular unit is assumed on the parameters.
+   * Obviously, for this call to make sense, all arguments should have the same unit, which is also
+   * the unit of the returned value.
+   * <p>
+   * Examples: <br />
+   * <table border="1">
+   * <tr><th>Arguments: <code>(a, b) (A, B)</code></th><th>Return value</th></tr>
+   * <tr><td><code>(0, 10) (5, 15) </code></td><td><code>5</code> (length of (5, 10))</td> </tr>
+   * <tr><td><code>(0, 20) (5, 15) </code></td><td><code>10</code> (length of (5, 15))</td> </tr>
+   * <tr><td><code>(0, 10) (10, 20) </code></td><td><code>0</code> (length of (10, 10))</td> </tr>
+   * <tr><td><code>(0, 5) (10, 20) </code></td><td><code>0</code> (no intersection)</td> </tr>
+   * </table> 
+   * <p>
+   * If {@code a} > {@code b} or {@code A} > {@code B}, the values are swapped accordingly:
+   * <code>intersectRange(10, 1, 20, 5) == intersectRange(1, 10, 5, 20)</code>
    */
   static private long intersectRange(long a, long b, long A, long B) {
     if (a > b) {

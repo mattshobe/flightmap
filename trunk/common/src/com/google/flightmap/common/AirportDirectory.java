@@ -31,8 +31,8 @@ public interface AirportDirectory {
   /**
    * Returns airports within {@code radius} meters of {@code position}.
    * <p>
-   * The airport ranks must be at least {@code minRank}.<br />
-   * Results must be sorted in order of increasing distance from {@code position}.
+   * The airport ranks are at least {@code minRank}.<br />
+   * Results are sorted in order of increasing distance from {@code position}.
    * @param position  Center of radius search
    * @param radius    Radius of search [meters]
    * @param minRank   Minimum airport rank to return
@@ -43,7 +43,7 @@ public interface AirportDirectory {
   /**
    * Returns airports in {@code area}.
    * <p>
-   * The returned collection must in fact be a set: no airport can be included more than once.
+   * The returned collection is in fact a set: no airport can be included more than once.
    * The return value is kept as a {@link java.util.Collection Collection} for performance reasons:
    * membership tests in {@link java.util.Set Set} implementations can be unecessarily costly.
    *

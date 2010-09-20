@@ -25,7 +25,7 @@ import java.util.Collection;
 /**
  * Caches access to {@link AirportDirectory} for improved performance.
  * <p>
- * Area searches are cached by rerieving all airports within a larger area than requested, and
+ * Area searches are cached by retrieving all airports within a larger area than requested, and
  * keeping the results in memory.  Subsequent requests are served from memory, as long as the
  * requested area is included in the cached area.
  * <p>
