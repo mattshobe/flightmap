@@ -90,7 +90,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   private static final float PANEL_NOTCH_WIDTH = 10;
   private static final float PANEL_TEXT_BASELINE =
       PANEL_HEIGHT - PANEL_NOTCH_HEIGHT - PANEL_TEXT_MARGIN;
-
+  
   // Rectangle with a notch that's the background for the top panel area.
   private Path topPanel;
 
