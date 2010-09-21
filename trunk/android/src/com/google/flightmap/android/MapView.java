@@ -35,9 +35,12 @@ import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.ZoomButtonsController;
 
 import com.google.flightmap.common.CachedMagneticVariation;
@@ -90,14 +93,14 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   private static final float PANEL_NOTCH_WIDTH = 10;
   private static final float PANEL_TEXT_BASELINE =
       PANEL_HEIGHT - PANEL_NOTCH_HEIGHT - PANEL_TEXT_MARGIN;
-  
+
   // Rectangle with a notch that's the background for the top panel area.
   private Path topPanel;
 
-  // Main class.
+  // Main activity.
   private final MainActivity mainActivity;
 
-  // Last known bearing
+  // Last known bearing.
   private float lastBearing = -1;
 
   // Coordinates to draw the aircraft on the map.
@@ -112,6 +115,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
 
   // Airplane image and location where to draw the left, top so it's centered.
   private final Drawable airplaneImage;
+
+  // Layout holding the simulator message.
+  private LinearLayout simulatorMessage;
 
   // Screen density.
   private final float density;
@@ -184,12 +190,12 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     createZoomController();
     setTextSizes(density);
 
-    Resources res = mainActivity.getResources();
+    simulatorMessage = (LinearLayout) mainActivity.findViewById(R.id.simulator_message);
 
+    Resources res = mainActivity.getResources();
     // Set up paints from resource colors.
     toweredPaint.setColor(res.getColor(R.color.ToweredAirport));
     nonToweredPaint.setColor(res.getColor(R.color.NonToweredAirport));
-
     // Set up airplane image.
     airplaneImage = centerImage(res.getDrawable(R.drawable.aircraft));
   }
@@ -397,6 +403,14 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
 
   private void createZoomController() {
     zoomController = new ZoomButtonsController(this);
+
+    // Set the gravity on the the zoom controls to the bottom left of this view.
+    FrameLayout.LayoutParams zoomParams =
+        new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT);
+    zoomParams.gravity = Gravity.BOTTOM | Gravity.LEFT;
+    zoomController.getZoomControls().setLayoutParams(zoomParams);
+
     zoomController.setOnZoomListener(new ZoomButtonsController.OnZoomListener() {
       @Override
       public void onZoom(boolean zoomIn) {
@@ -458,6 +472,13 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       c.drawText(mainActivity.getText(R.string.old_location).toString(), c.getWidth() / 2, //
           c.getHeight() / 2, ERROR_TEXT_PAINT);
       return;
+    }
+
+    // Show or hide the simulator warning.
+    if (mainActivity.flightMap.getLocationHandler().isLocationSimulated()) {
+      simulatorMessage.setVisibility(VISIBLE);
+    } else {
+      simulatorMessage.setVisibility(GONE);
     }
 
     LatLng locationLatLng = LatLng.fromDouble(location.getLatitude(), location.getLongitude());

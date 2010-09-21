@@ -38,9 +38,9 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.FrameLayout;
 
 import com.google.flightmap.android.location.LocationHandler;
-import com.google.flightmap.android.location.LocationHandler.Source;
 import com.google.flightmap.common.AirportDirectory;
 import com.google.flightmap.common.AviationDbAdapter;
 import com.google.flightmap.common.CachedAirportDirectory;
@@ -68,10 +68,11 @@ public class MainActivity extends Activity {
   private boolean disclaimerAccepted;
   private boolean isRunning;
   private UpdateHandler updater = new UpdateHandler();
+  private FrameLayout mapFrame;
   private MapView mapView;
   private boolean initializationDone;
   private boolean databaseDownloaded;
-  private FlightMap flightMap;
+  FlightMap flightMap;
   AviationDbAdapter aviationDbAdapter;
   AirportDirectory airportDirectory;
   UserPrefs userPrefs;
@@ -82,13 +83,20 @@ public class MainActivity extends Activity {
     flightMap = (FlightMap) getApplication();
     flightMap.setLocationHandler(new LocationHandler(
         (LocationManager) getSystemService(Context.LOCATION_SERVICE), flightMap));
-    
-//    TODO: Add a UI control or UI preference to switch this on/off. 
-//    flightMap.getLocationHandler().setLocationSource(LocationHandler.Source.SIMULATED);
-    
+
+    // TODO: Add a UI control or UI preference to switch this on/off.
+    // flightMap.getLocationHandler().setLocationSource(LocationHandler.Source.SIMULATED);
+
     userPrefs = new UserPrefs(flightMap);
     setDatabaseDownloaded((null != savedInstanceState && savedInstanceState
         .getBoolean(DATABASE_DOWNLOADED)));
+
+    // Map view initialization.
+    setContentView(R.layout.mapview);
+    mapFrame = (FrameLayout) findViewById(R.id.map_frame);
+    mapView = new MapView(this);
+    // The MapView must be the first child.
+    mapFrame.addView(mapView, 0);
 
     // Show the disclaimer screen if there's no previous state, or the user
     // didn't accept the disclaimer.
@@ -126,20 +134,13 @@ public class MainActivity extends Activity {
     super.onSaveInstanceState(outState);
     outState.putBoolean(DISCLAIMER_ACCEPTED, isDisclaimerAccepted());
     outState.putBoolean(DATABASE_DOWNLOADED, isDatabaseDownloaded());
-    MapView map = getMapView();
-    if (null != map) {
-      map.saveInstanceState(outState);
-    }
+    mapView.saveInstanceState(outState);
   }
 
   @Override
   protected void onRestoreInstanceState(Bundle savedInstanceState) {
     super.onRestoreInstanceState(savedInstanceState);
-
-    MapView map = getMapView();
-    if (null != map) {
-      map.restoreInstanceState(savedInstanceState);
-    }
+    mapView.restoreInstanceState(savedInstanceState);
   }
 
   private void showDisclaimerView() {
@@ -225,23 +226,11 @@ public class MainActivity extends Activity {
     // TODO: handle the case of this throwing when there's no database.
     airportDirectory.open();
 
-    if (null == getMapView()) {
-      setMapView(new MapView(this));
-    }
-
     setInitializationDone(true);
     setRunning(true);
 
     // Now show the map.
-    showMap();
-  }
-
-  /**
-   * Shows the map. This is called by initializeApplication once the application
-   * is ready to display the map.
-   */
-  private synchronized void showMap() {
-    setContentView(getMapView());
+    setContentView(mapFrame);
   }
 
   @Override
@@ -299,12 +288,11 @@ public class MainActivity extends Activity {
   }
 
   private void drawUi() {
-    MapView map = getMapView();
     if (!isDisclaimerAccepted()) {
       return;
     }
     Location location = flightMap.getLocationHandler().getLocation();
-    map.drawMap(location);
+    mapView.drawMap(location);
   }
 
   /**
@@ -335,14 +323,6 @@ public class MainActivity extends Activity {
     this.isRunning = isRunning;
   }
 
-  private synchronized MapView getMapView() {
-    return mapView;
-  }
-
-  private synchronized void setMapView(MapView mapView) {
-    this.mapView = mapView;
-  }
-
   public synchronized void setDisclaimerAccepted(boolean disclaimerAccepted) {
     this.disclaimerAccepted = disclaimerAccepted;
   }
@@ -350,7 +330,6 @@ public class MainActivity extends Activity {
   public synchronized boolean isDisclaimerAccepted() {
     return disclaimerAccepted;
   }
-
 
   private synchronized boolean isInitializationDone() {
     return initializationDone;
