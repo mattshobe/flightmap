@@ -197,6 +197,10 @@ public class NavigationUtil {
 
   /**
    * Computes the magnetic variation at a given position.
+   * <p>
+   * Note: typically the magnetic variation is only applied to the numeric
+   * display of a bearing or track. It <b>should not</b> be applied to drawing
+   * the map, vectors, etc.
    * 
    * @param position Latitude and longitude
    * @param height Height (meters)

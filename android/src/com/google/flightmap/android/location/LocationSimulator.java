@@ -19,6 +19,8 @@ import java.io.IOException;
 
 import org.xmlpull.v1.XmlPullParserException;
 
+import com.google.flightmap.common.NavigationUtil;
+
 import android.content.Context;
 import android.content.res.XmlResourceParser;
 import android.location.Location;
@@ -52,6 +54,9 @@ class LocationSimulator {
   // Reused for distance and bearing calculations.
   private float results[] = new float[2];
   private LocationHandler locationHandler;
+
+  // Don't replay .gpx file. Have just one location.
+  private boolean singleLocation = true;
 
   LocationSimulator(Context context) {
     this.context = context;
@@ -102,6 +107,23 @@ class LocationSimulator {
    * encountered.
    */
   private void updateLocation() {
+    if (singleLocation) { // Short final to KPAO.
+      synchronized (this) {
+        if (location == null) {
+          location = new Location(LocationSimulator.class.getSimpleName());
+          location.setAltitude((float) (180.0f / NavigationUtil.METERS_TO_FEET));
+          location.setLatitude(37.452285);
+          location.setLongitude(-122.106358);
+          // Magnetic course to RWY 31 + magnetic deviation = true course.
+          location.setBearing(307.5f + 14.2f);
+          location.setSpeed((float) (65.0 / NavigationUtil.METERS_PER_SEC_TO_KNOTS));
+        }
+        location.setTime(System.currentTimeMillis());
+        locationHandler.onLocationChanged(location);
+      }
+      return;
+    }
+
     boolean foundPosition = false;
     float lat = Float.NaN;
     float lng = Float.NaN;

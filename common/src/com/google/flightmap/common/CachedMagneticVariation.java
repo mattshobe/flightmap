@@ -41,6 +41,10 @@ public class CachedMagneticVariation {
   /**
    * Returns magnetic variation for {@code location}. May return cached result
    * if location hasn't changed significantly since last call.
+   * <p>
+   * Note: typically the magnetic variation is only applied to the numeric
+   * display of a bearing or track. It <b>should not</b> be applied to drawing
+   * the map, vectors, etc.
    * 
    * @param location location
    * @param altitude altitude in meters

@@ -53,6 +53,9 @@ import com.google.flightmap.common.data.LatLngRect;
 
 /**
  * View for the moving map.
+ * <p>
+ * Magnetic variation does not affect how the map is drawn. It only matters when
+ * displaying the numeric track value on the top panel.
  */
 public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     OnSharedPreferenceChangeListener, ProgressListener {
@@ -101,7 +104,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   private final MainActivity mainActivity;
 
   // Last known bearing.
-  private float lastBearing = -1;
+  private float lastBearing;
 
   // Coordinates to draw the aircraft on the map.
   private int aircraftX;
@@ -488,16 +491,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
 
     // Update bearing (if possible)
     if (location.hasBearing()) {
-      lastBearing =
-          getMagneticBearing(location.getBearing(), locationLatLng, (float) location.getAltitude());
-    } else {
-      if (lastBearing == -1) {
-        // Special case for testing on the emulator.
-        // TODO: Remove this once we've got a simulator.
-        lastBearing =
-            getMagneticBearing(location.getBearing(), locationLatLng, (float) location
-                .getAltitude());
-      }
+      lastBearing = location.getBearing();
     }
 
     // Draw everything relative to the aircraft.
@@ -572,9 +566,13 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         speed = String.format("%.0f", location.getSpeed() * distanceUnits.speedMultiplier);
       }
       if (location.hasBearing()) {
-        track =
-            String.format(" %03.0f%s", getMagneticBearing(location.getBearing(), locationLatLng,
-                (float) location.getAltitude()), DEGREES_SYMBOL);
+        // Show numeric display relative to magnetic north.
+        float magneticTrack =
+            location.getBearing()
+                + magneticVariation.getMagneticVariation(locationLatLng, (float) location
+                    .getAltitude());
+        magneticTrack = (float) NavigationUtil.normalizeBearing(magneticTrack);
+        track = String.format(" %03.0f%s", magneticTrack, DEGREES_SYMBOL);
       }
       if (location.hasAltitude()) {
         // Round altitude to nearest 10 foot increment to avoid jitter.
@@ -603,19 +601,6 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       c.drawText(altitude, width - textWidth - PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE,
           PANEL_DIGITS_PAINT);
     }
-  }
-
-  /**
-   * Returns {@code bearing} with magnetic variation applied. Result will be
-   * relative to magnetic north.
-   * 
-   * @param trueBearing in degrees relative to true north.
-   * @param location location for magnetic variation conversion.
-   * @param altitude altitude in meters above mean sea level.
-   */
-  private float getMagneticBearing(float trueBearing, LatLng location, float altitude) {
-    return (float) NavigationUtil.normalizeBearing(trueBearing
-        + magneticVariation.getMagneticVariation(location, altitude));
   }
 
   /**
@@ -718,8 +703,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         LatLng.fromDouble(previousLocation.getLatitude(), previousLocation.getLongitude());
     final Point locationPoint = AndroidMercatorProjection.toPoint(getZoom(), location);
     final float orientation =
-        mainActivity.userPrefs.isNorthUp() ? 0 : getMagneticBearing(previousLocation.getBearing(),
-            location, (float) previousLocation.getAltitude());
+        mainActivity.userPrefs.isNorthUp() ? 0 : previousLocation.getBearing();
     return getLocationForPoint(getZoom(), orientation, locationPoint, screenPoint);
   }
 
