@@ -48,6 +48,12 @@ public interface AviationDbAdapter {
   public Airport getAirport(int airportId);
 
   /**
+   * Returns {@link Airport} with given icao.
+   */
+
+  public Airport getAirportByICAO(String icao);
+
+  /**
    * Returns a list of airports in the given cells with rank >= {@code minRank}.
    */
   public Collection<Airport> getAirportsInCells(int startCell, int endCell, int minRank);
