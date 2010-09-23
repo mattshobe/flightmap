@@ -364,31 +364,29 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
           magneticVariation.getMagneticVariation(locationLatLng, (float) location.getAltitude());
     }
 
-    setDistanceBearingResult(location, magneticConversion);
-    updateNavigationMiniMap(location, magneticConversion);
+    setDistanceBearingResult(location);
+    updateNavigationMiniMap(location);
     updateNavigationTextItems(location, magneticConversion);
   }
 
   /**
    * Stores the distance and bearing from {@code location} to {@code
    * airportLatLng} in distanceBearingResult[]. Index 0 will be the distance in
-   * meters, index 1 will be the bearing in magnetic degrees.
+   * meters, index 1 will be the bearing in true degrees.
    */
-  private synchronized void setDistanceBearingResult(Location location, float magneticConversion) {
+  private synchronized void setDistanceBearingResult(Location location) {
     // Calculate distance and bearing to airport.
     final double locationLat = location.getLatitude();
     final double locationLng = location.getLongitude();
     // results[0]===distance, results[1]==bearing
     Location.distanceBetween(locationLat, locationLng, airportLatLng.latDeg(), airportLatLng
         .lngDeg(), distanceBearingResult);
-    distanceBearingResult[1] =
-        (float) NavigationUtil.normalizeBearing(distanceBearingResult[1] + magneticConversion);
   }
 
   /**
    * Updates the mini map pointing to the airport.
    */
-  private synchronized void updateNavigationMiniMap(Location location, float magneticConversion) {
+  private synchronized void updateNavigationMiniMap(Location location) {
     Canvas c = null;
     try {
       if (null == holder) {
@@ -404,7 +402,7 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
 
           // Update bearing (if possible)
           if (location.hasBearing()) {
-            lastBearing = location.getBearing() + magneticConversion;
+            lastBearing = location.getBearing();
           }
 
           // Center everythng on the canvas.
@@ -465,7 +463,7 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
     }
 
     final float distanceMeters = distanceBearingResult[0];
-    final float bearingTo = distanceBearingResult[1];
+    final float bearingTo = (float) NavigationUtil.normalizeBearing(distanceBearingResult[1] + magneticConversion);
 
     DistanceUnits distanceUnits = userPrefs.getDistanceUnits();
     String distance =
