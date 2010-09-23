@@ -56,7 +56,7 @@ class LocationSimulator {
   private LocationHandler locationHandler;
 
   // Don't replay .gpx file. Have just one location.
-  private boolean singleLocation = true;
+  private boolean singleLocation = false;
 
   LocationSimulator(Context context) {
     this.context = context;
@@ -145,11 +145,9 @@ class LocationSimulator {
 
           case XmlResourceParser.START_TAG:
             String tag = xmlParser.getName();
-            Log.d(TAG, "start tag " + tag);
             if ("trkpt".equals(tag)) {
               String latAttr = xmlParser.getAttributeValue(null, "lat");
               String lngAttr = xmlParser.getAttributeValue(null, "lon");
-              Log.d(TAG, "lat=" + latAttr + " lng=" + lngAttr);
               lat = Float.parseFloat(latAttr);
               lng = Float.parseFloat(lngAttr);
               if (!Float.isNaN(alt)) {
@@ -157,7 +155,6 @@ class LocationSimulator {
               }
             } else if ("ele".equals(tag)) {
               String eleText = xmlParser.nextText();
-              Log.d(TAG, "ele=" + eleText);
               alt = Float.parseFloat(eleText);
               if (!Float.isNaN(lat) && !Float.isNaN(lng)) {
                 foundPosition = true;

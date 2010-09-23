@@ -41,7 +41,6 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 
 import com.google.flightmap.android.location.LocationHandler;
-import com.google.flightmap.common.AirportDirectory;
 import com.google.flightmap.common.AviationDbAdapter;
 import com.google.flightmap.common.CachedAirportDirectory;
 import com.google.flightmap.common.CachedAviationDbAdapter;
@@ -74,7 +73,7 @@ public class MainActivity extends Activity {
   private boolean databaseDownloaded;
   FlightMap flightMap;
   AviationDbAdapter aviationDbAdapter;
-  AirportDirectory airportDirectory;
+  CachedAirportDirectory airportDirectory;
   UserPrefs userPrefs;
 
   @Override

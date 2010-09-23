@@ -25,37 +25,35 @@ import java.util.Collection;
 /**
  * Caches access to {@link AirportDirectory} for improved performance.
  * <p>
- * Area searches are cached by retrieving all airports within a larger area than requested, and
- * keeping the results in memory.  Subsequent requests are served from memory, as long as the
- * requested area is included in the cached area.
+ * Area searches are cached by retrieving all airports within a larger area than
+ * requested, and keeping the results in memory. Subsequent requests are served
+ * from memory, as long as the requested area is included in the cached area.
  * <p>
- * Requesting a search area that is not included in the cached area results in clearing the cache
- * and starting all over.  Results needed to build the cache are obtained by querying an underlying
- * {@code AirportDirectory}.
+ * Requesting a search area that is not included in the cached area results in
+ * clearing the cache and starting all over. Results needed to build the cache
+ * are obtained by querying an underlying {@code AirportDirectory}.
  * <p>
  * The following figures illustrate this process.
  * <p align="center">
- * <a href="doc-files/CachedAirportDirectory-0.png" target="_blank">
- * <img src="doc-files/CachedAirportDirectory-0.png" width="40%" />
- * </a>
+ * <a href="doc-files/CachedAirportDirectory-0.png" target="_blank"> <img
+ * src="doc-files/CachedAirportDirectory-0.png" width="40%" /> </a>
  * <p align="center">
  * A first area search is performed: a larger area is cached.
  * <p align="center">
- * <a href="doc-files/CachedAirportDirectory-1.png" target="_blank">
- * <img src="doc-files/CachedAirportDirectory-1.png" width="40%" />
- * </a>
+ * <a href="doc-files/CachedAirportDirectory-1.png" target="_blank"> <img
+ * src="doc-files/CachedAirportDirectory-1.png" width="40%" /> </a>
  * <p align="center">
- * All subsequent area searches that fall within the cached area are served from memory.
+ * All subsequent area searches that fall within the cached area are served from
+ * memory.
  * <p align="center">
- * <a href="doc-files/CachedAirportDirectory-2.png" target="_blank">
- * <img src="doc-files/CachedAirportDirectory-2.png" width="40%" />
- * </a>
+ * <a href="doc-files/CachedAirportDirectory-2.png" target="_blank"> <img
+ * src="doc-files/CachedAirportDirectory-2.png" width="40%" /> </a>
  * <p align="center">
- * When an area search falls outside of the cached area (cache miss), the latter is cleared.
+ * When an area search falls outside of the cached area (cache miss), the latter
+ * is cleared.
  * <p align="center">
- * <a href="doc-files/CachedAirportDirectory-3.png" target="_blank">
- * <img src="doc-files/CachedAirportDirectory-3.png" width="40%" />
- * </a>
+ * <a href="doc-files/CachedAirportDirectory-3.png" target="_blank"> <img
+ * src="doc-files/CachedAirportDirectory-3.png" width="40%" /> </a>
  * <p align="center">
  * A new cached area is then retrieved for the following requests.
  */
@@ -80,37 +78,59 @@ public class CachedAirportDirectory extends AbstractAirportDirectory {
    */
   private Collection<Airport> cachedAirports;
 
+  private LatLngRect inProgressArea;
+
+  private int inProgressRank;
+
   /**
    * Creates decorator for underlying {@code airportDirectory}.
-   *
-   * @see <a href="http://en.wikipedia.org/wiki/Decorator_pattern">Decorator pattern</a>
+   * 
+   * @see <a href="http://en.wikipedia.org/wiki/Decorator_pattern">Decorator
+   *      pattern</a>
    */
   public CachedAirportDirectory(final AirportDirectory airportDirectory) {
     this.airportDirectory = airportDirectory;
   }
 
   @Override
-  synchronized public Collection<Airport> getAirportsInRectangle(final LatLngRect area, 
-      final int minRank) {
-    if (cachedArea != null && cachedArea.contains(area) && cachedMinRank == minRank) {
-      return cachedAirports;
+  public Collection<Airport> getAirportsInRectangle(final LatLngRect area, final int minRank) {
+    synchronized (this) {
+      if (cachedArea != null && cachedArea.contains(area) && cachedMinRank == minRank) {
+        return cachedAirports;
+      }
     }
-
-    // Cache miss: update cache
+    // Cache miss: get new results.
     final LatLng areaNeCorner = area.getNeCorner();
     final LatLng areaSwCorner = area.getSwCorner();
     final LatLng cachedAreaNeCorner =
         new LatLng(areaNeCorner.lat + 100000, areaNeCorner.lng + 100000);
     final LatLng cachedAreaSwCorner =
         new LatLng(areaSwCorner.lat - 100000, areaSwCorner.lng - 100000);
-    final LatLngRect newCachedArea = new LatLngRect(cachedAreaNeCorner, cachedAreaSwCorner);
-    final Collection<Airport> newCachedAirports = 
-        airportDirectory.getAirportsInRectangle(newCachedArea, minRank);
-    cachedArea = newCachedArea;
-    cachedMinRank = minRank;
-    cachedAirports = newCachedAirports;
+    synchronized (this) {
+      inProgressArea = new LatLngRect(cachedAreaNeCorner, cachedAreaSwCorner);
+      inProgressRank = minRank;
+    }
 
-    return cachedAirports;
+    // This call may be slow.
+    System.out.println("Fetching airports for " + area + "    rank=" + minRank);
+    final Collection<Airport> newCachedAirports =
+        airportDirectory.getAirportsInRectangle(inProgressArea, minRank);
+    System.out.println("Got airports in rectangle. Count=" + newCachedAirports.size());
+    synchronized (this) {
+      cachedArea = inProgressArea;
+      cachedMinRank = minRank;
+      cachedAirports = newCachedAirports;
+      return cachedAirports;
+    }
+  }
+
+  /**
+   * Returns true if {@code area} and {@code minRank} will either 1) hit the
+   * cache, or 2) give the same results as the query that's in progress by
+   * {@link #getAirportsInRectangle(LatLngRect, int)}.
+   */
+  public synchronized boolean isCacheMatch(LatLngRect area, int minRank) {
+    return inProgressArea != null && inProgressArea.contains(area) && inProgressRank == minRank;
   }
 
   @Override
@@ -123,4 +143,3 @@ public class CachedAirportDirectory extends AbstractAirportDirectory {
     airportDirectory.close();
   }
 }
-
