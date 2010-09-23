@@ -10,6 +10,6 @@
   <color name="TapcardHeaderText">#fff</color>
   <color name="TapcardNavigationBackground">#000</color>
   <color name="TapcardNavigationForeground">#fff</color>
-  <color name="ToweredAirport">#0cf</color>
-  <color name="NonToweredAirport">#c3c</color>
+  <color name="ToweredAirport">#36a4d6</color>
+  <color name="NonToweredAirport">#b622c6</color>
 </resources>
