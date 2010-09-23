@@ -42,6 +42,7 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
   private final Connection dbConn;
 
   private PreparedStatement getAirportDataFromIdStmt;
+  private PreparedStatement getAirportDataFromICAOStmt;
   private PreparedStatement getAirportIdsInCellsStmt;
   private PreparedStatement getRunwayEndPropertiesStmt;
   private PreparedStatement getAirportPropertiesStmt;
@@ -67,12 +68,12 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
 
   public synchronized void open() {
     throw new RuntimeException(
-        "Invalid call: connection must be mangaged at caller.");
+        "Invalid call: connection must be managed at caller.");
   }
 
   public synchronized void close() {
     throw new RuntimeException(
-        "Invalid call: connection must be mangaged at caller.");
+        "Invalid call: connection must be managed at caller.");
   }
 
 
@@ -115,6 +116,28 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
       throw new RuntimeException(sqlEx);
     }
   }
+
+  public Airport getAirportByICAO(final String airportICAO) {
+    try {
+      if (getAirportDataFromICAOStmt == null) {
+        getAirportDataFromICAOStmt = dbConn.prepareStatement(
+            "SELECT id FROM airports WHERE icao = ?");
+        }
+      getAirportDataFromICAOStmt.setString(1, airportICAO);
+      ResultSet airportId = getAirportDataFromICAOStmt.executeQuery();
+
+      if (! airportId.next()) {
+        return null;
+        }
+      final int id = airportId.getInt("type");
+      final Airport airport = getAirport(id);
+
+      return airport;
+      } 
+    catch (SQLException sqlEx) {
+      throw new RuntimeException(sqlEx);
+      }
+    }
 
   public String getConstant(final int constantId) {
     try {

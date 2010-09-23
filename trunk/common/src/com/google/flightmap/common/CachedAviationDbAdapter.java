@@ -51,7 +51,12 @@ public class CachedAviationDbAdapter implements AviationDbAdapter {
 
   @Override
   public Airport getAirport(final int airportId) {
-	  return cachedDbAdapter.getAirport(airportId);
+    return cachedDbAdapter.getAirport(airportId);
+  }
+
+  @Override
+  public Airport getAirportByICAO(final String icao) {
+    return cachedDbAdapter.getAirportByICAO(icao);
   }
 
   @Override
@@ -87,4 +92,5 @@ public class CachedAviationDbAdapter implements AviationDbAdapter {
       final int minRank) {
     return cachedDbAdapter.getAirportsInCells(startCell, endCell, minRank);
   }
+
 }
