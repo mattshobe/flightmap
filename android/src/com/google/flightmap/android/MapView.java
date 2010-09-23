@@ -761,36 +761,23 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   }
 
   private synchronized void updateAirportsOnScreen(LatLngRect screenArea, int minimumAirportRank) {
-    // If there's a current query in progress with different QueryParams, cancel
-    // it. We don't need the answer anymore.
-    //
-    // TODO: Find a way to actually cancel a database query in progress.
-    if (getAirportsTask != null) {
-      GetAirportsInRectangleTask.QueryParams queryInProgress =
-          getAirportsTask.getInProgressQueryParams();
-      if (queryInProgress != null) {
-        // <TODO> Figure out a more efficient way to do the next test. I think
-        // what we really want to do is test whether the one cell id that covers
-        // screenArea has changed.
-        //
-        // When moving, the screenArea rectangle will always be different, so
-        // we're going to make a lot more queries than we really need to. The
-        // test below is really only useful when absolutely stationary.
-        //
-        // Need a method like CustomGrilUtil.getCellCovering(LatLngRect) which
-        // returns exactly one cell id. Also need documentation for
-        // CustomGridUtil so I could write that method.
-        // </TODO>
-        if (screenArea.equals(queryInProgress.rectangle)
-            && minimumAirportRank == queryInProgress.minRank) {
-          // The query we want is already in progress. Let it finish.
-          // Right now, this will only happen when not moving (see above TODO).
-          return;
-        }
+    // Is there a query in progress?
+    if (getAirportsTask != null && getAirportsTask.isQueryInProgress()) {
+      if (mainActivity.airportDirectory.isCacheMatch(screenArea, minimumAirportRank)) {
+        // The query in progress will give the same results as passing
+        // (screenArea, minRank) to a new task.
+        Log.i(TAG, "updateAirportsOnScreen: Still waiting on query");
+        return;
       }
       // Cancel the in progress task. It's working on an answer we no longer
       // need.
-      getAirportsTask.cancel(true);
+      Log.i(TAG, "updateAirportsOnScreen: Cancel query in progress.");
+      // TODO: Cancelling doesn't appear to have any affect. I think the db code
+      // that's running doesn't respond to the InterruptedException.
+      boolean cancelled = getAirportsTask.cancel(true);
+      if (!cancelled) {
+        Log.w(TAG, "updateAirportsOnScreen: FAILED to cancel query.");
+      }
     }
     // Have to make a new task here. Can't call execute again on an active task.
     getAirportsTask = new GetAirportsInRectangleTask(mainActivity.airportDirectory, this);

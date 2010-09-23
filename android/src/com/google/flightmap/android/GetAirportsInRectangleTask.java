@@ -47,11 +47,10 @@ public class GetAirportsInRectangleTask extends
   }
 
   /**
-   * Returns parameters passed to the query in progress. Returns null if there
-   * is no query in progress.[
+   * Returns true if there is a query in progress.
    */
-  public synchronized QueryParams getInProgressQueryParams() {
-    return queryParams;
+  public synchronized boolean isQueryInProgress() {
+    return queryParams != null;
   }
 
   /**
