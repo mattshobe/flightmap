@@ -83,7 +83,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
 
   // Zoom items.
   private static final int MIN_ZOOM = 4;
-  private static final int MAX_ZOOM = 15;
+  private static final int MAX_ZOOM = 12;
   private static final float ZOOM_STEP = 0.5f;
 
   private ZoomButtonsController zoomController;
