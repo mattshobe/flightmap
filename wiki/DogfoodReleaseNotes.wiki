@@ -50,7 +50,7 @@ Also, you should consider joining the Flight Map [http://g/flightmap mailing lis
 =Release: v0.5.0 - 9/2/10=
 Initial dogfood release.
   * Known issues
-    * Communication frequency data for airports is widely incomplete/inconsistent. This is our #1 motivator for a better data source and we've started discussions with AOPA about licensing their [http://www.aopa.org/airports/ Airport Directory] data.
+    * Communication frequency data for airports is widely incomplete/inconsistent. This is our #1 motivator for a better data source.
     *  GPS-derived altitude reads 100 feet low on Nexus One (this inaccuracy may occur on other hardware, too).
     *  GPS-derived ground speed is sometimes very wrong, especially when changing altitude.
     *  Facility database download continues in the background even if the application is closed prior to completion.
