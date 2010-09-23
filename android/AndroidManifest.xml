@@ -15,7 +15,7 @@
       </intent-filter>
     </activity>
     <activity android:name=".SearchActivity" android:label="@string/search_activity"
-	  android:launchMode="singleTop" >
+	  android:launchMode="singleInstance" >
       <intent-filter>
     	<action android:name="android.intent.action.SEARCH" />
     	</intent-filter>
