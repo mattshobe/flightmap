@@ -16,7 +16,7 @@
 
 package com.google.flightmap.android;
 
-import android.app.Activity;
+import android.app.ListActivity;
 
 import android.app.SearchManager;
 import com.google.flightmap.common.AviationDbAdapter;
@@ -27,17 +27,18 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 
-public class SearchActivity extends Activity {
+public class SearchActivity extends ListActivity {
   private static final String TAG = SearchActivity.class.getSimpleName();
 
   private AviationDbAdapter aviationDbAdapter;
   private UserPrefs userPrefs;
-  public Airport searchAirport;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+//    setContentView(R.layout.search);
     // Open database connection.
+
     userPrefs = new UserPrefs(getApplication());
     try {
       aviationDbAdapter = new CachedAviationDbAdapter(new AndroidAviationDbAdapter(userPrefs));
@@ -46,34 +47,33 @@ public class SearchActivity extends Activity {
         Log.w(TAG, "Unable to open database", t);
         finish();
         }
-      Airport airport = handleIntent(getIntent());
-      searchAirport = airport;
-      if(searchAirport != null)
-        Log.d("Airport", searchAirport.name);
-      //TODO: Launch Tapcard with searchAirprt info. 
+      handleIntent(getIntent());
+
   }
+  
   @Override
   protected void onNewIntent(Intent intent) {
     setIntent(intent);
-    searchAirport = handleIntent(intent);
+    handleIntent(intent);
   }
 
-  private Airport handleIntent(Intent intent) {
+  private void handleIntent(Intent intent) {
     if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
       String query = intent.getStringExtra(SearchManager.USER_QUERY);
-      Airport airport = doSearch(query);
-      return airport;
-      }
-    else 
-      return null;
+      doSearch(query);
+    }
   }
 	
-  private Airport doSearch(String query) {
+  private void doSearch(String query) {
      Airport airport = aviationDbAdapter.getAirportByICAO(query);
-     return airport;	
+     if(airport != null)
+       showTapcard(airport);
+     //TODO: need a way to exit the search activity.;	
   }
   
-  public synchronized Airport getAirport() {
-    return searchAirport;
+  private void showTapcard(Airport airport) {
+    Intent tapcardIntent = new Intent(this, TapcardActivity.class);
+    tapcardIntent.putExtra(TapcardActivity.AIRPORT_ID, airport.id);
+    this.startActivity(tapcardIntent);
   }
 }
