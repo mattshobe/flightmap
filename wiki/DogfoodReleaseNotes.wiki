@@ -43,12 +43,15 @@ Also, you should consider joining the Flight Map [http://g/flightmap mailing lis
       * After changing zoom levels, airports may appear or disappear based on their ranking.
       * Currently no indication to user of areas of the screen with database queries in progress.
 
-=Update: v0.5.1=
-  * Solves reported issue:  "Database update failed" error dialog would appear even though download completed successfully.
+=Release: v0.5.1 - 9/9/10=
+  * Bug fixes
+    * Solves reported issue:  "Database update failed" error dialog would appear even though download completed successfully.
 
-=Known Issues: v0.5.0=
-  * Communication frequency data for airports is widely incomplete/inconsistent. This is our #1 motivator for a better data source and we've started discussions with AOPA about licensing their [http://www.aopa.org/airports/ Airport Directory] data.
-  *  GPS-derived altitude reads 100 feet low on Nexus One (this inaccuracy may occur on other hardware, too).
-  *  GPS-derived ground speed is sometimes very wrong, especially when changing altitude.
-  *  Facility database download continues in the background even if the application is closed prior to completion.
-  * Map view when standing still or moving slowly (e.g., walking or taxiing very slowly) is a bit erratic. The view may shift position unexpectedly until you are moving at a more consistent speed.
+=Release: v0.5.0 - 9/2/10=
+Initial dogfood release.
+  * Known issues
+    * Communication frequency data for airports is widely incomplete/inconsistent. This is our #1 motivator for a better data source and we've started discussions with AOPA about licensing their [http://www.aopa.org/airports/ Airport Directory] data.
+    *  GPS-derived altitude reads 100 feet low on Nexus One (this inaccuracy may occur on other hardware, too).
+    *  GPS-derived ground speed is sometimes very wrong, especially when changing altitude.
+    *  Facility database download continues in the background even if the application is closed prior to completion.
+    * Map view when standing still or moving slowly (e.g., walking or taxiing very slowly) is a bit erratic. The view may shift position unexpectedly until you are moving at a more consistent speed.
