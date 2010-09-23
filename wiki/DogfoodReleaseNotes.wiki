@@ -1,11 +1,11 @@
 #summary Flight Map Release Notes
-
-=Flight Map v0.5.x - Google Dogfood Edition - Release Notes=
+<wiki:toc max_depth="2" />
+=Flight Map - Google Dogfood Edition - Release Notes=
 
 ==Intro==
 Flight Map is an Android application created by Googler pilots who wanted to build a fun, simple-to-use aid to navigation and fair-weather pilotage. It is in its absolute earliest stages of development/feature maturity, but it's ready for pilots and other interested parties to dogfood in flight.
 
-Flight Map offers these features in v0.5:
+Flight Map offers these features:
   *  Works in *Airplane Mode*. All the data is kept locally on your phone.
   *  Current track, speed, and altitude
   *  GPS-plotted position on a moving, zoom-able map with nearby airport display
@@ -25,12 +25,30 @@ Please file a bug using our official [http://code.google.com/p/flightmap/issues/
 
 Also, you should consider joining the Flight Map [http://g/flightmap mailing list]. The development team will monitor this list for discussion and provide updates on development plans and launch timetables through it.
 
-==Known Issues: v0.5==
+=Coming Soon=
+  * Search by airport code (later name, city, etc.)
+  * Panning the map.
+  * Pinch-to-zoom.
+  * Simulator mode.
+
+=Release: v0.7.0 - target 9/23/10=
+  * Bug fixes
+    * Screen stays on the airport details page. It was already kept on on the map page.
+      * General decision: any page that updates automatically with map or navigation data will keep the screen on.
+    * Map incorrectly rotated by magnetic variation amount. Issue 89.
+    * Show integer scale values and make zoom scale more visible. Issue 77.
+    * Move zoom scale control so it doesn't overlap with zoom scale text. Issue 45.
+  * New functionality
+    * Database query to fetch airports in view is on a separate thread.
+      * After changing zoom levels, airports may appear or disappear based on their ranking.
+      * Currently no indication to user of areas of the screen with database queries in progress.
+
+=Update: v0.5.1=
+  * Solves reported issue:  "Database update failed" error dialog would appear even though download completed successfully.
+
+=Known Issues: v0.5.0=
   * Communication frequency data for airports is widely incomplete/inconsistent. This is our #1 motivator for a better data source and we've started discussions with AOPA about licensing their [http://www.aopa.org/airports/ Airport Directory] data.
   *  GPS-derived altitude reads 100 feet low on Nexus One (this inaccuracy may occur on other hardware, too).
   *  GPS-derived ground speed is sometimes very wrong, especially when changing altitude.
   *  Facility database download continues in the background even if the application is closed prior to completion.
   * Map view when standing still or moving slowly (e.g., walking or taxiing very slowly) is a bit erratic. The view may shift position unexpectedly until you are moving at a more consistent speed.
-
-==Update: v0.5.1==
-  * Solves reported issue:  "Database update failed" error dialog would appear even though download completed successfully.
