@@ -26,6 +26,8 @@ import com.google.flightmap.common.data.Airport;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.ArrayAdapter;
+import android.widget.SimpleCursorAdapter;
 
 public class SearchActivity extends ListActivity {
   private static final String TAG = SearchActivity.class.getSimpleName();
@@ -36,7 +38,7 @@ public class SearchActivity extends ListActivity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-//    setContentView(R.layout.search);
+    setContentView(R.layout.search);
     // Open database connection.
 
     userPrefs = new UserPrefs(getApplication());
@@ -65,15 +67,24 @@ public class SearchActivity extends ListActivity {
   }
 	
   private void doSearch(String query) {
-     Airport airport = aviationDbAdapter.getAirportByICAO(query);
-     if(airport != null)
-       showTapcard(airport);
-     //TODO: need a way to exit the search activity.;	
+     int airportId = aviationDbAdapter.getAirportIdByICAO(query);
+     if (airportId == -1 && query.length() == 3) {
+       // Try again with 'K' prepended if it's only 3 letters.
+       airportId = aviationDbAdapter.getAirportIdByICAO("K" + query);
+     }
+     if(airportId != -1) {
+       showTapcard(airportId);
+     }
+     else {
+       // Can return "like" results.
+       String[] items = {query + " not found"};
+       setListAdapter(new ArrayAdapter(this,android.R.layout.simple_list_item_1, items));
+     }
   }
   
-  private void showTapcard(Airport airport) {
+  private void showTapcard(int airportId) {
     Intent tapcardIntent = new Intent(this, TapcardActivity.class);
-    tapcardIntent.putExtra(TapcardActivity.AIRPORT_ID, airport.id);
+    tapcardIntent.putExtra(TapcardActivity.AIRPORT_ID, airportId);
     this.startActivity(tapcardIntent);
   }
 }

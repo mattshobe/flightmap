@@ -8,7 +8,7 @@
     not include terrain data.\n\nFlight Map does not include Notices to
     Airmen (NOTAMs).\n\nFlight Map does not include information released
     since you last updated Flight Map.\n\nFlight Map is an aid for
-    sitational awareness. It is not a substitute for good judgment and
+    situational awareness. It is not a substitute for good judgment and
     experience.\n\nBy clicking "I Agree", you agree to assume all risk
     and responsibility associated with using Flight Map and to release
     Google from any liability associated with your use of Flight Map.
@@ -17,8 +17,8 @@
   <string name="no_airports">No airports found</string>
   <string name="old_location">Searching for GPS...</string>
   <string name="preferences_from_xml">Settings...</string>
-  <string name="search_activity">Search for airports</string>
-  <string name="search_hint">Search airports by ICAO</string>
+  <string name="search_activity">Search results</string>
+  <string name="search_hint">Search by ICAO</string>
   <string name="simulator_warning">SIMULATOR</string>
   <string name="tapcard_activity">Airport Details</string>
   <string name="updating_database">Updating database...</string>
