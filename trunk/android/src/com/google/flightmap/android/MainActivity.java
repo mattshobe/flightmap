@@ -207,8 +207,9 @@ public class MainActivity extends Activity {
     };
 
     final DbAdapter dbAdapter = new AndroidAviationDbAdapter(userPrefs);
-    final DbUpdaterTask.Params params = new DbUpdaterTask.Params(
-        localFile, url, workingDir, dbAdapter, AVIATION_DATABASE_REQUIRED_SCHEMA_VERSION);
+    final DbUpdaterTask.Params params =
+        new DbUpdaterTask.Params(localFile, url, workingDir, dbAdapter,
+            AVIATION_DATABASE_REQUIRED_SCHEMA_VERSION);
     dbUpdaterTask = new DbUpdaterTask(dbUpdateListener);
     dbUpdaterTask.execute(params);
     Time curr = new Time();
