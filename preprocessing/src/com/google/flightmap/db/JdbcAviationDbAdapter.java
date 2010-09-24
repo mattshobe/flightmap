@@ -42,7 +42,7 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
   private final Connection dbConn;
 
   private PreparedStatement getAirportDataFromIdStmt;
-  private PreparedStatement getAirportIdFromICAOStmt;
+  private PreparedStatement getAirportIdFromIcaoStmt;
   private PreparedStatement getAirportIdsInCellsStmt;
   private PreparedStatement getRunwayEndPropertiesStmt;
   private PreparedStatement getAirportPropertiesStmt;
@@ -117,14 +117,14 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
     }
   }
 
-  public int getAirportIdByICAO(final String airportICAO) {
+  public int getAirportIdByIcao(final String airportICAO) {
     try {
-      if (getAirportIdFromICAOStmt == null) {
-        getAirportIdFromICAOStmt = dbConn.prepareStatement(
+      if (getAirportIdFromIcaoStmt == null) {
+        getAirportIdFromIcaoStmt = dbConn.prepareStatement(
             "SELECT id FROM airports WHERE icao = ?");
         }
-      getAirportIdFromICAOStmt.setString(1, airportICAO);
-      ResultSet airportId = getAirportIdFromICAOStmt.executeQuery();
+      getAirportIdFromIcaoStmt.setString(1, airportICAO);
+      ResultSet airportId = getAirportIdFromIcaoStmt.executeQuery();
 
       if (!airportId.next()) {
         return -1;
@@ -132,8 +132,7 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
       final int id = airportId.getInt("type");
 
       return id;
-      } 
-    catch (SQLException sqlEx) {
+      } catch (SQLException sqlEx) {
       throw new RuntimeException(sqlEx);
       }
     }

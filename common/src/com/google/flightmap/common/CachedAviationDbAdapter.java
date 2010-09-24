@@ -55,8 +55,8 @@ public class CachedAviationDbAdapter implements AviationDbAdapter {
   }
 
   @Override
-  public int getAirportIdByICAO(final String icao) {
-    return cachedDbAdapter.getAirportIdByICAO(icao);
+  public int getAirportIdByIcao(final String icao) {
+    return cachedDbAdapter.getAirportIdByIcao(icao);
   }
 
   @Override
