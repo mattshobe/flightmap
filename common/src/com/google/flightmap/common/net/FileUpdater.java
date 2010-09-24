@@ -71,6 +71,7 @@ public class FileUpdater {
   private int totalBytes;
   private int bytesDownloaded;
   private int lastPercentNotified;
+  private Boolean cancelled = Boolean.FALSE;
 
   private List<ProgressListener> listeners = new LinkedList<ProgressListener>();
 
@@ -117,19 +118,13 @@ public class FileUpdater {
   }
 
   /**
-   * Updates the local file iff needed.
-   *
-   * @return {@code true} if an update was needed.
+   * Updates the local file.  Does so regardless of whether an update is needed.
    */
-  public synchronized boolean update() throws IOException {
+  public synchronized void update() throws IOException {
     boolean success = false;
     try {
-      final boolean updateNeeded = isUpdateNeeded();
-      if (updateNeeded) {
-        doUpdate();
-      }
-      success = true;
-      return updateNeeded;
+      doUpdate();
+      success = !isCancelled();
     } finally {
       notifyUpdateCompleted(success);
     }
@@ -213,6 +208,7 @@ public class FileUpdater {
 
     try {
       for (Map.Entry<String, Integer> partEntry: parts.entrySet()) {
+        if (isCancelled()) return;
         final String partFilename = partEntry.getKey();
         final int partFileSize = partEntry.getValue().intValue();
 
@@ -237,6 +233,24 @@ public class FileUpdater {
     } catch (IOException ioEx) {
       file.delete();
       throw ioEx;
+    }
+  }
+
+  /**
+   * Cancels update as soon as possible.
+   */
+  public void cancel() {
+    synchronized(this.cancelled) {
+      cancelled = Boolean.FALSE;
+    }
+  }
+
+  /**
+   * Checks if cancelled flag is set.
+   */
+  private boolean isCancelled() {
+    synchronized(this.cancelled) {
+      return cancelled;
     }
   }
 

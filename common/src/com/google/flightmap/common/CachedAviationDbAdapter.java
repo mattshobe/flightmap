@@ -93,4 +93,9 @@ public class CachedAviationDbAdapter implements AviationDbAdapter {
     return cachedDbAdapter.getAirportsInCells(startCell, endCell, minRank);
   }
 
+  @Override
+  public String getMetadata(final String key) {
+    return cachedDbAdapter.getMetadata(key);
+  }
+
 }

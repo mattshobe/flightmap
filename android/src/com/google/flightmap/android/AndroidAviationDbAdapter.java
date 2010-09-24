@@ -26,6 +26,13 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   // database
   static final String DATABASE_PATH = "/sdcard/com.google.flightmap/aviation.db";
 
+  // metadata
+  private static final String METADATA_TABLE = "metadata";
+  private static final String KEY_COLUMN = "key";
+  private static final String VALUE_COLUMN = "value";
+  private static final String KEY_WHERE = KEY_COLUMN + " = ?";
+  private static final String[] VALUE_COLUMNS = new String[] {VALUE_COLUMN};
+  
   // airports
   private static final String AIRPORTS_TABLE = "airports";
   private static final String ID_COLUMN = "_id";
@@ -62,8 +69,6 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   // airport_properties
   private static final String AIRPORT_PROPERTIES_TABLE = "airport_properties";
   private static final String AIRPORT_ID_COLUMN = "airport_id";
-  private static final String KEY_COLUMN = "key";
-  private static final String VALUE_COLUMN = "value";
   private static final String AIRPORT_ID_WHERE = AIRPORT_ID_COLUMN + " = ?";
   private static final String[] PROPERTY_COLUMNS = new String[] {KEY_COLUMN, VALUE_COLUMN};
   private static final HashSet<String> INTEGER_AIRPORT_PROPERTIES;
@@ -130,7 +135,11 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
 
   @Override
   public synchronized void close() {
-    database.close();
+    try {
+      database.close();
+    } catch (android.database.sqlite.SQLiteException sqlEx) {
+      sqlEx.printStackTrace();
+    }
   }
 
   /**
@@ -504,4 +513,20 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
     }
   }
 
+  @Override
+  public String getMetadata(final String key) {
+    final String[] keyArray = {key};
+    final Cursor metadataValueCursor =
+        database.query(METADATA_TABLE, VALUE_COLUMNS, KEY_WHERE, keyArray, null, null, null);
+    try {
+      if (!metadataValueCursor.moveToFirst()) {
+        Log.e(TAG, "No metadata value for key =" + key);
+        return null;
+      }
+
+      return metadataValueCursor.getString(metadataValueCursor.getColumnIndexOrThrow(VALUE_COLUMN));
+    } finally {
+      metadataValueCursor.close();
+    }
+  }
 }
