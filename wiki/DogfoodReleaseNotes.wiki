@@ -36,6 +36,7 @@ Also, you should consider joining the Flight Map [http://g/flightmap mailing lis
       * General decision: any page that updates automatically with map or navigation data will keep the screen on.
     * Map incorrectly rotated by magnetic variation amount. Issue 89.
     * Show integer scale values and make zoom scale more visible. Issue 77.
+    * Better visibility of text on the airport details page. Issue 75.
     * Move zoom scale control so it doesn't overlap with zoom scale text. Issue 45.
   * New functionality
     * Database query to fetch airports in view is on a separate thread.
