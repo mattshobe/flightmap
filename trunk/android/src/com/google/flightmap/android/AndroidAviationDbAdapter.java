@@ -45,6 +45,7 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
       String.format("%s >= ? and %s < ? and %s >= ?", CELL_ID_COLUMN, CELL_ID_COLUMN, RANK_COLUMN);
   private static final String ID_WHERE = ID_COLUMN + " = ?";
   private static final String ICAO_WHERE = ICAO_COLUMN + " = ?";
+  private static final String[] ID_COLUMNS = new String[] {ID_COLUMN};
   private static final String[] LOCATION_COLUMNS =
       new String[] {ID_COLUMN, LAT_COLUMN, LNG_COLUMN, CELL_ID_COLUMN, RANK_COLUMN};
   private static final String[] AIRPORT_COLUMNS =
@@ -194,7 +195,7 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   public int getAirportIdByICAO(final String icao) {
     final String[] stringICAO = {icao.toUpperCase()};
     final Cursor result = database.query(
-        AIRPORTS_TABLE, AIRPORT_COLUMNS, ICAO_WHERE, stringICAO, null, null, null);
+        AIRPORTS_TABLE, ID_COLUMNS, ICAO_WHERE, stringICAO, null, null, null);
     try {
       if (!result.moveToFirst()) {
         Log.e(TAG, "No airport for icao =" + stringICAO);
