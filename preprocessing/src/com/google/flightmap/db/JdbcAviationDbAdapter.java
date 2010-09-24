@@ -133,7 +133,7 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
 
       return id;
       } catch (SQLException sqlEx) {
-      throw new RuntimeException(sqlEx);
+        throw new RuntimeException(sqlEx);
       }
     }
 
