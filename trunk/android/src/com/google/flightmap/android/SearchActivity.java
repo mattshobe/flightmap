@@ -42,7 +42,7 @@ import android.util.Log;
 import android.widget.ArrayAdapter;
 
 /**
- * Activity for searching for airports by icao within MainActivity.
+ * Activity for search within MainActivity.
  */
 public class SearchActivity extends ListActivity {
   private static final String TAG = SearchActivity.class.getSimpleName();
@@ -53,7 +53,6 @@ public class SearchActivity extends ListActivity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    // Basic layout for showing search results.
     setContentView(R.layout.search);
 
     userPrefs = new UserPrefs(getApplication());
@@ -65,7 +64,6 @@ public class SearchActivity extends ListActivity {
         Log.w(TAG, "Unable to open database", t);
         finish();
         }
-      // Handle the intent this way to avoid multiple tapcard instances.
       handleIntent(getIntent());
 
   }
@@ -82,26 +80,23 @@ public class SearchActivity extends ListActivity {
       doSearch(query);
     }
   }
-
-  /**
-   * Searches for an airport ID based on an icao as the input query.
-   */
+	
   private void doSearch(String query) {
-    // 
-    int airportId = aviationDbAdapter.getAirportIdByICAO(query);
-    // -1 returned if the icao was not recognized. Since many pilots use only
-    // the last 3 letters if an icao, try prepending a 'K' and retrying.
-    if (airportId == -1 && query.length() == 3) {
-      airportId = aviationDbAdapter.getAirportIdByICAO("K" + query);
-    }
-    if(airportId != -1) {
-      showTapcard(airportId);
-    }
+     int airportId = aviationDbAdapter.getAirportIdByIcao(query);
+     if (airportId == -1 && query.length() == 3) {
+       // Try again with 'K' prepended if it's only 3 letters.
+       airportId = aviationDbAdapter.getAirportIdByIcao("K" + query);
+     }
+     if(airportId != -1) {
+       showTapcard(airportId);
+     }
+     else {
+       // Can return "like" results down the road.
+       String[] items = {query + " not found"};
+       setListAdapter(new ArrayAdapter(this,android.R.layout.simple_list_item_1, items));
+     }
   }
   
-  /**
-   * Starts the Tapcard Activity using the ID of the airport from doSearch.
-   */
   private void showTapcard(int airportId) {
     Intent tapcardIntent = new Intent(this, TapcardActivity.class);
     tapcardIntent.putExtra(TapcardActivity.AIRPORT_ID, airportId);

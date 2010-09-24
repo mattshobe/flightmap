@@ -192,7 +192,7 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   }
 
   @Override
-  public int getAirportIdByICAO(final String icao) {
+  public int getAirportIdByIcao(final String icao) {
     final String[] stringICAO = {icao.toUpperCase()};
     final Cursor result = database.query(
         AIRPORTS_TABLE, ID_COLUMNS, ICAO_WHERE, stringICAO, null, null, null);
