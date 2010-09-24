@@ -26,12 +26,11 @@ Please file a bug using our official [http://code.google.com/p/flightmap/issues/
 Also, you should consider joining the Flight Map [http://g/flightmap mailing list]. The development team will monitor this list for discussion and provide updates on development plans and launch timetables through it.
 
 =Coming Soon=
-  * Search by airport code (later name, city, etc.)
   * Panning the map.
   * Pinch-to-zoom.
   * Simulator mode.
 
-=Release: v0.7.0 - target 9/23/10=
+=Release: v0.7.0 - 9/24/10=
   * Bug fixes
     * Screen stays on the airport details page. It was already kept on on the map page.
       * General decision: any page that updates automatically with map or navigation data will keep the screen on.
