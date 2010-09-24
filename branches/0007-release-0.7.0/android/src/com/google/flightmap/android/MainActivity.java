@@ -145,10 +145,12 @@ public class MainActivity extends Activity {
     setContentView(R.layout.disclaimer);
 
     // Set disclaimer "agree" button to switch to map view.
-    Button agreeButton = (Button) findViewById(R.id.agree);
+    final Button agreeButton = (Button) findViewById(R.id.agree);
+    agreeButton.setEnabled(true);
     agreeButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
+        agreeButton.setEnabled(false);
         setDisclaimerAccepted(true);
         downloadDatabase();
       }
