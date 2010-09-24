@@ -60,6 +60,11 @@ cd ~/src/flightmap
 svn info | grep URL:
 }}}
 
+== Create a release branch ==
+{{{
+svn cp -r333 https://flightmap.googlecode.com/svn/trunk https://flightmap.googlecode.com/svn/branches/0007-release-0.7.0
+}}}
+
 == Merge a change from trunk to a branch ==
 Typically this down to cherry pick one specific revision's change down to a release branch.
 
@@ -85,5 +90,5 @@ This is normally done by copying a release branch to the tags directory at a spe
 
 Example:
 {{{
-svn cp -r268 https://flightmap.googlecode.com/svn/branches/release-0.5-dogfood https://flightmap.googlecode.com/svn/tags/release-0.5-dogfood
+svn cp -r268 https://flightmap.googlecode.com/svn/branches/0123-release-0.0123 https://flightmap.googlecode.com/svn/tags/0123-release-0.0123
 }}}
