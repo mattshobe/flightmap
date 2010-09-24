@@ -74,8 +74,8 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
   public static final String AIRPORT_ID = PACKAGE_NAME + "AirportId";
 
   // Dimensions of the "to" pointer in pixels
-  private static final float POINTER_LENGTH = 12;
-  private static final float POINTER_WIDTH = 10;
+  private static final float POINTER_LENGTH = 17;
+  private static final float POINTER_WIDTH = 12;
 
   private FlightMap flightMap;
   private AviationDbAdapter aviationDbAdapter;
@@ -470,7 +470,7 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
         String.format("      %.1f%s", distanceUnits.getDistance(distanceMeters),
             distanceUnits.distanceAbbreviation);
     distanceText.setText(distance);
-    bearingText.setText(String.format(" - %03.0f%s BRG", bearingTo, MapView.DEGREES_SYMBOL));
+    bearingText.setText(String.format(" %03.0f%s", bearingTo, MapView.DEGREES_SYMBOL));
 
     final DistanceUnits nauticalUnits = DistanceUnits.NAUTICAL_MILES;
     final double speedInKnots = nauticalUnits.getSpeed(location.getSpeed());
@@ -483,9 +483,9 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
 
       // Normally hours will be 0, so omit if possible.
       if (hours == 0) {
-        eteText.setText(String.format(" - %d:%02d", minutes, seconds));
+        eteText.setText(String.format(" %d:%02d", minutes, seconds));
       } else {
-        eteText.setText(String.format(" - %d:%02d:%02d", hours, minutes, seconds));
+        eteText.setText(String.format(" %d:%02d:%02d", hours, minutes, seconds));
       }
     } else {
       eteText.setText("");
