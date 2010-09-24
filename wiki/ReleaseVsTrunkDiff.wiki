@@ -1,0 +1,21 @@
+#summary Differences between release branches and trunk
+= Introduction =
+
+This documents tracks _significant differences_ between the code of released versions (in tags/xxxx-release-x.x.x) and the corresponding code in trunk/ at the time of release.
+
+Significant differences are changes that are not reflected in trunk, such as quick fixes (hacks) needed for a particular release, etc.  Cherrypicking a revision from trunk to a release branch usually does *not* constitute such a difference: the change is already in trunk.
+
+Notation:
+  * *Release x (rY -> rZ)*: Revision Y was tagged as release x in revision Z.
+
+== Release 0.7.0 ==
+  * Removed simulator code (r336)
+
+== Release 0.5.1 (r293 -> r294) ==
+  * Improved database download hack: Hide exceptions raised by showing dialog when application is closed. (r292, r293)
+
+== Release 0.5 (r268 -> r270) ==
+  * Remove keypad heading (r249, done in trunk/ in r274)
+  * Database download hack: do not show dialog while checking for update, hide errors (r266)
+
+
