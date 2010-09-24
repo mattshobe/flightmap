@@ -31,7 +31,6 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.text.format.Time;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -107,10 +106,7 @@ public class MainActivity extends Activity {
       showDisclaimerView();
     } else { // disclaimer accepted.
       setDisclaimerAccepted(true);
-      if (userPrefs.getAlwaysUpdate() || userPrefs.getNeedToUpdate())
-        downloadDatabase();
-      else
-        downloadDatabaseDone();
+      downloadDatabase();
     }
   }
 
@@ -154,11 +150,7 @@ public class MainActivity extends Activity {
       @Override
       public void onClick(View v) {
         setDisclaimerAccepted(true);
-        if (userPrefs.getAlwaysUpdate() || userPrefs.getNeedToUpdate())
-          downloadDatabase();
-        else
-          downloadDatabaseDone();
-
+        downloadDatabase();
       }
     });
   }
@@ -212,9 +204,6 @@ public class MainActivity extends Activity {
             AVIATION_DATABASE_REQUIRED_SCHEMA_VERSION);
     dbUpdaterTask = new DbUpdaterTask(dbUpdateListener);
     dbUpdaterTask.execute(params);
-    Time curr = new Time();
-    curr.setToNow();
-    userPrefs.setUpdateTime(curr.toMillis(true));
   }
 
   /**
