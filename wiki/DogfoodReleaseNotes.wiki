@@ -42,6 +42,9 @@ Also, you should consider joining the Flight Map [http://g/flightmap mailing lis
     * Database query to fetch airports in view is on a separate thread.
       * After changing zoom levels, airports may appear or disappear based on their ranking.
       * Currently no indication to user of areas of the screen with database queries in progress.
+    * Search by airport code (later name, city, etc.)
+    * Aviation database is only updated on schema changes or if data is past its expiration date.
+      * Database downloads cannot be interrupted by hitting the "back" button.
 
 =Release: v0.5.1 - 9/9/10=
   * Bug fixes
