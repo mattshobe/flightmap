@@ -8,7 +8,7 @@ Significant differences are changes that are not reflected in trunk, such as qui
 Notation:
   * *Release x (rY -> rZ)*: Revision Y was tagged as release x in revision Z.
 
-== Release 0.7.0 ==
+== Release 0.7.0 (r344 -> r345) ==
   * Removed simulator code (r336)
 
 == Release 0.5.1 (r293 -> r294) ==
@@ -17,5 +17,3 @@ Notation:
 == Release 0.5 (r268 -> r270) ==
   * Remove keypad heading (r249, done in trunk/ in r274)
   * Database download hack: do not show dialog while checking for update, hide errors (r266)
-
-
