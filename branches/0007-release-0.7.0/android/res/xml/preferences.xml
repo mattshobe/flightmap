@@ -32,9 +32,4 @@
       android:entries="@array/lengths" android:entryValues="@array/lengths_values" />
 
   </PreferenceCategory>
-  <PreferenceCategory android:title="Update Settings">
-    <CheckBoxPreference android:title="Database Updates"
-      android:summary="Always check for updates at startup when selected. Unchecked is once per day."
-      android:key="Always_Update" android:defaultValue="true" />
-  </PreferenceCategory>
 </PreferenceScreen>
