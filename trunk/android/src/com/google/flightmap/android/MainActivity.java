@@ -45,6 +45,7 @@ import com.google.flightmap.common.AviationDbAdapter;
 import com.google.flightmap.common.CachedAirportDirectory;
 import com.google.flightmap.common.CachedAviationDbAdapter;
 import com.google.flightmap.common.CustomGridAirportDirectory;
+import com.google.flightmap.common.DbAdapter;
 import com.google.flightmap.common.ProgressListener;
 
 public class MainActivity extends Activity {
@@ -63,6 +64,7 @@ public class MainActivity extends Activity {
 
   private static final String AVIATION_DATABASE_URL =
       "http://sites.google.com/site/flightmapdata/aviation-db/aviation.db";
+  private static final int AVIATION_DATABASE_REQUIRED_SCHEMA_VERSION = 1;
 
   private boolean disclaimerAccepted;
   private boolean isRunning;
@@ -71,6 +73,7 @@ public class MainActivity extends Activity {
   private MapView mapView;
   private boolean initializationDone;
   private boolean databaseDownloaded;
+  private DbUpdaterTask dbUpdaterTask;
   FlightMap flightMap;
   AviationDbAdapter aviationDbAdapter;
   CachedAirportDirectory airportDirectory;
@@ -182,7 +185,7 @@ public class MainActivity extends Activity {
     final ProgressDialog dialog = new ProgressDialog(this);
     dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
     dialog.setMessage(this.getString(R.string.updating_database));
-    dialog.show();
+    dialog.setCancelable(false);
 
     final ProgressListener dbUpdateListener = new ProgressListener() {
       @Override
@@ -198,12 +201,16 @@ public class MainActivity extends Activity {
 
       @Override
       public void hasProgressed(int percent) {
+        dialog.show();
         dialog.setProgress(percent);
       }
     };
 
-    final FileUpdaterTask.Params params = new FileUpdaterTask.Params(localFile, url, workingDir);
-    new FileUpdaterTask(dbUpdateListener).execute(params);
+    final DbAdapter dbAdapter = new AndroidAviationDbAdapter(userPrefs);
+    final DbUpdaterTask.Params params = new DbUpdaterTask.Params(
+        localFile, url, workingDir, dbAdapter, AVIATION_DATABASE_REQUIRED_SCHEMA_VERSION);
+    dbUpdaterTask = new DbUpdaterTask(dbUpdateListener);
+    dbUpdaterTask.execute(params);
     Time curr = new Time();
     curr.setToNow();
     userPrefs.setUpdateTime(curr.toMillis(true));

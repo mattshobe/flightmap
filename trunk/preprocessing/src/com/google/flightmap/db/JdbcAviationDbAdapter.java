@@ -35,7 +35,7 @@ import java.util.TreeSet;
  * JDBC adapter for aviation database
  *
  * This adapted is NOT meant to be used in production environment, as it is neither optimized nor
- * thread-safe.  It is rather intended to be used during in preprocessing, mainly to populate the
+ * thread-safe.  It is rather intended to be used during preprocessing, mainly to populate the
  * aviation database.
  */
 public class JdbcAviationDbAdapter implements AviationDbAdapter {
@@ -50,6 +50,7 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
   private PreparedStatement getRunwaysStmt;
   private PreparedStatement getRunwayEndsStmt;
   private PreparedStatement getAirportCommsStmt;
+  private PreparedStatement getMetadataStmt;
 
   // TODO(aristidis): Eliminate code duplication (see AndroidAviationDbAdapter)
   private static final HashSet<String> INTEGER_AIRPORT_PROPERTIES;
@@ -314,7 +315,7 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
     try {
       if (getAirportCommsStmt == null) {
         getAirportCommsStmt = dbConn.prepareStatement(
-            "SELECT identifier, frequency, remarks from airport_comm WHERE airport_id = ?");
+            "SELECT identifier, frequency, remarks FROM airport_comm WHERE airport_id = ?");
       }
 
       getAirportCommsStmt.setInt(1, airportId);
@@ -331,6 +332,27 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
     } catch (SQLException sqlEx) {
       throw new RuntimeException(sqlEx);
     }
+  }
+
+  @Override
+  public String getMetadata(final String key) {
+    try {
+      if (getMetadataStmt == null) {
+        getMetadataStmt = dbConn.prepareStatement(
+            "SELECT value FROM metadata WHERE key = ?");
+      }
+
+      getMetadataStmt.setString(1, key);
+      ResultSet metadataValues = getMetadataStmt.executeQuery();
+      if (metadataValues.next()) {
+        return metadataValues.getString("value");
+      } else {
+        return null;
+      }
+    } catch (SQLException sqlEx) {
+      throw new RuntimeException(sqlEx);
+    }
+
   }
 
 }

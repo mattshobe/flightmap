@@ -38,6 +38,9 @@ class FileUpdaterTask extends AsyncTask<FileUpdaterTask.Params, Integer, Boolean
     try {
       final Params param = params[0];
       final FileUpdater updater = new FileUpdater(param.file, param.url, param.workingDir);
+      if (!updater.isUpdateNeeded()) {
+        return Boolean.TRUE;
+      }
       updater.addProgressListener(this);
       updater.update();
       return Boolean.TRUE;

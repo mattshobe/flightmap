@@ -24,24 +24,9 @@ import java.util.Map;
 import java.util.List;
 
 /**
- * Low level interface to database entities.
+ * Low level interface to aviation database entities.
  */
-public interface AviationDbAdapter {
-  /**
-   * Prepares this object for future calls.
-   * <p>
-   * This method must be called prior to any other call
-   */
-  public void open();
-
-  /**
-   * Closes this object.
-   * <p>
-   * This method must be called after all other calls.  No other method should be called on this
-   * without calling {@link AviationDbAdapter#open} first.
-   */
-  public void close();
-
+public interface AviationDbAdapter extends DbAdapter {
   /**
    * Returns {@link Airport} with given id.
    */

@@ -36,6 +36,11 @@ import java.util.Map;
  *
  */
 public class AviationMasterRecordParser {
+  // Database metadata
+  private final static int DB_SCHEMA_VERSION = 1;
+  private final static long DB_EXPIRATION_TIMESTAMP = 1290070860000; // 18 Nov 2010 09:01:00 GMT
+
+
   // Airport data headers
   private final static String AIRPORT_USE_HEADER = "Use";  // PU, PR
   private final static String AIRPORT_OWNERSHIP_HEADER = "Ownership";  // PU, PR, MA, MN, MR
@@ -816,6 +821,24 @@ public class AviationMasterRecordParser {
   }
 
   /**
+   * Initializes metadata db table.
+   */
+  private void initMetadataTable() throws SQLException {
+    Statement stat = dbConn.createStatement();
+    stat.executeUpdate("DROP TABLE IF EXISTS metadata;");
+    stat.executeUpdate("CREATE TABLE metadata (" + 
+                       "key TEXT NOT NULL UNIQUE, " +
+                       "value TEXT NOT NULL" + 
+                       ");");
+    stat.executeUpdate("CREATE UNIQUE INDEX metadata_key_index ON metadata (key)");
+    stat.executeUpdate("INSERT INTO metadata (key, value) VALUES ('schema version', '" +
+                       DB_SCHEMA_VERSION + "');");
+    stat.executeUpdate("INSERT INTO metadata (key, value) VALUES ('expires', '" +
+                       DB_EXPIRATION_TIMESTAMP + "');");
+    stat.close();
+  }
+
+  /**
    * Create airports db table.  Drop existing table if necessary.
    */
   private void initRunwayTables() throws SQLException {
@@ -863,6 +886,7 @@ public class AviationMasterRecordParser {
     try {
       dbConn = initDB();
       initAndroidMetadataTable();
+      initMetadataTable();
       initConstantsTable();
       addAirportDataToDb();
       addRunwayDataToDb();
