@@ -24,6 +24,8 @@ The integer `versionCode` in android/!AndroidManifest.xml is an important number
 
 Given how important the `versionCode` is, our naming scheme for release branches and tags emphasizes that by putting the `versionCode` first.
 
+Odd minor version numbers (`0.5`, `0.5.1`, `0.7.0`, `0.11.2`, ...) represent experimental (i.e. dogfood) releases, even numbers represent public releases.
+
 {{{
 <4-digit-versionCode>-release-<versionName>
 }}}
