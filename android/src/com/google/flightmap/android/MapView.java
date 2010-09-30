@@ -514,12 +514,16 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     final float orientation = isTrackUp ? lastBearing : 0;
 
     final LatLngRect screenArea = getScreenRectangle(zoomCopy, orientation, locationPoint);
-    updateAirportsOnScreen(screenArea, getMinimumAirportRank(zoomCopy));
+    final int minAirportRank = getMinimumAirportRank(zoomCopy);
+    updateAirportsOnScreen(screenArea, minAirportRank);
 
     // airportsOnScreen could be null if the background task hasn't finished
     // yet.
     if (airportsOnScreen != null) {
       for (Airport airport : airportsOnScreen) {
+        if (!mainActivity.userPrefs.shouldInclude(airport) || airport.rank < minAirportRank) {
+          continue;
+        }
         final Paint airportPaint = getAirportPaint(airport);
         Point airportPoint = AndroidMercatorProjection.toPoint(zoomCopy, airport.location);
         c.drawCircle(airportPoint.x, airportPoint.y, 15, airportPaint);
@@ -621,7 +625,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    * Returns the minimum airport rank for the given zoom level. Ranks are in the
    * range 0-5 (5 being most important).
    */
-  private int getMinimumAirportRank(float zoom) {
+  private static int getMinimumAirportRank(float zoom) {
     if (zoom <= 6) {
       return 5;
     }
