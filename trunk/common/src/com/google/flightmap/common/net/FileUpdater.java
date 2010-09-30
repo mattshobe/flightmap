@@ -203,6 +203,7 @@ public class FileUpdater {
    */
   private void downloadInParts(final File file) throws IOException {
     final byte[] buf = new byte[FileDownload.BUFFER_SIZE];
+    file.delete();  // Clean slate: removes any previous file.
     final OutputStream out =
         new BufferedOutputStream(new FileOutputStream(file), FileDownload.BUFFER_SIZE);
 
@@ -230,6 +231,8 @@ public class FileUpdater {
           }
         }
       }
+
+      out.close();
     } catch (IOException ioEx) {
       file.delete();
       throw ioEx;
