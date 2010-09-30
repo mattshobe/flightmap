@@ -119,9 +119,6 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   // Airplane image and location where to draw the left, top so it's centered.
   private final Drawable airplaneImage;
 
-  // Layout holding the simulator message.
-  private LinearLayout simulatorMessage;
-
   // Screen density.
   private final float density;
 
@@ -192,8 +189,6 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     setKeepScreenOn(true);
     createZoomController();
     setTextSizes(density);
-
-    simulatorMessage = (LinearLayout) mainActivity.findViewById(R.id.simulator_message);
 
     Resources res = mainActivity.getResources();
     // Set up paints from resource colors.
@@ -475,13 +470,6 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       c.drawText(mainActivity.getText(R.string.old_location).toString(), c.getWidth() / 2, //
           c.getHeight() / 2, ERROR_TEXT_PAINT);
       return;
-    }
-
-    // Show or hide the simulator warning.
-    if (mainActivity.flightMap.getLocationHandler().isLocationSimulated()) {
-      simulatorMessage.setVisibility(VISIBLE);
-    } else {
-      simulatorMessage.setVisibility(GONE);
     }
 
     LatLng locationLatLng = LatLng.fromDouble(location.getLatitude(), location.getLongitude());
