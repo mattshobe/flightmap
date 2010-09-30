@@ -63,7 +63,7 @@ public class MainActivity extends Activity {
 
   private static final String AVIATION_DATABASE_URL =
       "http://sites.google.com/site/flightmapdata/aviation-db/aviation.db";
-  private static final int AVIATION_DATABASE_REQUIRED_SCHEMA_VERSION = 1;
+  private static final int AVIATION_DATABASE_REQUIRED_SCHEMA_VERSION = 2;
 
   private boolean disclaimerAccepted;
   private boolean isRunning;
