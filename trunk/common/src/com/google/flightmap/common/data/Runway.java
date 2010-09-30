@@ -16,11 +16,22 @@
 
 package com.google.flightmap.common.data;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.SortedSet;
 /**
  * Runway data structure.
  */
 public class Runway implements Comparable<Runway> {
+  private static final List<String> HARD_SURFACE_PREFIXES;
+
+  static {
+    HARD_SURFACE_PREFIXES = new LinkedList<String>();
+    HARD_SURFACE_PREFIXES.add("ASPH");
+    HARD_SURFACE_PREFIXES.add("CONC");
+    HARD_SURFACE_PREFIXES.add("PEM");
+  }
+
   public final int airportId;
 
   public final String letters;
@@ -45,6 +56,18 @@ public class Runway implements Comparable<Runway> {
     this.width = width;
     this.surface = surface;
     this.runwayEnds = runwayEnds;
+  }
+
+  /**
+   * Returns whether this surface is hard.
+   */
+  public boolean isHardSurface() {
+    for (String hardSurfacePrefix: HARD_SURFACE_PREFIXES) {
+      if (surface.startsWith(hardSurfacePrefix)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override

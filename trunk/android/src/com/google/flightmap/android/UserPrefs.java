@@ -20,6 +20,7 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 
 import com.google.flightmap.common.NavigationUtil.DistanceUnits;
+import com.google.flightmap.common.data.Airport;
 
 /**
  * Provides read-only access to shared user preferences.
@@ -107,7 +108,7 @@ public class UserPrefs {
   /**
    * Returns units corresponding to the distance units preference string.
    */
-  private DistanceUnits getDistanceUnitFromPreference(String distancePrefsString) {
+  private static DistanceUnits getDistanceUnitFromPreference(String distancePrefsString) {
     if (DISTANCE_UNITS_MILES.equals(distancePrefsString)) {
       return DistanceUnits.MILES;
     } else if (DISTANCE_UNITS_KILOMETERS.equals(distancePrefsString)) {
@@ -121,7 +122,7 @@ public class UserPrefs {
   /**
    * Returns minimum runway length corresponding to preferences string
    */
-  private int getMinRunwayLengthFromPreference(String runwayPrefsString) {
+  private static int getMinRunwayLengthFromPreference(String runwayPrefsString) {
     if (RUNWAY_LENGTH_NONE.equals(runwayPrefsString)) {
       return 0;
     } else if (RUNWAY_LENGTH_4000.equals(runwayPrefsString)) {
@@ -130,5 +131,43 @@ public class UserPrefs {
       // Return 2000 as minimum even on parse failure.
       return 2000;
     }
+  }
+
+  /**
+   * Returns true if the airport should be included in database results. User
+   * preferences are applied here to filter the database results.
+   */
+  public synchronized boolean shouldInclude(final Airport airport) {
+    if (airport.type.equals(Airport.Type.HELIPORT) && !showHeliport()) {
+      return false;
+    }
+    if (airport.type.equals(Airport.Type.SEAPLANE_BASE) && !showSeaplane()) {
+      return false;
+    }
+    // No user prefs to control these. Always hide.
+    if (airport.type.equals(Airport.Type.ULTRALIGHT) || airport.type.equals(Airport.Type.GLIDERPORT)
+        || airport.type.equals(Airport.Type.BALLOONPORT)) {
+      return false;
+    }
+
+    if (airport.isMilitary && !showMilitary()) {
+      return false;
+    }
+    if (!airport.isPublic && !showPrivate()) {
+      if (!(airport.isMilitary && showMilitary())) {
+        return false;
+      }
+    }
+    if (!showSoft()) {
+      return airport.runways.first().isHardSurface();
+    }
+    final int minRunwayLength = getMinRunwayLength();
+    if (minRunwayLength > 0) {
+      final int length = airport.runways.first().length;
+      if (length < minRunwayLength) {
+        return false;
+      }
+    }
+    return true;
   }
 }

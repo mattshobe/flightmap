@@ -101,19 +101,12 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   private static final HashSet<String> INTEGER_RUNWAY_END_PROPERTIES;
   private static final String RUNWAY_END_ID_WHERE = RUNWAY_END_ID_COLUMN + " = ? ";
 
-  private static final List<String> HARD_SURFACE_PREFIXES;
-
   static {
     INTEGER_AIRPORT_PROPERTIES = new HashSet<String>();
     INTEGER_AIRPORT_PROPERTIES.add("Elevation");
 
     INTEGER_RUNWAY_END_PROPERTIES = new HashSet<String>();
     INTEGER_RUNWAY_END_PROPERTIES.add("True Alignment");
-
-    HARD_SURFACE_PREFIXES = new LinkedList<String>();
-    HARD_SURFACE_PREFIXES.add("ASPH");
-    HARD_SURFACE_PREFIXES.add("CONC");
-    HARD_SURFACE_PREFIXES.add("PEM");
   }
 
   private SQLiteDatabase database;
@@ -215,7 +208,6 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
       result.close();
     }
   }
-
   
   @Override
   public List<Airport> getAirportsInCells(int startCell, int endCell, int minRank) {
@@ -238,7 +230,7 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
         final int lng = locations.getInt(lngColumn);
         final LatLng location = new LatLng(lat, lng);
         final Airport airport = getAirport(id, location);
-        if (shouldInclude(airport)) {
+        if (userPrefs.shouldInclude(airport)) {
           result.add(airport);
         }
       } while (locations.moveToNext());
@@ -246,50 +238,6 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
       locations.close();
     }
     return result;
-  }
-
-  /**
-   * Returns true if the airport should be included in database results. User
-   * preferences are applied here to filter the database results.
-   */
-  private boolean shouldInclude(final Airport airport) {
-    if (airport.type.equals(Airport.Type.HELIPORT) && !userPrefs.showHeliport()) {
-      return false;
-    }
-    if (airport.type.equals(Airport.Type.SEAPLANE_BASE) && !userPrefs.showSeaplane()) {
-      return false;
-    }
-    // No user prefs to control these. Always hide.
-    if (airport.type.equals(Airport.Type.ULTRALIGHT) || airport.type.equals(Airport.Type.GLIDERPORT)
-        || airport.type.equals(Airport.Type.BALLOONPORT)) {
-      return false;
-    }
-
-    if (airport.isMilitary && !userPrefs.showMilitary()) {
-      return false;
-    }
-    if (!airport.isPublic && !userPrefs.showPrivate()) {
-      if (!(airport.isMilitary && userPrefs.showMilitary())) {
-        return false;
-      }
-    }
-    if (!userPrefs.showSoft()) {
-      final String longestRunwaySurface = airport.runways.first().surface;
-      for(String hardSurfacePrefix: HARD_SURFACE_PREFIXES) {
-        if (longestRunwaySurface.startsWith(hardSurfacePrefix)) {
-          return true;
-        }
-      }
-      return false;
-    }
-    final int minRunwayLength = userPrefs.getMinRunwayLength();
-    if (minRunwayLength > 0) {
-      final int length = airport.runways.first().length;
-      if (length < minRunwayLength) {
-        return false;
-      }
-    }
-    return true;
   }
 
   /**
