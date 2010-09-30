@@ -30,6 +30,11 @@ Also, you should consider joining the Flight Map [http://g/flightmap mailing lis
   * Pinch-to-zoom.
   * Simulator mode.
 
+=Release: v0.7.1 - 9/30/10=
+  * Bug fixes
+    * Database was getting corrupted during download.  Issue 101.
+    * When zooming in/out, previously displayed airports were not filtered correctly.  Issue 108.
+
 =Release: v0.7.0 - 9/24/10=
   * Bug fixes
     * Screen stays on the airport details page. It was already kept on on the map page.
