@@ -19,8 +19,10 @@ We create branches for each release. These are typically short-lived, just for r
 = Tags =
 Tags are made for each release. These are kept forever.
 
-= Version Numbering Scheme =
-We use the common 3-group decimal scheme to name versions. The format is `major.minor.revision`.
+= Version Naming Scheme =
+We use the common 3-group decimal scheme to name versions. This is coresponds to the `versionName` in the AndroidManifest.xml file.
+
+The format is `major.minor.revision`.
   * The major number is incremented by 1 for each big jump in functionality. 
     * Prior to public release, the major number will be 0.
   * The minor number changes with each significant release of the code.
