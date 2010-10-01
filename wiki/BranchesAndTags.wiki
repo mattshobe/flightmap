@@ -19,12 +19,19 @@ We create branches for each release. These are typically short-lived, just for r
 = Tags =
 Tags are made for each release. These are kept forever.
 
+= Version Numbering Scheme =
+We use the common 3-group decimal scheme to name versions. The format is `major.minor.revision`.
+  * The major number is incremented by 1 for each big jump in functionality. 
+    * Prior to public release, the major number will be 0.
+  * The minor number changes with each significant release of the code.
+    * Odd minor version numbers (`0.5`, `0.5.1`, `0.7.0`, `0.11.2`, ...) represent experimental releases, even numbers represent public releases.
+  * The revision number starts at 0 and increments by 1 for each small bug fix release.
+    * The revision may also be a text string such as `trunk` to indicate an un-numbered top-of-trunk build.
+
 = Naming Scheme for release Branches and Tags =
 The integer `versionCode` in android/!AndroidManifest.xml is an important number. It must be incremented for the Android system to detect your code has been updated. The `versionName` in that file is what we typically talk about (version 0.5.1, 1.0.0, etc.). It's shown to the user, but has no significance to the updating system.
 
 Given how important the `versionCode` is, our naming scheme for release branches and tags emphasizes that by putting the `versionCode` first.
-
-Odd minor version numbers (`0.5`, `0.5.1`, `0.7.0`, `0.11.2`, ...) represent experimental (i.e. dogfood) releases, even numbers represent public releases.
 
 {{{
 <4-digit-versionCode>-release-<versionName>
