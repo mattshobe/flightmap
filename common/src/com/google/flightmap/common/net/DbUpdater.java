@@ -53,6 +53,7 @@ public class DbUpdater extends FileUpdater {
    * Checks if the database needs to be updated. This is determined based on
    * the database expiration time and schema version (available as metadata).
    */
+  @Override
   public synchronized boolean isUpdateNeeded() throws IOException {
     if (dbAdapter == null) {
       return super.isUpdateNeeded();
