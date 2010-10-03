@@ -242,7 +242,7 @@ public class MainActivity extends Activity {
   public boolean onOptionsItemSelected(MenuItem item) {
     super.onOptionsItemSelected(item);
     switch (item.getItemId()) {
-      case R.id.display:
+      case R.id.preferences:
         Intent startIntent = new Intent(this, UserPrefsActivity.class);
         startActivity(startIntent);
         return true;
