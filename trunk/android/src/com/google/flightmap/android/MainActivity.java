@@ -55,7 +55,9 @@ public class MainActivity extends Activity {
    */
   private static long UPDATE_RATE = 100;
 
-  private static final int DOWNLOAD_FAILED = 1;
+  // Dialog identifiers (must be unique).
+  private static final int DOWNLOAD_FAILED_DIALOG = 1;
+  private static final int SIMULATOR_DIALOG = 2;
 
   // Saved instance state constants
   private static final String DISCLAIMER_ACCEPTED = "disclaimer-accepted";
@@ -85,9 +87,6 @@ public class MainActivity extends Activity {
     flightMap.setLocationHandler(new LocationHandler(
         (LocationManager) getSystemService(Context.LOCATION_SERVICE), flightMap));
 
-    // TODO: Add a UI control or UI preference to switch this on/off.
-    // flightMap.getLocationHandler().setLocationSource(LocationHandler.Source.SIMULATED);
-
     userPrefs = new UserPrefs(flightMap);
     setDatabaseDownloaded((null != savedInstanceState && savedInstanceState
         .getBoolean(DATABASE_DOWNLOADED)));
@@ -113,12 +112,35 @@ public class MainActivity extends Activity {
   @Override
   protected Dialog onCreateDialog(int id) {
     switch (id) {
-      case DOWNLOAD_FAILED:
+      case DOWNLOAD_FAILED_DIALOG:
         return new AlertDialog.Builder(this).setMessage(R.string.download_failed)
             .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
               @Override
               public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
+              }
+            }).create();
+
+      case SIMULATOR_DIALOG:
+        // This dialog is temporary, so hardcoding a lot of things here that
+        // will go away soon.
+        final CharSequence[] items = {"Enabled", "Disabled"};
+        final int simulatorEnabled = 0;
+        final int simulatorDisabled = 1;
+        final LocationHandler locationHandler = flightMap.getLocationHandler();
+        final int selectedItem = locationHandler.isLocationSimulated() ? simulatorEnabled : simulatorDisabled;
+
+        return new AlertDialog.Builder(this).setTitle("Simulator").setSingleChoiceItems(items,
+            selectedItem, new DialogInterface.OnClickListener() {
+
+              @Override
+              public void onClick(DialogInterface dialog, int which) {
+                if (which == simulatorDisabled) {
+                  locationHandler.setLocationSource(LocationHandler.Source.REAL);
+                } else {
+                  locationHandler.setLocationSource(LocationHandler.Source.SIMULATED);
+                }
+                dismissDialog(SIMULATOR_DIALOG);
               }
             }).create();
 
@@ -187,7 +209,7 @@ public class MainActivity extends Activity {
         dialog.dismiss();
         Log.i(TAG, "Download completed.  Success: " + success);
         if (!success) {
-          showDialog(DOWNLOAD_FAILED);
+          showDialog(DOWNLOAD_FAILED_DIALOG);
           Log.e(TAG, "Download failed");
         }
         downloadDatabaseDone();
@@ -245,6 +267,10 @@ public class MainActivity extends Activity {
       case R.id.preferences:
         Intent startIntent = new Intent(this, UserPrefsActivity.class);
         startActivity(startIntent);
+        return true;
+
+      case R.id.simulator:
+        showDialog(SIMULATOR_DIALOG);
         return true;
     }
     return false;
