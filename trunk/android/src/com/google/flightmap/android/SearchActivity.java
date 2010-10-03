@@ -93,7 +93,7 @@ public class SearchActivity extends ListActivity {
      else {
        // Can return "like" results down the road.
        String[] items = {query + " not found"};
-       setListAdapter(new ArrayAdapter(this,android.R.layout.simple_list_item_1, items));
+       setListAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1, items));
      }
   }
   
