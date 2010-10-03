@@ -16,7 +16,7 @@
   <string name="download_failed">Database download failed.</string>
   <string name="no_airports">No airports found</string>
   <string name="old_location">Searching for GPS...</string>
-  <string name="preferences_from_xml">Settings...</string>
+  <string name="preferences">Preferences</string>
   <string name="search_activity">Search results</string>
   <string name="search_hint">Search by ICAO</string>
   <string name="simulator_warning">SIMULATOR</string>
