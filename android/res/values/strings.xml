@@ -17,8 +17,11 @@
   <string name="no_airports">No airports found</string>
   <string name="old_location">Searching for GPS...</string>
   <string name="preferences">Preferences</string>
+  <string name="preferences_short">Prefs</string>
   <string name="search_activity">Search results</string>
   <string name="search_hint">Search by ICAO</string>
+  <string name="simulator">Simulator</string>
+  <string name="simulator_short">Sim</string>
   <string name="simulator_warning">SIMULATOR</string>
   <string name="tapcard_activity">Airport Details</string>
   <string name="updating_database">Updating database...</string>

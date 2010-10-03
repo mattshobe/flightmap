@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-  <item android:titleCondensed="Preferences" android:id="@+id/preferences"
-    android:title="@string/preferences" android:orderInCategory="1"></item>
+  <item android:title="@string/preferences" android:titleCondensed="@string/preferences_short"
+    android:id="@+id/preferences" android:orderInCategory="1"></item>
+  <item android:title="@string/simulator" android:titleCondensed="@string/simulator_short"
+    android:id="@+id/simulator" android:orderInCategory="2"></item>
 </menu>
