@@ -140,7 +140,7 @@ public class MainActivity extends Activity {
                 } else {
                   locationHandler.setLocationSource(LocationHandler.Source.SIMULATED);
                 }
-                dismissDialog(SIMULATOR_DIALOG);
+                dialog.dismiss();
               }
             }).create();
 

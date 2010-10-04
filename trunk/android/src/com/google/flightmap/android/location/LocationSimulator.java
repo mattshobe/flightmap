@@ -182,6 +182,7 @@ class LocationSimulator {
     newLocation.setAltitude(alt);
     newLocation.setLatitude(lat);
     newLocation.setLongitude(lng);
+    newLocation.setAccuracy(10);
     synchronized (this) {
       // Compute bearing and speed if possible.
       if (location != null) {

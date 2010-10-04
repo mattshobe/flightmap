@@ -136,7 +136,7 @@ public class NavigationUtil {
   /**
    * Returns the distance in meters between {@code point1} and {@code point2}.
    * 
-   * @see NavigationUtil#computeDistance(double, double, double, double)
+   * @see NavigationUtil#computeDistanceUsingRadians
    */
   public static double computeDistance(LatLng point1, LatLng point2) {
     final double lat1 = point1.latRad();
@@ -144,14 +144,14 @@ public class NavigationUtil {
     final double lat2 = point2.latRad();
     final double lng2 = point2.lngRad();
 
-    return computeDistance(lat1, lng1, lat2, lng2);
+    return computeDistanceUsingRadians(lat1, lng1, lat2, lng2);
   }
 
   /**
    * Returns the distance in meters between ({@code lat1E6}, {@code lng1E6}) and
    * ({@code lat2E6}, {@code lng2E6}).
    * 
-   * @see NavigationUtil#computeDistance(double, double, double, double)
+   * @see NavigationUtil#computeDistanceUsingRadians
    */
   public static double computeDistance(int lat1E6, int lng1E6, int lat2E6, int lng2E6) {
     final double lat1 = Math.toRadians(lat1E6 * 1e-6);
@@ -159,17 +159,33 @@ public class NavigationUtil {
     final double lat2 = Math.toRadians(lat2E6 * 1e-6);
     final double lng2 = Math.toRadians(lng2E6 * 1e-6);
 
-    return computeDistance(lat1, lng1, lat2, lng2);
+    return computeDistanceUsingRadians(lat1, lng1, lat2, lng2);
   }
 
   /**
    * Returns the distance in meters between {@code point1} and ({@code lat2E6},
    * {@code lng2E6}).
    * 
-   * @see NavigationUtil#computeDistance(double, double, double, double)
+   * @see NavigationUtil#computeDistanceUsingRadians
    */
   public static double computeDistance(LatLng point1, int lat2E6, int lng2E6) {
     return computeDistance(point1.lat, point1.lng, lat2E6, lng2E6);
+  }
+
+  /**
+   * Returns the distance in meters between ({@code lat1Degrees}, {@code
+   * lng1Degrees}) and ( {@code lat2Degrees}, {@code lng2Degrees}).
+   * 
+   * @see NavigationUtil#computeDistanceUsingRadians
+   */
+  public static double computeDistance(double lat1Degrees, double lng1Degrees, double lat2Degrees,
+      double lng2Degrees) {
+    final double lat1 = Math.toRadians(lat1Degrees);
+    final double lng1 = Math.toRadians(lng1Degrees);
+    final double lat2 = Math.toRadians(lat2Degrees);
+    final double lng2 = Math.toRadians(lng2Degrees);
+
+    return computeDistanceUsingRadians(lat1, lng1, lat2, lng2);
   }
 
   /**
@@ -178,19 +194,20 @@ public class NavigationUtil {
    * <p>
    * Calculation is done by the Haversine Formula.
    * 
-   * @param lat1 Latitude of first point, in radians
-   * @param lng1 Longitude of first point, in radians
-   * @param lat2 Latitude of second point, in radians
-   * @param lng2 Longitude of second point, in radians
+   * @param lat1Radians Latitude of first point, in radians
+   * @param lng1Radians Longitude of first point, in radians
+   * @param lat2Radians Latitude of second point, in radians
+   * @param lng2Radians Longitude of second point, in radians
    * 
    * @see <a href="http://en.wikipedia.org/wiki/Haversine_formula"
    *      target="_parent"> Haversine formula</a>
    */
-  public static double computeDistance(double lat1, double lng1, double lat2, double lng2) {
-    final double dLat = lat2 - lat1;
-    final double dLng = lng2 - lng1;
+  public static double computeDistanceUsingRadians(double lat1Radians, double lng1Radians,
+      double lat2Radians, double lng2Radians) {
+    final double dLat = lat2Radians - lat1Radians;
+    final double dLng = lng2Radians - lng1Radians;
     final double a =
-        Math.pow(Math.sin(dLat / 2), 2) + Math.cos(lat1) * Math.cos(lat2)
+        Math.pow(Math.sin(dLat / 2), 2) + Math.cos(lat1Radians) * Math.cos(lat2Radians)
             * Math.pow(Math.sin(dLng / 2), 2);
     return EARTH_RADIUS * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
