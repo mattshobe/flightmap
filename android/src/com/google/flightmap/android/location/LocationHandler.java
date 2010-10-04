@@ -47,6 +47,9 @@ public class LocationHandler implements LocationListener {
   // Ignore location updates with accuracy less than this.
   private static final float MINIMUM_ACCURACY = 100; // meters.
 
+  // Ignore the previous location if it's this many milliseconds old.
+  private static final long MAX_TIME_DELTA = 3000;
+
   private final LocationManager locationManager;
   private final LocationSimulator locationSimulator;
   private Location location;
@@ -188,10 +191,14 @@ public class LocationHandler implements LocationListener {
       return;
     }
     final Location previousLocation = getLocation();
-    if (previousLocation == null) {
+    // If previous location is unusable because it's null or old, just update
+    // field and return.
+    if (previousLocation == null
+        || location.getTime() - previousLocation.getTime() > MAX_TIME_DELTA) {
       this.location = location;
       return;
     }
+
     // Calculate speed, because the value of location.getSpeed() is often wrong,
     // especially when altitude is changing. Ground speed should be unaffected
     // by altitude change.
