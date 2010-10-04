@@ -23,9 +23,15 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.google.flightmap.common.NavigationUtil;
+
 /**
  * Provides location information to the application. The source of location
  * information may be real or simulated.
+ * <p>
+ * The raw location information provided by the Android GPS provider is often
+ * jittery, and the ground speed values are always wrong when altitude is
+ * changing. This class normalizes the raw data to give smoother output.
  * <p>
  * Simulated locations are provided by the LocationSimulator class.
  */
@@ -34,6 +40,13 @@ public class LocationHandler implements LocationListener {
   // Get coarse location updates every 5 minutes or 1 km.
   private static final long COARSE_LOCATION_TIME = 300000; // 5 minutes.
   private static final float COARSE_LOCATION_DIST = 1000; // 1 km.
+
+  // Below this calculated speed, set the speed to 0.
+  private static final float MINIMUM_SPEED = (float) (3 / NavigationUtil.METERS_PER_SEC_TO_KNOTS);
+
+  // Ignore location updates with accuracy less than this.
+  private static final float MINIMUM_ACCURACY = 100; // meters.
+
   private final LocationManager locationManager;
   private final LocationSimulator locationSimulator;
   private Location location;
@@ -81,13 +94,14 @@ public class LocationHandler implements LocationListener {
     return getLocationSource() == Source.SIMULATED;
   }
 
-  public void setLocationSource(Source locationSource) {
+  public synchronized void setLocationSource(Source locationSource) {
     if (locationSource == this.locationSource) {
       return;
     }
     // Switch between simulator and actual LocationProvider.
     if (isLocationSimulated()) {
       stopSimulator();
+      location = null; // discard simulated position.
       startRealLocationUpdates();
     } else {
       stopRealLocationUpdates();
@@ -107,7 +121,7 @@ public class LocationHandler implements LocationListener {
       startRealLocationUpdates();
     }
   }
-  
+
   public void stopListening() {
     if (isLocationSimulated()) {
       stopSimulator();
@@ -154,8 +168,78 @@ public class LocationHandler implements LocationListener {
     locationManager.removeUpdates(this);
   }
 
+  /**
+   * {@inheritDoc}. Called whent he real or simulated location provider has a
+   * new location. Smoothes out jitters or missing values in the raw data.
+   */
   @Override
-  public synchronized void onLocationChanged(Location location) {
+  public void onLocationChanged(Location location) {
+    updateLocation(location);
+  }
+
+  /**
+   * Updates the value returned by {@link #getLocation()} to give better results
+   * when the raw data is jittery or has missing values.
+   */
+  private synchronized void updateLocation(Location location) {
+    // Ignore locations with poor accuracy.
+    if (location.getAccuracy() > MINIMUM_ACCURACY) {
+      Log.i(TAG, "Accuracy too low: " + location.getAccuracy());
+      return;
+    }
+    final Location previousLocation = getLocation();
+    if (previousLocation == null) {
+      this.location = location;
+      return;
+    }
+    // Calculate speed, because the value of location.getSpeed() is often wrong,
+    // especially when altitude is changing. Ground speed should be unaffected
+    // by altitude change.
+    float meters =
+        (float) NavigationUtil.computeDistance(previousLocation.getLatitude(), previousLocation
+            .getLongitude(), location.getLatitude(), location.getLongitude());
+
+    float seconds = (location.getTime() - previousLocation.getTime()) / 1000.0f;
+    if (seconds > 0) {
+      float speed = meters / seconds;
+      // Smooth speed with a very simple Kalman filter.
+      final int samples = 3; // higher values give more smoothing, and more lag.
+      float smoothedSpeed = ((previousLocation.getSpeed() * (samples - 1)) + speed) / samples;
+
+      // Reset speed to 0 if it's basically stationary.
+      if (smoothedSpeed < MINIMUM_SPEED) {
+        smoothedSpeed = 0;
+      }
+      location.setSpeed(smoothedSpeed);
+    }
+    // If the bearing is missing, calculate it.
+    if (!location.hasBearing()) {
+      if (location.getSpeed() > 0) { // Don't calculate bearing when stationary.
+        float bearing =
+            (float) NavigationUtil.normalizeBearing(previousLocation.bearingTo(location));
+        Log.d(TAG, "Calculated bearing: " + bearing);
+        if (!previousLocation.hasBearing()) {
+          location.setBearing(bearing);
+        } else {
+          // Use the previous bearing to smooth the change.
+          float previousBearing = previousLocation.getBearing();
+          if (Math.abs(previousBearing - bearing) > 180) {
+            // Bearings are on opposite sides of 360 (e.g. 355 and 005).
+            // Set their values to be in the same range so averaging works.
+            bearing += (bearing < 180) ? 360 : 0;
+            previousBearing += (previousBearing < 180) ? 360 : 0;
+          }
+          location.setBearing((float) NavigationUtil
+              .normalizeBearing((previousBearing + bearing) / 2.0f));
+          Log.d(TAG, "Normalized bearing: " + location.getBearing());
+        }
+      } else {
+        // We're stationary, re-use the last bearing.
+        if (previousLocation.hasBearing()) {
+          location.setBearing(previousLocation.getBearing());
+        }
+      }
+    }
     this.location = location;
   }
 

@@ -477,8 +477,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       return;
     }
 
-    // Show or hide the simulator warning.
-    if (mainActivity.flightMap.getLocationHandler().isLocationSimulated()) {
+    // Show or hide the simulator warning. Blink off every 2 seconds.
+    boolean blinkOff = ((location.getTime() / 1000) % 4) < 2;
+    if (mainActivity.flightMap.getLocationHandler().isLocationSimulated() && !blinkOff) {
       simulatorMessage.setVisibility(VISIBLE);
     } else {
       simulatorMessage.setVisibility(GONE);
@@ -612,7 +613,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    * (ignoring fields that don't affect the rendering).
    */
   private synchronized boolean hasMoved(Location location) {
-    if (null == previousLocation || location.getBearing() != previousLocation.getBearing()
+    if (null == location || null == previousLocation
+        || location.getBearing() != previousLocation.getBearing()
         || location.getAltitude() != previousLocation.getAltitude()
         || location.getSpeed() != previousLocation.getSpeed()
         || location.distanceTo(previousLocation) > 5) {
