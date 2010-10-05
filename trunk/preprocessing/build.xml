@@ -45,6 +45,27 @@ limitations under the License.
     </javac>
   </target>
 
+  <target name="manualtest.compile" depends="compile" description="Compile Manual tests.">
+    <mkdir dir="${build.dir}/classes"/>
+    <javac
+      srcdir="${manualtest.dir}"
+      destdir="${build.dir}/classes"
+      debug="on"
+      target="1.6"
+      bootclasspath="${env.JAVA5_HOME}/lib/rt.jar"
+      extdirs=""
+    >
+      <compilerarg value="-Xlint:all"/>
+      <classpath>
+        <pathelement location="${lib.dir}/sqlitejdbc-v056.jar"/>
+        <pathelement location="${lib.dir}/commons-lang-2.5.jar"/>
+        <fileset dir="../common/release">
+          <include name="*.jar" />
+        </fileset>
+      </classpath>
+    </javac>
+  </target>
+
   <!-- Uncomment when tests are added
   <target name="testfw" description="Compile test framework.">
     <mkdir dir="${build.dir}/testfwclasses"/>
