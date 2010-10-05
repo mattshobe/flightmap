@@ -43,6 +43,8 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
 
   private PreparedStatement getAirportDataFromIdStmt;
   private PreparedStatement getAirportIdFromIcaoStmt;
+  private PreparedStatement getAirportIdsWithCityLikeStmt;
+  private PreparedStatement getAirportIdsWithNameLikeStmt;
   private PreparedStatement getAirportIdsInCellsStmt;
   private PreparedStatement getRunwayEndPropertiesStmt;
   private PreparedStatement getAirportPropertiesStmt;
@@ -67,17 +69,19 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
     this.dbConn = dbConn;
   }
 
+  @Override
   public synchronized void open() {
     throw new RuntimeException(
         "Invalid call: connection must be managed at caller.");
   }
 
+  @Override
   public synchronized void close() {
     throw new RuntimeException(
         "Invalid call: connection must be managed at caller.");
   }
 
-
+  @Override
   public Airport getAirport(final int airportId) {
     try {
       if (getAirportDataFromIdStmt == null) {
@@ -118,11 +122,12 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
     }
   }
 
+  @Override
   public int getAirportIdByIcao(final String airportICAO) {
     try {
       if (getAirportIdFromIcaoStmt == null) {
         getAirportIdFromIcaoStmt = dbConn.prepareStatement(
-            "SELECT id FROM airports WHERE icao = ?");
+            "SELECT _id FROM airports WHERE icao = ?");
         }
       getAirportIdFromIcaoStmt.setString(1, airportICAO);
       ResultSet airportId = getAirportIdFromIcaoStmt.executeQuery();
@@ -130,14 +135,53 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
       if (!airportId.next()) {
         return -1;
         }
-      final int id = airportId.getInt("type");
+      final int id = airportId.getInt("_id");
 
       return id;
-      } catch (SQLException sqlEx) {
-        throw new RuntimeException(sqlEx);
-      }
+    } catch (SQLException sqlEx) {
+      throw new RuntimeException(sqlEx);
     }
+  }
 
+  @Override
+  public List<Integer> getAirportIdsWithCityLike(final String pattern) {
+    try {
+      if (getAirportIdsWithCityLikeStmt == null) {
+        getAirportIdsWithCityLikeStmt = dbConn.prepareStatement(
+            "SELECT _id FROM airports WHERE city LIKE ?");
+      }
+      getAirportIdsWithCityLikeStmt.setString(1, pattern);
+      ResultSet airportIdsResultSet = getAirportIdsWithCityLikeStmt.executeQuery();
+      List<Integer> airportIds = new LinkedList<Integer>();
+      while (airportIdsResultSet.next()) {
+        airportIds.add(airportIdsResultSet.getInt("_id"));
+      }
+      return airportIds;
+    } catch (SQLException sqlEx) {
+      throw new RuntimeException(sqlEx);
+    }
+  }
+
+  @Override
+  public List<Integer> getAirportIdsWithNameLike(final String pattern) {
+    try {
+      if (getAirportIdsWithNameLikeStmt == null) {
+        getAirportIdsWithNameLikeStmt = dbConn.prepareStatement(
+            "SELECT _id FROM airports WHERE name LIKE ?");
+      }
+      getAirportIdsWithNameLikeStmt.setString(1, pattern);
+      ResultSet airportIdsResultSet = getAirportIdsWithNameLikeStmt.executeQuery();
+      List<Integer> airportIds = new LinkedList<Integer>();
+      while (airportIdsResultSet.next()) {
+        airportIds.add(airportIdsResultSet.getInt("_id"));
+      }
+      return airportIds;
+    } catch (SQLException sqlEx) {
+      throw new RuntimeException(sqlEx);
+    }
+  }
+
+  @Override
   public String getConstant(final int constantId) {
     try {
       if (getConstantStmt == null) {

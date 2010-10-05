@@ -60,6 +60,18 @@ public class CachedAviationDbAdapter implements AviationDbAdapter {
   }
 
   @Override
+  public List<Integer> getAirportIdsWithCityLike(final String pattern) {
+    return cachedDbAdapter.getAirportIdsWithCityLike(pattern);
+  }
+
+  @Override
+  public List<Integer> getAirportIdsWithNameLike(final String pattern) {
+    return cachedDbAdapter.getAirportIdsWithNameLike(pattern);
+  }
+
+
+
+  @Override
   public Map<String, String> getAirportProperties(final int airportId) {
     return cachedDbAdapter.getAirportProperties(airportId);
   }

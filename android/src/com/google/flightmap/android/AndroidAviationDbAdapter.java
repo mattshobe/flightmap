@@ -35,6 +35,7 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   
   // airports
   private static final String AIRPORTS_TABLE = "airports";
+  // airports - columns
   private static final String ID_COLUMN = "_id";
   private static final String ICAO_COLUMN = "icao";
   private static final String NAME_COLUMN = "name";
@@ -48,10 +49,14 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   private static final String LAT_COLUMN = "lat";
   private static final String LNG_COLUMN = "lng";
   private static final String CELL_ID_COLUMN = "cell_id";
+  // airports - conditions
   private static final String CELL_ID_WHERE =
       String.format("%s >= ? and %s < ? and %s >= ?", CELL_ID_COLUMN, CELL_ID_COLUMN, RANK_COLUMN);
   private static final String ID_WHERE = ID_COLUMN + " = ?";
   private static final String ICAO_WHERE = ICAO_COLUMN + " = ?";
+  private static final String NAME_LIKE = NAME_COLUMN + " LIKE ?";
+  private static final String CITY_LIKE = CITY_COLUMN + " LIKE ?";
+  // airports - return columns
   private static final String[] ID_COLUMNS = new String[] {ID_COLUMN};
   private static final String[] LOCATION_COLUMNS =
       new String[] {ID_COLUMN, LAT_COLUMN, LNG_COLUMN, CELL_ID_COLUMN, RANK_COLUMN};
@@ -208,7 +213,38 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
       result.close();
     }
   }
-  
+  @Override
+  public List<Integer> getAirportIdsWithCityLike(final String pattern) {
+    return getAirportIdsWithPattern(CITY_LIKE, pattern);
+  }
+
+  @Override
+  public List<Integer> getAirportIdsWithNameLike(final String pattern) {
+    return getAirportIdsWithPattern(NAME_LIKE, pattern);
+  }
+
+  /**
+   * Returns ids of {@link Airport}s for which {@code condition} applied to {@code pattern} is true.
+   *
+   * @param condition A column condition requiring one pattern (e.g. "name LIKE ?")
+   * @param pattern A match pattern for the condition (e.g. "John _ Kennedy%");
+   */
+  private List<Integer> getAirportIdsWithPattern(final String condition, final String pattern) {
+    final String[] stringPattern = {pattern};
+    final Cursor result = database.query(
+      AIRPORTS_TABLE, ID_COLUMNS, condition, stringPattern, null, null, null);
+    List<Integer> airportIds = new LinkedList<Integer>();
+    try {
+      final int idColumn = result.getColumnIndexOrThrow(ID_COLUMN);
+      while(result.moveToNext()) {
+        airportIds.add(result.getInt(idColumn));
+      }
+      return airportIds;
+    } finally {
+      result.close();
+    }
+  }
+
   @Override
   public List<Airport> getAirportsInCells(int startCell, int endCell, int minRank) {
     final String[] stringRange =

@@ -38,7 +38,7 @@ import java.util.Map;
 public class AviationMasterRecordParser {
   // Database metadata
   private final static int DB_SCHEMA_VERSION = 1;
-  private final static long DB_EXPIRATION_TIMESTAMP = 1290070860000; // 18 Nov 2010 09:01:00 GMT
+  private final static long DB_EXPIRATION_TIMESTAMP = 1290070860000L; // 18 Nov 2010 09:01:00 GMT
 
 
   // Airport data headers

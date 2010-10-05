@@ -1,12 +1,12 @@
 /*
  * Copyright (C) 2010 Google Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -38,6 +38,24 @@ public interface AviationDbAdapter extends DbAdapter {
   public int getAirportIdByIcao(String icao);
 
   /**
+   * Returns ids of {@link Airport}s whose {@code city} match {@code pattern}.
+   *
+   * @param pattern A SQL "LIKE" query pattern.  A percent symbol ("%") matches any sequence of
+   * zero or more characters, an underscore ("_") matches any single character. Any other character
+   * matches itself or its lower/upper case equivalent (i.e. case-insensitive matching).
+   *
+   * @see <a href="http://www.sqlite.org/lang_expr.html#like">The LIKE and GLOB operators</a>
+   */
+  public List<Integer> getAirportIdsWithCityLike(String pattern);
+
+  /**
+   * Returns ids of {@link Airport}s whose {@code name} match {@code pattern}.
+   *
+   * @see #getAirportIdsWithCityLike
+   */
+  public List<Integer> getAirportIdsWithNameLike(String pattern);
+
+  /**
    * Returns a list of airports in the given cells with rank >= {@code minRank}.
    */
   public Collection<Airport> getAirportsInCells(int startCell, int endCell, int minRank);
@@ -56,7 +74,7 @@ public interface AviationDbAdapter extends DbAdapter {
    * Returns non-essential properties for a runway end.
    */
   public Map<String, String> getRunwayEndProperties(int runwayEndId);
-  
+
   /**
    * Returns constant string.
    */
