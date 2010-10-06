@@ -7,6 +7,7 @@
   <color name="SimulatorWarningBackground">#333</color>
   <color name="TapcardBackground">#fff</color>
   <color name="TapcardForeground">#000</color>
+  <color name="TapcardForegroundAnnotation">#333</color>
   <color name="TapcardHeaderText">#fff</color>
   <color name="TapcardNavigationBackground">#000</color>
   <color name="TapcardNavigationForeground">#fff</color>
