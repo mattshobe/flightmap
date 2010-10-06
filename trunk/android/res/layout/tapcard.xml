@@ -5,7 +5,9 @@
   <LinearLayout android:id="@+id/tapcard_outer_layout"
     style="@style/TapcardOuterLayout">
     <!-- ICAO and airport name -->
-    <TableLayout android:id="@+id/tapcard_name_table" style="@style/TapcardNameTable">
+    <TableLayout android:id="@+id/tapcard_name_table" 
+    	style="@style/TapcardNameTable"
+    	android:shrinkColumns="1">
       <TableRow android:id="@+id/tapcard_icao_and_name_row"
         style="@style/TapcardIcaoAndNameRow">
         <TextView android:id="@+id/tapcard_icao" style="@style/TapcardText.Icao" />
@@ -21,10 +23,12 @@
       <TextView android:id="@+id/tapcard_ete" style="@style/TapcardNavigationText" />
     </LinearLayout>
     <!--  Communications Table -->
-    <TableLayout android:id="@+id/tapcard_comm_table" style="@style/TapcardComms" />
+    <TableLayout android:id="@+id/tapcard_comm_table" 
+    	style="@style/TapcardComms" 
+    	android:shrinkColumns="0" />
     <!-- Runway List -->
     <LinearLayout android:id="@+id/tapcard_runway_layout"
-      style="@style/TapcardRunwayLayout" />
+      	style="@style/TapcardRunwayLayout" />
     <!-- Elevation -->
     <LinearLayout style="@style/FillWidth">
       <TextView android:id="@+id/tapcard_elevation" style="@style/TapcardElevation" />

@@ -206,46 +206,62 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
    * Adds communication frequencies to the tapcard.
    */
   private void addCommInfo(final List<Comm> comms, Resources res) {
-    if (comms == null) {
-      return;
-    }
     final TableLayout commTable = (TableLayout) findViewById(R.id.tapcard_comm_table);
     final LayoutParams rowLayout =
         new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT);
-    final int textColor = res.getColor(R.color.TapcardForeground);
+    final int mainTextColor = res.getColor(R.color.TapcardForeground);
+    final int annotationTextColor = res.getColor(R.color.TapcardForegroundAnnotation);
+    
+    if (comms == null) {
+      TableRow emptyRow = new TableRow(this);
+      emptyRow.setLayoutParams(rowLayout);
+      TextView emptyMsg = new TextView(this);
+      emptyMsg.setText("(No comm frequencies available)");
+      emptyMsg.setTypeface(Typeface.SANS_SERIF);
+      emptyMsg.setTextColor(annotationTextColor);
+      emptyMsg.setTextSize(TypedValue.DENSITY_DEFAULT, 15 * density);
+      emptyMsg.setPadding(5, 10, 5, 0);
+      emptyRow.addView(emptyMsg);      
+      commTable.addView(emptyRow);
+      
+      return;
+      
+    }    
+    
     for (Comm comm : comms) {
       TableRow commRow = new TableRow(this);
       commRow.setLayoutParams(rowLayout);
 
-      // Identifier
+      // Identifier row
       TextView ident = new TextView(this);
       ident.setText(comm.identifier);
       ident.setTypeface(Typeface.SANS_SERIF);
-      ident.setTextColor(textColor);
+      ident.setTextColor(mainTextColor);
       ident.setTextSize(TypedValue.DENSITY_DEFAULT, 18 * density);
-      ident.setPadding(5, 5, 25, 5);
+      ident.setPadding(5, 25, 5, 0);
       commRow.addView(ident);
-
-      // Frequency
+      
+      // Frequency row
       TextView frequency = new TextView(this);
       frequency.setText(comm.frequency);
       frequency.setTypeface(Typeface.SANS_SERIF, Typeface.BOLD);
-      frequency.setTextColor(textColor);
+      frequency.setTextColor(mainTextColor);
       frequency.setTextSize(TypedValue.DENSITY_DEFAULT, 22 * density);
-      frequency.setPadding(25, 5, 5, 5);
+      frequency.setPadding(0, 0, 5, 0);
       commRow.addView(frequency);
-
+      
       commTable.addView(commRow);
-
+      
+      
       if (comm.remarks != null) {
         commRow = new TableRow(this);
         commRow.setLayoutParams(rowLayout);
         TextView remarks = new TextView(this);
         remarks.setText(comm.remarks);
         remarks.setTypeface(Typeface.SANS_SERIF);
-        remarks.setTextColor(textColor);
+        remarks.setTextColor(annotationTextColor);
         remarks.setTextSize(TypedValue.DENSITY_DEFAULT, 15 * density);
-        remarks.setPadding(5, 0, 0, 5);
+        remarks.setPadding(5, 0, 0, 0);
 
         commRow.addView(remarks);
         commTable.addView(commRow);
@@ -261,7 +277,11 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
   private void addRunways(SortedSet<Runway> runways, Resources res) {
     final LinearLayout runwayLayout = (LinearLayout) findViewById(R.id.tapcard_runway_layout);
     final int textColor = res.getColor(R.color.TapcardForeground);
+    final int textAnnotationColor = res.getColor(R.color.TapcardForegroundAnnotation);
 
+    //Paint a horizontal rule to separate runway section from comms
+    //TODO shobe to add drawable or whatever
+    
     for (Runway runway : runways) {
       TextView letters = new TextView(this);
       letters.setText(runway.letters);
@@ -274,8 +294,8 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
       TextView size = new TextView(this);
       size.setText(runway.length + "x" + runway.width + " " + runway.surface);
       size.setTypeface(Typeface.SANS_SERIF);
-      size.setTextColor(textColor);
-      size.setTextSize(TypedValue.DENSITY_DEFAULT, 18 * density);
+      size.setTextColor(textAnnotationColor);
+      size.setTextSize(TypedValue.DENSITY_DEFAULT, 15 * density);
       size.setPadding(5, 0, 5, 10);
       runwayLayout.addView(size);
     }
@@ -296,6 +316,7 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
     }
     TextView elevationText = (TextView) findViewById(R.id.tapcard_elevation);
     elevationText.setText("ELEV " + elevation + "' MSL");
+    elevationText.setPadding(10, 0, 0, 0);
   }
 
   @Override
