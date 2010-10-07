@@ -143,7 +143,8 @@ public class ZoomScale {
       finalDistanceUnits = distanceUnits.getShortDistance();
       scaleInUnits = (int) finalDistanceUnits.getDistance(scaleInMeters);
     }
-    actualWidth = (float) (scaleInUnits / (finalDistanceUnits.distanceMultiplier * mpp * density));
+    actualWidth = (float) (scaleInUnits / (finalDistanceUnits.distanceMultiplier * 
+    		                               mpp * density));
 
     String units = finalDistanceUnits.distanceAbbreviation;
     String result = null;
