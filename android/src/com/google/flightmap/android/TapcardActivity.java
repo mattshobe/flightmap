@@ -216,7 +216,7 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
       TableRow emptyRow = new TableRow(this);
       emptyRow.setLayoutParams(rowLayout);
       TextView emptyMsg = new TextView(this);
-      emptyMsg.setText("(No comm frequencies available)");
+      emptyMsg.setText(R.string.no_comm_freqs);
       emptyMsg.setTypeface(Typeface.SANS_SERIF);
       emptyMsg.setTextColor(annotationTextColor);
       emptyMsg.setTextSize(TypedValue.DENSITY_DEFAULT, 15 * density);
@@ -232,7 +232,7 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
       TableRow commRow = new TableRow(this);
       commRow.setLayoutParams(rowLayout);
 
-      // Identifier row
+      // Identifier cell
       TextView ident = new TextView(this);
       ident.setText(comm.identifier);
       ident.setTypeface(Typeface.SANS_SERIF);
@@ -241,13 +241,13 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
       ident.setPadding(5, 25, 5, 0);
       commRow.addView(ident);
       
-      // Frequency row
+      // Frequency cell
       TextView frequency = new TextView(this);
       frequency.setText(comm.frequency);
       frequency.setTypeface(Typeface.SANS_SERIF, Typeface.BOLD);
       frequency.setTextColor(mainTextColor);
       frequency.setTextSize(TypedValue.DENSITY_DEFAULT, 22 * density);
-      frequency.setPadding(0, 0, 5, 0);
+      frequency.setPadding(10, 0, 5, 0);
       commRow.addView(frequency);
       
       commTable.addView(commRow);
