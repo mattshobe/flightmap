@@ -82,18 +82,11 @@ public class SearchActivity extends ListActivity {
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 		super.onListItemClick(l, v, position, id);
 		String content = (String) getListView().getItemAtPosition(position);
-		String icao = content.substring(0, 3);
+		String icao = content.split(" ")[0];
 		int airportId = aviationDbAdapter.getAirportIdByIcao(icao);
-		if (airportId == -1) {
-			// Try again with 'K' prepended if it's only 3 letters.
-			// TODO: Move this down to the list results.
-			airportId = aviationDbAdapter.getAirportIdByIcao(content.substring(
-					0, 4));
-		}
 		if (airportId != -1) {
 			showTapcard(airportId);
 		}
-
 	}
 
 	@Override
