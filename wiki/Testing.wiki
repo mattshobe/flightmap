@@ -1,5 +1,5 @@
+#summary Test overview for each iteration.
 #labels Phase-QA
-#Test overview for each iteration.
 
 = Introduction =
 
