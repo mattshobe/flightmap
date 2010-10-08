@@ -41,8 +41,10 @@
  * 3/28/2000 EAW
  * Converted to Java class
  * 12/6/2000 Reece Robinson
- * 06/05/2010 Updated coefficients, integrated in Flight Map.
- * 10/07/2010 Redistributed under Apache License v2, with permission of EAW.
+ * Removed obsolete data, modified for custom use, integrated in flightmap.
+ * 06/05/2010 Aristidis Papaioannou (aristidis@google.com)
+ * Redistributed under Apache License v2, with permission of EAW.
+ * 10/07/2010 aristidis
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of

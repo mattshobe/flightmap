@@ -133,22 +133,21 @@ public class ZoomScale {
 
     // Use user prefs to determine units to show.
     DistanceUnits distanceUnits = userPrefs.getDistanceUnits();
-    DistanceUnits finalDistanceUnits = distanceUnits;
+    String units = distanceUnits.distanceAbbreviation;
 
     // Round to nearest whole unit.
-    // If scaleInMeters is less than 1 convert to short units.
-    int scaleInUnits = (int) distanceUnits.getDistance(scaleInMeters);
-    scaleInUnits = (int) (scaleInUnits + 0.5);
-    if (scaleInUnits < 1) {
-      finalDistanceUnits = distanceUnits.getShortDistance();
-      scaleInUnits = (int) finalDistanceUnits.getDistance(scaleInMeters);
+    float scaleInUnits = (float) distanceUnits.getDistance(scaleInMeters);
+    int wholeScaleInUnits = (int) (scaleInUnits + 0.5);
+    if (wholeScaleInUnits == 0) {
+      wholeScaleInUnits = 1;
+      scaleInUnits += 1;
     }
-    actualWidth = (float) (scaleInUnits / (finalDistanceUnits.distanceMultiplier * 
-    		                               mpp * density));
+    float scaleAdjustmentInMeters =
+        (float) ((scaleInUnits - wholeScaleInUnits) / distanceUnits.distanceMultiplier);
+    actualWidth = (scaleInMeters + scaleAdjustmentInMeters) / (mpp * density);
 
-    String units = finalDistanceUnits.distanceAbbreviation;
     String result = null;
-    result = String.format("%d %s", scaleInUnits, units);
+    result = String.format("%d %s", wholeScaleInUnits, units);
     previousLocation = location;
     previousZoom = zoom;
     previousScaleText = result;

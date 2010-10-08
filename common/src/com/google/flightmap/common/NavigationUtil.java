@@ -38,11 +38,6 @@ public class NavigationUtil {
   public static final double METERS_TO_KM = .001;
 
   /**
-   * Meter constant.
-   */
-  public static final double METERS = 1;
-
-  /**
    * Multiply meters by this constant to obtain feet.
    */
   public static final double METERS_TO_FEET = 3.2808399;
@@ -81,13 +76,9 @@ public class NavigationUtil {
    * Simplifies display of distances and speeds in various units.
    */
   public enum DistanceUnits {
-    MILES("mi", METERS_TO_MILE, "mph", METERS_PER_SEC_TO_MPH), NAUTICAL_MILES(
-    	"nm", METERS_TO_NM, "kts", METERS_PER_SEC_TO_KNOTS), KILOMETERS(
-    	"km", METERS_TO_KM, "kph", METERS_PER_SEC_TO_KPH), SHORT_MILES(
-        "ft", METERS_TO_FEET, "mph", METERS_PER_SEC_TO_MPH), SHORT_NM(
-        "ft", METERS_TO_FEET, "kts", METERS_PER_SEC_TO_KNOTS), SHORT_KM(
-        "m", METERS, "kph", METERS_PER_SEC_TO_KPH);
-    
+    MILES("mi", METERS_TO_MILE, "mph", METERS_PER_SEC_TO_MPH), NAUTICAL_MILES("nm", METERS_TO_NM,
+        "kts", METERS_PER_SEC_TO_KNOTS), KILOMETERS("km", METERS_TO_KM, "kph",
+        METERS_PER_SEC_TO_KPH);
     /** Distance abbreviation such as mi or nm. */
     public final String distanceAbbreviation;
     /** Speed abbreviation such as mph or kts. */
@@ -111,21 +102,6 @@ public class NavigationUtil {
       this.speedMultiplier = speedMultiplier;
     }
 
-    /**
-     * Returns {@code DistanceUnits} convert to this unit's short values.
-     */
-    public DistanceUnits getShortDistance() {
-      if (this == MILES) {
-    	  return this.SHORT_MILES;
-      }
-      else if (this == NAUTICAL_MILES) {
-    	  return this.SHORT_NM;
-      }
-      else {
-    	  return this.SHORT_KM;
-      }
-    }
-    
     /**
      * Returns {@code meters} convert to this unit's distance.
      */
