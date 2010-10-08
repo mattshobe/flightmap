@@ -16,6 +16,9 @@
 
 package com.google.flightmap.android;
 
+import java.util.Iterator;
+import java.util.List;
+
 import android.app.ListActivity;
 /*
  * Copyright (C) 2010 Google Inc.
@@ -39,7 +42,9 @@ import com.google.flightmap.common.CachedAviationDbAdapter;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.ListView;
 
 /**
  * Activity for search within MainActivity.
@@ -68,6 +73,22 @@ public class SearchActivity extends ListActivity {
 
   }
   
+  /**
+   * This method will be called when an item in the list is selected and
+   * show the tapcard for the selected item.
+   */
+  @Override
+  protected void onListItemClick(ListView l, View v, int position, long id) {
+	super.onListItemClick(l, v, position, id);
+	String content = (String) getListView().getItemAtPosition(position);
+	String icao = content.substring(0, 4);
+	int airportId = aviationDbAdapter.getAirportIdByIcao(icao);
+	if(airportId != -1) {
+      showTapcard(airportId);
+	}
+  }
+
+  
   @Override
   protected void onNewIntent(Intent intent) {
     setIntent(intent);
@@ -85,15 +106,42 @@ public class SearchActivity extends ListActivity {
      int airportId = aviationDbAdapter.getAirportIdByIcao(query);
      if (airportId == -1 && query.length() == 3) {
        // Try again with 'K' prepended if it's only 3 letters.
+       // TODO: Move this down to the list results.
        airportId = aviationDbAdapter.getAirportIdByIcao("K" + query);
      }
      if(airportId != -1) {
        showTapcard(airportId);
      }
      else {
-       // Can return "like" results down the road.
-       String[] items = {query + " not found"};
-       setListAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1, items));
+       // Replaces spaces with % for the %LIKE% db search.
+       query = query.replace(' ', '%');
+       query = '%' + query + '%';
+       List<Integer> airportsName = aviationDbAdapter.getAirportIdsWithNameLike(query);
+       List<Integer> airports = aviationDbAdapter.getAirportIdsWithCityLike(query);
+       Iterator<Integer> iter1 = airportsName.iterator();
+       // Remove duplicates. Iterate through airportsName and if it's not in
+       // airports List, add it.
+       while(iter1.hasNext()) {
+    	   int id = iter1.next();
+    	   if(!airports.contains(id)) {
+    		   airports.add(id);
+    	   }
+       }
+       if (airports.isEmpty()) {
+     	  String[] items = {query + " not found"};
+          setListAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, items));
+       } else {
+         Iterator<Integer> iter2 = airports.iterator();
+         int i=0;
+      	 String[] airportList = new String[airports.size()];
+         while(iter2.hasNext()) {
+    	   int id = iter2.next();
+    	   String showName = aviationDbAdapter.getAirport(id).icao + " " + aviationDbAdapter.getAirport(id).name;
+    	   airportList[i] = showName;
+    	   i++;
+    	 }
+    	 setListAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, airportList));
+       }
      }
   }
   
