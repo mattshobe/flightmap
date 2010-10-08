@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:id="@+id/map_frame" style="@style/FillParent">
+  <LinearLayout android:id="@+id/simulator_message" style="@style/FillWidth" android:visibility="gone">
+    <TextView android:text="@string/simulator_warning" style="@style/SimulatorWarning" />
+  </LinearLayout>
+</FrameLayout>
