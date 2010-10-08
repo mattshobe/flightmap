@@ -26,5 +26,4 @@
   <string name="tapcard_activity">Airport Details</string>
   <string name="no_comm_freqs">(No comm frequencies available)</string>
   <string name="updating_database">Updating database...</string>
-
 </resources>
