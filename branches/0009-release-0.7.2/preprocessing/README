@@ -1,0 +1,8 @@
+How to build and run
+$ ant jar
+$ java -cp .:lib/sqlitejdbc-v056.jar:build/dist/blackbox-snapshot/blackbox-snapshot.jar com.google.blackbox.AirportDatabase ../tmp/airports.db 37422133 -122083550 5
+KNUQ (MOFFETT FEDERAL AFLD) - 1.6798482547193194
+KPAO (PALO ALTO ARPT OF SANTA CLARA) - 2.7807461819948123
+KSJC (NORMAN Y. MINETA SAN JOSE INTL) - 8.186620593383925
+KSQL (SAN CARLOS) - 9.569700256816578
+KRHV (REID-HILLVIEW OF SANTA CLARA C) - 13.67756024867034
