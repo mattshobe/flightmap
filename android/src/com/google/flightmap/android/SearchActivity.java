@@ -114,10 +114,10 @@ public class SearchActivity extends ListActivity {
      }
      else {
        // Replaces spaces with % for the %LIKE% db search.
-       query = query.replace(' ', '%');
-       query = '%' + query + '%';
-       List<Integer> airportsName = aviationDbAdapter.getAirportIdsWithNameLike(query);
-       List<Integer> airports = aviationDbAdapter.getAirportIdsWithCityLike(query);
+       String query_like = query.replace(' ', '%');
+       query_like = '%' + query_like + '%';
+       List<Integer> airportsName = aviationDbAdapter.getAirportIdsWithNameLike(query_like);
+       List<Integer> airports = aviationDbAdapter.getAirportIdsWithCityLike(query_like);
        Iterator<Integer> iter1 = airportsName.iterator();
        // Remove duplicates. Iterate through airportsName and if it's not in
        // airports List, add it.
