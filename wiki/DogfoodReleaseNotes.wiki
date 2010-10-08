@@ -30,6 +30,13 @@ Also, you should consider joining the Flight Map [http://g/flightmap mailing lis
   * Pinch-to-zoom.
   * Simulator mode.
 
+=Release: v0.7.2 - 10/8/10=
+  * Bug fixes
+    * Speed sometimes jumps to 250+ knots (when going much slower than that).  Issue 10.
+    * Time to airport in tapcard needs to provide a more general estimate. Issue 97.
+    * In tapcard, last digits of frequencies are hidden. Issue 90.
+    * In tapcard, comm frequencies are too close to station identifier. Issue 109.
+
 =Release: v0.7.1 - 9/30/10=
   * Bug fixes
     * Database was getting corrupted during download.  Issue 101.
