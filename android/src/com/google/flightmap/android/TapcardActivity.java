@@ -211,7 +211,7 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
         new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT);
     final int mainTextColor = res.getColor(R.color.TapcardForeground);
     final int annotationTextColor = res.getColor(R.color.TapcardForegroundAnnotation);
-
+    
     if (comms == null) {
       TableRow emptyRow = new TableRow(this);
       emptyRow.setLayoutParams(rowLayout);
@@ -221,11 +221,13 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
       emptyMsg.setTextColor(annotationTextColor);
       emptyMsg.setTextSize(TypedValue.DENSITY_DEFAULT, 15 * density);
       emptyMsg.setPadding(5, 10, 5, 0);
-      emptyRow.addView(emptyMsg);
+      emptyRow.addView(emptyMsg);      
       commTable.addView(emptyRow);
+      
       return;
-    }
-
+      
+    }    
+    
     for (Comm comm : comms) {
       TableRow commRow = new TableRow(this);
       commRow.setLayoutParams(rowLayout);
@@ -238,7 +240,7 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
       ident.setTextSize(TypedValue.DENSITY_DEFAULT, 18 * density);
       ident.setPadding(5, 25, 5, 0);
       commRow.addView(ident);
-
+      
       // Frequency cell
       TextView frequency = new TextView(this);
       frequency.setText(comm.frequency);
@@ -247,10 +249,10 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
       frequency.setTextSize(TypedValue.DENSITY_DEFAULT, 22 * density);
       frequency.setPadding(10, 0, 5, 0);
       commRow.addView(frequency);
-
+      
       commTable.addView(commRow);
-
-
+      
+      
       if (comm.remarks != null) {
         commRow = new TableRow(this);
         commRow.setLayoutParams(rowLayout);
@@ -277,9 +279,9 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
     final int textColor = res.getColor(R.color.TapcardForeground);
     final int textAnnotationColor = res.getColor(R.color.TapcardForegroundAnnotation);
 
-    // Paint a horizontal rule to separate runway section from comms
-    // TODO shobe to add drawable or whatever
-
+    //Paint a horizontal rule to separate runway section from comms
+    //TODO shobe to add drawable or whatever
+    
     for (Runway runway : runways) {
       TextView letters = new TextView(this);
       letters.setText(runway.letters);
@@ -482,8 +484,7 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
     }
 
     final float distanceMeters = distanceBearingResult[0];
-    final float bearingTo =
-        (float) NavigationUtil.normalizeBearing(distanceBearingResult[1] + magneticConversion);
+    final float bearingTo = (float) NavigationUtil.normalizeBearing(distanceBearingResult[1] + magneticConversion);
 
     DistanceUnits distanceUnits = userPrefs.getDistanceUnits();
     String distance =

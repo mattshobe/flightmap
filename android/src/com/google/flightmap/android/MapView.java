@@ -1,12 +1,12 @@
 /*
  * Copyright (C) 2010 Google Inc.
- *
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- *
+ * 
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -16,7 +16,6 @@
 package com.google.flightmap.android;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.ExecutionException;
 
@@ -522,15 +521,10 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     // airportsOnScreen could be null if the background task hasn't finished
     // yet.
     if (airportsOnScreen != null) {
-      final Iterator<Airport> i = airportsOnScreen.iterator();
-
-      while (i.hasNext()) {
-        final Airport airport = i.next();
+      for (Airport airport : airportsOnScreen) {
         if (!mainActivity.userPrefs.shouldInclude(airport) || airport.rank < minAirportRank) {
-          i.remove();
           continue;
         }
-
         final Paint airportPaint = getAirportPaint(airport);
         Point airportPoint = AndroidMercatorProjection.toPoint(zoomCopy, airport.location);
         c.drawCircle(airportPoint.x, airportPoint.y, 15, airportPaint);

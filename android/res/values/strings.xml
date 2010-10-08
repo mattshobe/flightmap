@@ -24,6 +24,6 @@
   <string name="simulator_short">Sim</string>
   <string name="simulator_warning">SIMULATOR</string>
   <string name="tapcard_activity">Airport Details</string>
-  <string name="no_comm_freqs">(No comm frequencies available)</string>
-  <string name="updating_database">Updating database...</string>
+  <string name="no_comm_freqs">(No comm frequencies available)</string><string name="updating_database">Updating database...</string>
+
 </resources>
