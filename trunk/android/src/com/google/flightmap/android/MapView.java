@@ -1,12 +1,12 @@
 /*
  * Copyright (C) 2010 Google Inc.
- *
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- *
+ * 
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -168,7 +168,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     ERROR_TEXT_PAINT.setTextAlign(Paint.Align.CENTER);
     AIRPORT_TEXT_PAINT.setAntiAlias(true);
     AIRPORT_TEXT_PAINT.setARGB(0xff, 0xff, 0xff, 0xff);
-    AIRPORT_TEXT_PAINT.setTypeface(Typeface.SANS_SERIF);
+    AIRPORT_TEXT_PAINT.setTypeface(Typeface.DEFAULT_BOLD);
     AIRPORT_TEXT_PAINT.setTextAlign(Paint.Align.CENTER);
     PANEL_BACKGROUND_PAINT.setARGB(0xee, 0x22, 0x22, 0x22);
     PANEL_DIGITS_PAINT.setAntiAlias(true);
@@ -231,7 +231,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     }
     textSizesSet = true;
     ERROR_TEXT_PAINT.setTextSize(15 * density);
-    AIRPORT_TEXT_PAINT.setTextSize(16 * density);
+    AIRPORT_TEXT_PAINT.setTextSize(19 * density);
     PANEL_DIGITS_PAINT.setTextSize(26 * density);
     PANEL_UNITS_PAINT.setTextSize(18 * density);
   }
@@ -533,14 +533,14 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
 
         final Paint airportPaint = getAirportPaint(airport);
         Point airportPoint = AndroidMercatorProjection.toPoint(zoomCopy, airport.location);
-        c.drawCircle(airportPoint.x, airportPoint.y, 15, airportPaint);
+        c.drawCircle(airportPoint.x, airportPoint.y, 24, airportPaint);
 
         // Undo, then redo the track-up rotation so the labels are always at the
         // top for track up.
         if (isTrackUp) {
           c.rotate(lastBearing, airportPoint.x, airportPoint.y);
         }
-        c.drawText(airport.icao, airportPoint.x, airportPoint.y - 20, AIRPORT_TEXT_PAINT);
+        c.drawText(airport.icao, airportPoint.x, airportPoint.y - 31, AIRPORT_TEXT_PAINT);
         if (isTrackUp) {
           c.rotate(360 - lastBearing, airportPoint.x, airportPoint.y);
         }
