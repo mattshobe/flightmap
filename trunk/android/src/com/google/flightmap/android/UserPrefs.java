@@ -32,6 +32,7 @@ public class UserPrefs {
   // Preference keys. These match keys in preferences.xml
   private static final String NORTH_UP = "North_Up";
   private static final String DISTANCE_UNITS = "Distance_Units";
+  private static final String DISABLE_SIMULATOR = "Disable_Simulator";
   private static final String SHOW_SEAPLANE = "Show_Seaplane";
   private static final String SHOW_MILITARY = "Show_Military";
   private static final String SHOW_SOFT = "Show_Soft";
@@ -69,6 +70,10 @@ public class UserPrefs {
     return getDistanceUnitFromPreference(distanceUnitsString);
   }
 
+  public synchronized boolean disableSimulator() {
+    return sharedPrefs.getBoolean(DISABLE_SIMULATOR, false);
+  }
+  
   public synchronized boolean showSeaplane() {
     return sharedPrefs.getBoolean(SHOW_SEAPLANE, false);
   }

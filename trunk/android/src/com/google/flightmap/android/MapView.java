@@ -44,6 +44,8 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ZoomButtonsController;
 
+import com.google.flightmap.android.location.LocationHandler;
+import com.google.flightmap.android.location.LocationHandler.Source;
 import com.google.flightmap.common.CachedMagneticVariation;
 import com.google.flightmap.common.NavigationUtil;
 import com.google.flightmap.common.ProgressListener;
@@ -442,6 +444,13 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         return;
       }
       synchronized (this) {
+        // Stop the simulator if the user preference was changed.
+        final LocationHandler locationHandler = mainActivity.flightMap.getLocationHandler();
+        if (locationHandler.isLocationSimulated() && mainActivity.userPrefs.disableSimulator()) {
+          Log.i(TAG, "Stopping simulator due to user preference.");
+          locationHandler.setLocationSource(Source.REAL);
+        }
+
         if (!hasMoved(location) && !isRedrawNeeded() && zoom == previousZoom) {
           return;
         }
@@ -475,6 +484,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     if (null == location || System.currentTimeMillis() - location.getTime() > MAX_LOCATION_AGE) {
       c.drawText(mainActivity.getText(R.string.old_location).toString(), c.getWidth() / 2, //
           c.getHeight() / 2, ERROR_TEXT_PAINT);
+      simulatorMessage.setVisibility(GONE);
       return;
     }
 
