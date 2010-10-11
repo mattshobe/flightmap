@@ -40,6 +40,7 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 
 import com.google.flightmap.android.location.LocationHandler;
+import com.google.flightmap.android.location.SimulatorDialog;
 import com.google.flightmap.common.AviationDbAdapter;
 import com.google.flightmap.common.CachedAirportDirectory;
 import com.google.flightmap.common.CachedAviationDbAdapter;
@@ -122,27 +123,7 @@ public class MainActivity extends Activity {
             }).create();
 
       case SIMULATOR_DIALOG:
-        // This dialog is temporary, so hardcoding a lot of things here that
-        // will go away soon.
-        final CharSequence[] items = {"Enabled", "Disabled"};
-        final int simulatorEnabled = 0;
-        final int simulatorDisabled = 1;
-        final LocationHandler locationHandler = flightMap.getLocationHandler();
-        final int selectedItem = locationHandler.isLocationSimulated() ? simulatorEnabled : simulatorDisabled;
-
-        return new AlertDialog.Builder(this).setTitle("Simulator").setSingleChoiceItems(items,
-            selectedItem, new DialogInterface.OnClickListener() {
-
-              @Override
-              public void onClick(DialogInterface dialog, int which) {
-                if (which == simulatorDisabled) {
-                  locationHandler.setLocationSource(LocationHandler.Source.REAL);
-                } else {
-                  locationHandler.setLocationSource(LocationHandler.Source.SIMULATED);
-                }
-                dialog.dismiss();
-              }
-            }).create();
+        return SimulatorDialog.getDialog(this, flightMap.getLocationHandler());
 
       default:
         return null;
@@ -251,6 +232,16 @@ public class MainActivity extends Activity {
 
     // Now show the map.
     setContentView(mapFrame);
+  }
+
+  @Override
+  public boolean onPrepareOptionsMenu(Menu menu) {
+    // Simulator menu item may be hidden by user prefs.
+    MenuItem simulatorItem = menu.findItem(R.id.simulator);
+    boolean showSimulatorItem = !userPrefs.disableSimulator();
+    simulatorItem.setVisible(showSimulatorItem);
+    simulatorItem.setEnabled(showSimulatorItem);
+    return super.onPrepareOptionsMenu(menu);
   }
 
   @Override

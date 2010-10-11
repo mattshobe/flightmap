@@ -5,6 +5,7 @@
   <color name="MapBackground">#000</color>
   <color name="SimulatorWarningForeground">#f11</color>
   <color name="SimulatorWarningBackground">#333</color>
+  <color name="SimulatorDialogText">#fff</color>
   <color name="TapcardBackground">#fff</color>
   <color name="TapcardForeground">#000</color>
   <color name="TapcardForegroundAnnotation">#333</color>

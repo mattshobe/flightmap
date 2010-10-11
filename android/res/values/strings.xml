@@ -14,7 +14,9 @@
     Google from any liability associated with your use of Flight Map.
   </string>
   <string name="download_failed">Database download failed.</string>
+  <string name="enable_simulator">Enable simulator</string>
   <string name="no_airports">No airports found</string>
+  <string name="no_comm_freqs">(No comm frequencies available)</string>
   <string name="old_location">Searching for GPS...</string>
   <string name="preferences">Preferences</string>
   <string name="preferences_short">Prefs</string>
@@ -22,8 +24,9 @@
   <string name="search_hint">Search by ICAO</string>
   <string name="simulator">Simulator</string>
   <string name="simulator_short">Sim</string>
+  <string name="simulator_stop">Stop</string>
   <string name="simulator_warning">SIMULATOR</string>
   <string name="tapcard_activity">Airport Details</string>
-  <string name="no_comm_freqs">(No comm frequencies available)</string>
+  <string name="track">Track</string>
   <string name="updating_database">Updating database...</string>
 </resources>
