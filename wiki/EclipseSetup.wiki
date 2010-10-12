@@ -17,6 +17,7 @@ Configure Eclipse to use a 1.6 compiler.
 Use the Eclipse auto-formatter to format your code in a style that's consistent with other Flight Map developers. Here's how:
   # Download the [http://flightmap.googlecode.com/files/flightmap-eclipse-format.xml flightmap-eclipse-format.xml] file.
   # In Eclipse, File > Import. General > Preferences. Then select the above file.
+  # On a Mac, Eclipse > Preferences (or command-comma). Filter on "formatter" to get to Java > Code Style > Formatter. Click the "Import" button and choose the above file.
 
 Use the Eclipse auto-formatter by hitting ctl+shift+F (ctl+cmd+F on a Mac).
 
