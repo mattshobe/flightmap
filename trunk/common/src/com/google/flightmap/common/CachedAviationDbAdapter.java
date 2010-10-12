@@ -110,4 +110,9 @@ public class CachedAviationDbAdapter implements AviationDbAdapter {
     return cachedDbAdapter.getMetadata(key);
   }
 
+@Override
+public Map<Integer, Integer> doSearch(String query) {
+	return cachedDbAdapter.doSearch(query);
+}
+
 }
