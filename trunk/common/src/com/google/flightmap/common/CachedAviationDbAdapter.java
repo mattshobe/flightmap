@@ -85,22 +85,22 @@ public class CachedAviationDbAdapter implements AviationDbAdapter {
   public Map<String, String> getRunwayEndProperties(final int runwayEndId) {
     return cachedDbAdapter.getRunwayEndProperties(runwayEndId);
   }
-  
+
   @Override
   public String getConstant(final int constantId) {
     final Integer constantIdInteger = Integer.valueOf(constantId);
     final String cachedConstant = constants.get(constantIdInteger);
     if (cachedConstant != null) {
-    	return cachedConstant;
+      return cachedConstant;
     }
-    
+
     final String newConstant = cachedDbAdapter.getConstant(constantId);
     constants.put(constantIdInteger, newConstant);
     return newConstant;
   }
 
   @Override
-  public Collection<Airport> getAirportsInCells(final int startCell, final int endCell, 
+  public Collection<Airport> getAirportsInCells(final int startCell, final int endCell,
       final int minRank) {
     return cachedDbAdapter.getAirportsInCells(startCell, endCell, minRank);
   }
@@ -110,9 +110,9 @@ public class CachedAviationDbAdapter implements AviationDbAdapter {
     return cachedDbAdapter.getMetadata(key);
   }
 
-@Override
-public Map<Integer, Integer> doSearch(String query) {
-	return cachedDbAdapter.doSearch(query);
-}
+  @Override
+  public Map<Integer, Integer> doSearch(String query) {
+    return cachedDbAdapter.doSearch(query);
+  }
 
 }
