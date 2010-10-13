@@ -43,6 +43,7 @@ import android.app.ListActivity;
 import android.app.SearchManager;
 import com.google.flightmap.common.AviationDbAdapter;
 import com.google.flightmap.common.CachedAviationDbAdapter;
+import com.google.flightmap.common.data.Airport;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -152,8 +153,8 @@ public class SearchActivity extends ListActivity {
       String[] airportList = new String[airportIds.size()];
       for (Iterator<Integer> iter = airportIds.iterator(); iter.hasNext();) {
         int id = iter.next();
-        String showName =
-            aviationDbAdapter.getAirport(id).icao + " " + aviationDbAdapter.getAirport(id).name;
+        Airport airport = aviationDbAdapter.getAirport(id);
+        String showName = airport.icao + " " + airport.name;
         airportList[airportCount] = showName;
         airportCount++;
       }
