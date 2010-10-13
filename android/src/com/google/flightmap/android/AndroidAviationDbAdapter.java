@@ -205,7 +205,6 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
         database.query(AIRPORTS_TABLE, ID_COLUMNS, ICAO_WHERE, stringICAO, null, null, null);
     try {
       if (!result.moveToFirst()) {
-        Log.e(TAG, "No airport for icao =" + stringICAO);
         return -1;
       }
       return result.getInt(result.getColumnIndexOrThrow(ID_COLUMN));
@@ -267,7 +266,7 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
     } else if (airportId == -1 && query.length() == 3) {
       // Try again with 'K' prepended if it's only 3 letters.
       airportId = getAirportIdByIcao("K" + query);
-      if (airportId != 1) {
+      if (airportId != -1) {
         // The first time we find an airport set the rank.
         airportResults.put(airportId, getAirport(airportId).rank);
       }
