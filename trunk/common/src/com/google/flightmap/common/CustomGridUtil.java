@@ -257,7 +257,8 @@ public class CustomGridUtil {
    * @return     List of cell intervals that cover the area.
    * @see #getCellsInRectangle(LatLngRect)
    */
-  static LinkedList<int[]> getCellsInRadius(final LatLng origin, final int radius) {
+  static LinkedList<int[]> getCellsInRadius(final LatLng origin, final int radius)
+      throws InterruptedException {
     return getCellsInRectangle(LatLngRect.getBoundingBox(origin, radius));
   }
 
@@ -269,7 +270,7 @@ public class CustomGridUtil {
    *             Each element of the list is an array of two integers: int[]{cellMin, cellMax}
    *             The set of all cellIds such that cellMin <= cellId < cellMax covers area.
    */
-  static LinkedList<int[]> getCellsInRectangle(final LatLngRect area) {
+  static LinkedList<int[]> getCellsInRectangle(final LatLngRect area) throws InterruptedException {
     final double threshold = 0.7;
 
     // Boundaries of next cell to inspect
@@ -292,6 +293,7 @@ public class CustomGridUtil {
     final int areaRight = area.getEast();
 
     while (!remainingCells.isEmpty()) {
+      ThreadUtils.checkIfInterrupted();
       PartialCell currentCell = remainingCells.remove();
 
       heightE6 = currentCell.height;

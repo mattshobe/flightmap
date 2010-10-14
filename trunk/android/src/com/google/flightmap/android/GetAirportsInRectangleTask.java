@@ -70,7 +70,11 @@ public class GetAirportsInRectangleTask extends
       rectangle = queryParams.rectangle;
       minRank = queryParams.minRank;
     }
-    return airportDirectory.getAirportsInRectangle(rectangle, minRank);
+    try {
+      return airportDirectory.getAirportsInRectangle(rectangle, minRank);
+    } catch (InterruptedException iEx) {
+      return null;
+    }
   }
 
   @Override

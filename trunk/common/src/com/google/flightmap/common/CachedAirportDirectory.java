@@ -93,7 +93,8 @@ public class CachedAirportDirectory extends AbstractAirportDirectory {
   }
 
   @Override
-  public Collection<Airport> getAirportsInRectangle(final LatLngRect area, final int minRank) {
+  public Collection<Airport> getAirportsInRectangle(final LatLngRect area, final int minRank)
+      throws InterruptedException {
     synchronized (this) {
       if (cachedArea != null && cachedArea.contains(area) && cachedMinRank == minRank) {
         return cachedAirports;
