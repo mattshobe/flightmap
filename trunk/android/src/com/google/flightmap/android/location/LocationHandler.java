@@ -15,7 +15,6 @@
  */
 package com.google.flightmap.android.location;
 
-import android.content.Context;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
@@ -58,9 +57,9 @@ public class LocationHandler implements LocationListener {
   /**
    * Creates an instance using real location data (as opposed to simulated).
    */
-  public LocationHandler(LocationManager locationManager, Context context) {
+  public LocationHandler(LocationManager locationManager) {
     this.locationManager = locationManager;
-    locationSimulator = new LocationSimulator(context);
+    locationSimulator = new LocationSimulator();
     locationSource = Source.REAL;
   }
 
@@ -178,6 +177,10 @@ public class LocationHandler implements LocationListener {
   @Override
   public void onLocationChanged(Location location) {
     updateLocation(location);
+  }
+
+  LocationSimulator getLocationSimulator() {
+    return locationSimulator;
   }
 
   /**

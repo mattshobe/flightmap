@@ -80,13 +80,14 @@ public class MainActivity extends Activity {
   AviationDbAdapter aviationDbAdapter;
   CachedAirportDirectory airportDirectory;
   UserPrefs userPrefs;
+  private SimulatorDialog simulatorDialog;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     flightMap = (FlightMap) getApplication();
     flightMap.setLocationHandler(new LocationHandler(
-        (LocationManager) getSystemService(Context.LOCATION_SERVICE), flightMap));
+        (LocationManager) getSystemService(Context.LOCATION_SERVICE)));
 
     userPrefs = new UserPrefs(flightMap);
     setDatabaseDownloaded((null != savedInstanceState && savedInstanceState
@@ -110,6 +111,17 @@ public class MainActivity extends Activity {
     }
   }
 
+
+  @Override
+  protected void onPrepareDialog(int id, Dialog dialog) {
+    if (id == SIMULATOR_DIALOG) {
+      simulatorDialog.setUnits(userPrefs.getDistanceUnits());
+      simulatorDialog.updateTextValues();
+    }
+    super.onPrepareDialog(id, dialog);
+  }
+
+
   @Override
   protected Dialog onCreateDialog(int id) {
     switch (id) {
@@ -123,7 +135,8 @@ public class MainActivity extends Activity {
             }).create();
 
       case SIMULATOR_DIALOG:
-        return SimulatorDialog.getDialog(this, flightMap.getLocationHandler());
+        simulatorDialog = new SimulatorDialog(this, flightMap.getLocationHandler());
+        return simulatorDialog;
 
       default:
         return null;
