@@ -15,18 +15,14 @@
  */
 package com.google.flightmap.android.location;
 
-import java.io.IOException;
-
-import org.xmlpull.v1.XmlPullParserException;
-
-import com.google.flightmap.common.NavigationUtil;
-
-import android.content.Context;
-import android.content.res.XmlResourceParser;
 import android.location.Location;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+
+import com.google.flightmap.common.MercatorProjection;
+import com.google.flightmap.common.NavigationUtil;
+import com.google.flightmap.common.data.LatLng;
 
 /**
  * Provides a simulated {@link Location}. This class does not extend
@@ -46,20 +42,34 @@ class LocationSimulator {
    * GPS provider.
    */
   private static final long UPDATE_RATE = 1000;
-  private boolean isRunning;
+  /**
+   * Turn rate in degrees per second.
+   */
+  private static final int TURN_RATE = 6; // 2x standard rate.
+  /**
+   * Speed change rate in meters per second.
+   */
+  private static final float SPEED_RATE = 10.28889f; // 20 kts per second.
+  /**
+   * Climb/descent rate in meters per second.
+   */
+  private static final float CLIMB_RATE = 10.16f; // 2000 feet per minute.
+
+  private static final float MIN_SPEED = 0;
+  private static final float MAX_SPEED = (float) (900 / NavigationUtil.METERS_PER_SEC_TO_KNOTS);
+
   private final PositionUpdater updater = new PositionUpdater();
-  private XmlResourceParser xmlParser;
-  private final Context context;
+  private boolean isRunning;
   private Location location;
-  // Reused for distance and bearing calculations.
-  private float results[] = new float[2];
   private LocationHandler locationHandler;
 
-  // Don't replay .gpx file. Have just one location.
-  private boolean singleLocation = false;
+  // Desired values for position. Units are as follows...
+  // Speed: m/s ; Altitude: meters ; Track: true degrees
+  private float desiredSpeed = (float) (120.0 / NavigationUtil.METERS_PER_SEC_TO_KNOTS);
+  private float desiredTrack = Float.NaN;
+  private float desiredAltitude = (float) (1500.0 / NavigationUtil.METERS_TO_FEET);
 
-  LocationSimulator(Context context) {
-    this.context = context;
+  LocationSimulator() {
   }
 
   /**
@@ -84,7 +94,6 @@ class LocationSimulator {
    */
   public void update() {
     updater.scheduleUpdate(UPDATE_RATE);
-    initializeParser();
     if (!isRunning()) {
       return;
     }
@@ -92,112 +101,103 @@ class LocationSimulator {
   }
 
   /**
-   * Initializes the XML parser.
+   * Returns a default location to use if there's no real location to start
+   * from. (The Googleplex in Mountain View, CA.)
    */
-  private synchronized void initializeParser() {
-    if (xmlParser == null) {
-      xmlParser = context.getResources().getXml(com.google.flightmap.android.R.xml.simtrack);
-    }
+  public static Location getDefaultLocation() {
+    Location result = new Location(TAG);
+    result.setLatitude(37.422006);
+    result.setLongitude(-122.084095);
+    return result;
   }
 
+  /**
+   * Updates location and posts to {@link LocationHandler#onLocationChanged}.
+   */
+  private synchronized void updateLocation() {
+    if (location == null) {
+      // Initialize location from last known location
+      location = locationHandler.getLocation();
+      // If it's still null, use the default location.
+      if (location == null) {
+        location = getDefaultLocation();
+      }
+    }
+
+    location.setProvider(TAG);
+    location.setTime(System.currentTimeMillis());
+    location.setAccuracy(10);
+    location.setSpeed(updateValue(location.getSpeed(), desiredSpeed, SPEED_RATE));
+
+    // Just in case desiredTrack is unset, set it here.
+    if (Float.isNaN(desiredTrack)) {
+      desiredTrack = location.getBearing();
+    }
+
+    location.setBearing(updateBearingValue(location.getBearing(), desiredTrack, TURN_RATE));
+    location.setAltitude(updateValue((float) location.getAltitude(), desiredAltitude, CLIMB_RATE));
+    changeLatLng();
+
+    locationHandler.onLocationChanged(location);
+    return;
+  }
 
   /**
-   * Parses the next location from the GPX file and sends it to
-   * {@link LocationHandler}. Loops back to the start when the end of the XML is
-   * encountered.
+   * Updates the latitude and longitude of {@code location} based on the current
+   * location, speed and track.
    */
-  private void updateLocation() {
-    if (singleLocation) { // Short final to KPAO.
-      synchronized (this) {
-        if (location == null) {
-          location = new Location(LocationSimulator.class.getSimpleName());
-          location.setAltitude((float) (180.0f / NavigationUtil.METERS_TO_FEET));
-          location.setLatitude(37.452285);
-          location.setLongitude(-122.106358);
-          // Magnetic course to RWY 31 + magnetic deviation = true course.
-          location.setBearing(307.5f + 14.2f);
-          location.setSpeed((float) (65.0 / NavigationUtil.METERS_PER_SEC_TO_KNOTS));
-        }
-        location.setTime(System.currentTimeMillis());
-        locationHandler.onLocationChanged(location);
-      }
-      return;
-    }
+  private synchronized void changeLatLng() {
+    final float track = location.getBearing();
+    final float speed = location.getSpeed();
+    // Use Mercator projection and trig to compute new location.
+    double trackRadians = Math.toRadians(NavigationUtil.normalizeBearing(track));
+    double deltaX = speed * Math.sin(trackRadians);
+    double deltaY = -speed * Math.cos(trackRadians); // -speed to adjust origin.
+    int[] point = new int[2];
+    final float zoom = 15; // arbitrarily chosen.
+    MercatorProjection.toPoint(zoom, LatLng.fromDouble(location.getLatitude(), location
+        .getLongitude()), point);
+    point[0] = (int) (point[0] + deltaX + 0.5);
+    point[1] = (int) (point[1] + deltaY + 0.5);
+    LatLng latLng = MercatorProjection.fromPoint(zoom, point);
+    location.setLatitude(latLng.latDeg());
+    location.setLongitude(latLng.lngDeg());
+  }
 
-    boolean foundPosition = false;
-    float lat = Float.NaN;
-    float lng = Float.NaN;
-    float alt = Float.NaN;
-    try {
-      int eventType = xmlParser.getEventType();
-      while (!foundPosition) {
-        switch (eventType) {
-          case XmlResourceParser.END_DOCUMENT:
-            synchronized (this) {
-              xmlParser = null;
-              initializeParser();
-            }
-            break;
-
-          case XmlResourceParser.START_DOCUMENT:
-            Log.d(TAG, "Start document");
-            break;
-
-          case XmlResourceParser.START_TAG:
-            String tag = xmlParser.getName();
-            if ("trkpt".equals(tag)) {
-              String latAttr = xmlParser.getAttributeValue(null, "lat");
-              String lngAttr = xmlParser.getAttributeValue(null, "lon");
-              lat = Float.parseFloat(latAttr);
-              lng = Float.parseFloat(lngAttr);
-              if (!Float.isNaN(alt)) {
-                foundPosition = true;
-              }
-            } else if ("ele".equals(tag)) {
-              String eleText = xmlParser.nextText();
-              alt = Float.parseFloat(eleText);
-              if (!Float.isNaN(lat) && !Float.isNaN(lng)) {
-                foundPosition = true;
-              }
-            }
-            break;
-        }
-        eventType = xmlParser.next();
-      }
-    } catch (XmlPullParserException e) {
-      Log.e(TAG, "XML exception", e);
-      synchronized (this) {
-        xmlParser = null;
-        initializeParser();
-      }
-    } catch (IOException e) {
-      Log.e(TAG, "IO exception", e);
-      synchronized (this) {
-        xmlParser = null;
-        initializeParser();
-      }
+  /**
+   * Returns the new value that should be set for a rate-based value.
+   * 
+   * @param currentValue current value.
+   * @param desiredValue desired value.
+   * @param changeRate rate of change per second.
+   */
+  private float updateValue(final float currentValue, final float desiredValue,
+      final float changeRate) {
+    if (Math.abs(desiredValue - currentValue) < changeRate) {
+      return desiredValue;
     }
-    Location newLocation = new Location(LocationSimulator.class.getSimpleName());
-    newLocation.setTime(System.currentTimeMillis());
-    newLocation.setAltitude(alt);
-    newLocation.setLatitude(lat);
-    newLocation.setLongitude(lng);
-    newLocation.setAccuracy(10);
-    synchronized (this) {
-      // Compute bearing and speed if possible.
-      if (location != null) {
-        Location
-            .distanceBetween(location.getLatitude(), location.getLongitude(), lat, lng, results);
-        float meters = results[0];
-        float seconds = (newLocation.getTime() - location.getTime()) / 1000.0f;
-        if (seconds > 0) {
-          newLocation.setSpeed(meters / seconds);
-        }
-        newLocation.setBearing(results[1]);
-      }
-      location = newLocation;
-      locationHandler.onLocationChanged(newLocation);
+    return currentValue + (changeRate * Math.signum(desiredValue - currentValue));
+  }
+
+  /**
+   * Returns the new value for a bearing. Handles special cases like the desired
+   * bearing being 10 when the current bearing is 350.
+   * 
+   * @param bearing current bearing
+   * @param desiredBearing desired bearing
+   * @param turnRate rate of turn in degrees per second.
+   */
+  private float updateBearingValue(float bearing, float desiredBearing, int turnRate) {
+    float absDiff = Math.abs(desiredBearing - bearing);
+    if (absDiff < turnRate) {
+      return desiredBearing;
     }
+    if (absDiff >= 180) {
+      bearing = bearing < 180 ? bearing + 360 : bearing;
+      desiredBearing = desiredBearing < 180 ? desiredBearing + 360 : desiredBearing;
+    }
+    return (float) NavigationUtil.normalizeBearing(bearing
+        + (turnRate * Math.signum(desiredBearing - bearing)));
   }
 
   /**
@@ -228,5 +228,37 @@ class LocationSimulator {
 
   private synchronized boolean isRunning() {
     return isRunning;
+  }
+
+  synchronized float getDesiredSpeed() {
+    return desiredSpeed;
+  }
+
+  synchronized void setDesiredSpeed(float desiredSpeed) {
+    this.desiredSpeed = Math.min(desiredSpeed, MAX_SPEED);
+    this.desiredSpeed = Math.max(this.desiredSpeed, MIN_SPEED);
+  }
+
+  synchronized void stopMoving() {
+    setDesiredTrack(location.getBearing());
+    setDesiredAltitude((float) location.getAltitude());
+    setDesiredSpeed(0);
+    location.setSpeed(0);
+  }
+
+  synchronized float getDesiredTrack() {
+    return desiredTrack;
+  }
+
+  synchronized void setDesiredTrack(float desiredTrack) {
+    this.desiredTrack = desiredTrack;
+  }
+
+  synchronized float getDesiredAltitude() {
+    return desiredAltitude;
+  }
+
+  synchronized void setDesiredAltitude(float desiredAltitude) {
+    this.desiredAltitude = desiredAltitude;
   }
 }
