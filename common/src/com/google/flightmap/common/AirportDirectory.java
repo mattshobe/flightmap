@@ -38,7 +38,7 @@ public interface AirportDirectory {
    * @param minRank   Minimum airport rank to return
    */
   public SortedSet<AirportDistance> getAirportsWithinRadius(final LatLng position,
-      final double radius, final int minRank);
+      final double radius, final int minRank) throws InterruptedException;
 
   /**
    * Returns airports in {@code area}.
@@ -50,7 +50,8 @@ public interface AirportDirectory {
    * @param area      Area of search
    * @param minRank   Minimum airport rank to return
    */
-  public Collection<Airport> getAirportsInRectangle(final LatLngRect area, final int minRank);
+  public Collection<Airport> getAirportsInRectangle(final LatLngRect area, final int minRank)
+      throws InterruptedException;
 
   /**
    * Prepares this object for future calls.

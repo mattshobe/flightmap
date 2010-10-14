@@ -52,10 +52,12 @@ public class CustomGridAirportDirectory extends AbstractAirportDirectory {
   }
 
   @Override
-  public Collection<Airport> getAirportsInRectangle(final LatLngRect area, final int minRank) {
+  public Collection<Airport> getAirportsInRectangle(final LatLngRect area, final int minRank)
+      throws InterruptedException {
     final LinkedList<int[]> cellRanges = CustomGridUtil.getCellsInRectangle(area);
     final Collection<Airport> airportsInArea = new LinkedList<Airport>();
     for (int[] range : cellRanges) {
+      ThreadUtils.checkIfInterrupted();
       final Collection<Airport> airportsInCells = adapter.getAirportsInCells(
           range[0], range[1], minRank);
       for (Airport airport : airportsInCells) {

@@ -793,9 +793,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       }
       // Cancel the in progress task. It's working on an answer we no longer
       // need.
-      Log.i(TAG, "updateAirportsOnScreen: Cancel query in progress.");
-      // TODO: Cancelling doesn't appear to have any affect. I think the db code
-      // that's running doesn't respond to the InterruptedException.
+      Log.i(TAG, "updateAirportsOnScreen: Cancel query in progress. " + getAirportsTask);
       boolean cancelled = getAirportsTask.cancel(true);
       if (!cancelled) {
         Log.w(TAG, "updateAirportsOnScreen: FAILED to cancel query.");
@@ -812,10 +810,11 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    */
   @Override
   public synchronized void hasCompleted(boolean success) {
+    Log.d(TAG, "hasCompleted: started, success: " + success);
     if (success && getAirportsTask != null) {
       try {
         airportsOnScreen = getAirportsTask.get();
-        setRedrawNeeded(true);
+        setRedrawNeeded(true); 
       } catch (InterruptedException e) {
         Log.i(TAG, "Interrupted while getting airports on screen", e);
       } catch (ExecutionException e) {
