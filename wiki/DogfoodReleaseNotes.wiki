@@ -29,7 +29,7 @@ Also, you should consider joining the Flight Map [http://g/flightmap mailing lis
   * Panning the map.
   * Pinch-to-zoom.
 
-=Release: v0.9.0 - 10/14/10=
+=Release: v0.9.0 "Citabria" - 10/15/10=
   * New features:
     * Search by airport code, city name or airport name.
       * Known issues with search:
@@ -45,6 +45,9 @@ Also, you should consider joining the Flight Map [http://g/flightmap mailing lis
       * We're still experimenting with how the map should look, so please give us your feedback on this.
     * Faster map updates.
       * New code can interrupt a slow database query that is no longer needed. Issue 95.
+    * Rounded scale text.  Issue 120.
+  * Bug fixes
+    * As zoom in, scale icon gets shorter, but continues to display "1nm".  Issue 100.
 
 =Release: v0.7.2 - 10/8/10=
   * Bug fixes
