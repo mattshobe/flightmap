@@ -44,6 +44,7 @@ public class SimulatorDialog extends Dialog implements Button.OnClickListener {
   private final LinkedList<Button> buttons = new LinkedList<Button>();
   private final CachedMagneticVariation magneticVariation = new CachedMagneticVariation();
   private DistanceUnits distanceUnits;
+  private CheckBox enabled;
   private TextView speedText;
   private TextView speedUnits;
   private TextView trackText;
@@ -68,11 +69,9 @@ public class SimulatorDialog extends Dialog implements Button.OnClickListener {
     altText = (TextView) findViewById(R.id.sim_alt_value);
     altUnits = (TextView) findViewById(R.id.sim_alt_units);
 
-    final boolean simEnabled = locationHandler.isLocationSimulated();
     initializeButtonList();
     initializeButtonListeners();
-    setSimulatorButtonsEnabled(simEnabled);
-    CheckBox enabled = (CheckBox) findViewById(R.id.enable_simulator);
+    enabled = (CheckBox) findViewById(R.id.enable_simulator);
     enabled.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
       @Override
       public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -87,8 +86,15 @@ public class SimulatorDialog extends Dialog implements Button.OnClickListener {
     });
   };
 
-  public void updateTextValues() {
+  /**
+   * Updates the values shown on the dialog.
+   */
+  public void updateDialog() {
     final DistanceUnits units = getUnits();
+    final boolean simEnabled = locationHandler.isLocationSimulated();
+    enabled.setChecked(simEnabled);
+    setSimulatorButtonsEnabled(simEnabled);
+
     LocationSimulator simulator = locationHandler.getLocationSimulator();
     // Speed
     speedText.setText(String.format("%.0f", units.getSpeed(simulator.getDesiredSpeed())));
@@ -113,7 +119,7 @@ public class SimulatorDialog extends Dialog implements Button.OnClickListener {
       magneticTrack += variation;
     }
     magneticTrack = (float) NavigationUtil.normalizeBearing(magneticTrack);
-    
+
     // Displayed degrees are always in magnetic.
     trackText.setText(String.format(" %03.0f", magneticTrack));
     trackUnits.setText(MapView.DEGREES_SYMBOL);
@@ -190,7 +196,7 @@ public class SimulatorDialog extends Dialog implements Button.OnClickListener {
         Log.e(TAG, "Unknown id: " + v.getId());
         break;
     }
-    updateTextValues();
+    updateDialog();
   }
 
   public synchronized DistanceUnits getUnits() {

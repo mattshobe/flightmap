@@ -446,7 +446,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       synchronized (this) {
         // Stop the simulator if the user preference was changed.
         final LocationHandler locationHandler = mainActivity.flightMap.getLocationHandler();
-        if (locationHandler.isLocationSimulated() && mainActivity.userPrefs.disableSimulator()) {
+        if (locationHandler.isLocationSimulated() && !mainActivity.userPrefs.enableSimulator()) {
           Log.i(TAG, "Stopping simulator due to user preference.");
           locationHandler.setLocationSource(Source.REAL);
         }

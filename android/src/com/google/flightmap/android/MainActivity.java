@@ -111,16 +111,14 @@ public class MainActivity extends Activity {
     }
   }
 
-
   @Override
   protected void onPrepareDialog(int id, Dialog dialog) {
     if (id == SIMULATOR_DIALOG) {
       simulatorDialog.setUnits(userPrefs.getDistanceUnits());
-      simulatorDialog.updateTextValues();
+      simulatorDialog.updateDialog();
     }
     super.onPrepareDialog(id, dialog);
   }
-
 
   @Override
   protected Dialog onCreateDialog(int id) {
@@ -251,7 +249,7 @@ public class MainActivity extends Activity {
   public boolean onPrepareOptionsMenu(Menu menu) {
     // Simulator menu item may be hidden by user prefs.
     MenuItem simulatorItem = menu.findItem(R.id.simulator);
-    boolean showSimulatorItem = !userPrefs.disableSimulator();
+    boolean showSimulatorItem = userPrefs.enableSimulator();
     simulatorItem.setVisible(showSimulatorItem);
     simulatorItem.setEnabled(showSimulatorItem);
     return super.onPrepareOptionsMenu(menu);
