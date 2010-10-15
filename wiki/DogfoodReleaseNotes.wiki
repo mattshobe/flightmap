@@ -28,7 +28,23 @@ Also, you should consider joining the Flight Map [http://g/flightmap mailing lis
 =Coming Soon=
   * Panning the map.
   * Pinch-to-zoom.
-  * Simulator mode.
+
+=Release: v0.9.0 - 10/14/10=
+  * New features:
+    * Search by airport code, city name or airport name.
+      * Known issues with search:
+        # Performance can be slow when there are lots of matches.
+        # Results are not sorted in a useful way.
+        # User preferences (e.g. hide heliports) are not applied to the search results.
+    * Simulator mode. Useful for testing, but can also help you explore how the app works on the ground.
+      * To use the simulator:
+        # Enable the simulator preference (Menu > Prefs > Enable Simulator). You only have to do this once. We chose to hide the simulator by default.
+        # Bring up the simulator control dialog (Menu > Sim). Check the "Enable simulator" box to start simulating flight.
+        # Set the desired speed, track and altitude and the airplane will move. A flashing "SIMULATOR" indicator will appear on the map to remind you that you're in simulator mode.
+    * Larger icons and text on the map screen.
+      * We're still experimenting with how the map should look, so please give us your feedback on this.
+    * Faster map updates.
+      * New code can interrupt a slow database query that is no longer needed.
 
 =Release: v0.7.2 - 10/8/10=
   * Bug fixes
