@@ -8,9 +8,9 @@
       android:summary="Nautical, statute or metric" android:key="Distance_Units"
       android:defaultValue="3" android:entries="@array/units"
       android:entryValues="@array/units_values" />
-    <CheckBoxPreference android:title="Disable simulator"
-      android:key="Disable_Simulator" android:defaultValue="false"
-      android:summary="Hide simulator menu item" />
+    <CheckBoxPreference android:title="Enable simulator"
+      android:key="Enable_Simulator" android:defaultValue="false"
+      android:summary="Adds simulator menu item" />
     <CheckBoxPreference android:title="Show Seaplane Bases"
       android:key="Show_Seaplane" android:defaultValue="false" />
     <CheckBoxPreference android:title="Show Military Bases"

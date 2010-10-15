@@ -14,7 +14,7 @@
     Google from any liability associated with your use of Flight Map.
   </string>
   <string name="download_failed">Database download failed.</string>
-  <string name="enable_simulator">Enable simulator</string>
+  <string name="enable_simulator">Activate simulator</string>
   <string name="no_airports">No airports found</string>
   <string name="no_comm_freqs">(No comm frequencies available)</string>
   <string name="old_location">Searching for GPS...</string>
