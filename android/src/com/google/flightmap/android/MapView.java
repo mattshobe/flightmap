@@ -810,11 +810,10 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    */
   @Override
   public synchronized void hasCompleted(boolean success) {
-    Log.d(TAG, "hasCompleted: started, success: " + success);
     if (success && getAirportsTask != null) {
       try {
         airportsOnScreen = getAirportsTask.get();
-        setRedrawNeeded(true); 
+        setRedrawNeeded(true);
       } catch (InterruptedException e) {
         Log.i(TAG, "Interrupted while getting airports on screen", e);
       } catch (ExecutionException e) {
