@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <color name="AircraftPaint">#0f0</color>
+  <color name="DropShadow">#8333</color>
+  <color name="MapBackground">#000</color>
+  <color name="SimulatorWarningForeground">#f11</color>
+  <color name="SimulatorWarningBackground">#333</color>
+  <color name="SimulatorDialogText">#fff</color>
+  <color name="TapcardBackground">#fff</color>
+  <color name="TapcardForeground">#000</color>
+  <color name="TapcardForegroundAnnotation">#333</color>
+  <color name="TapcardHeaderText">#fff</color>
+  <color name="TapcardNavigationBackground">#000</color>
+  <color name="TapcardNavigationForeground">#fff</color>
+  <color name="ToweredAirport">#36a4d6</color>
+  <color name="NonToweredAirport">#b622c6</color>
+</resources>
