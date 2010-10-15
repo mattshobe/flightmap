@@ -34,7 +34,14 @@ public class ZoomScale {
   private static final String TAG = ZoomScale.class.getSimpleName();
 
   /** Ideally how wide the scale bar should be in absolute pixels. */
-  private static final int PREFERRED_WIDTH = 60;
+  private static final int PREFERRED_WIDTH = 70;
+
+  /** Maximum width of the scale bar, in absolute pixels. */
+  private static final int MAX_WIDTH = 90;
+
+  /** Minimum width of the scale bar, in absolute pixels. */
+  private static final int MIN_WIDTH = 65;
+
   /** Height of the lines on the ends */
   private static final int HEIGHT = 20;
 
@@ -116,44 +123,71 @@ public class ZoomScale {
    * @param location current location.
    * @param zoom zoom level.
    */
-  private synchronized String getScaleText(Location location, double zoom) {
-    if (null != previousLocation && null != previousScaleText && null != previousDistanceUnits
-        && zoom == previousZoom) {
-      // Return cached result if the location hasn't changed much and units are
-      // unchanged.
-      if (previousDistanceUnits == userPrefs.getDistanceUnits()
-          && previousLocation.distanceTo(location) < ZOOM_UPDATE_DISTANCE) {
-        return previousScaleText;
-      }
+  private synchronized String getScaleText(final Location location, final double zoom) {
+    if (scaleTextIsCached(location, zoom)) {
+      return previousScaleText;
     }
-    float mpp =
+
+    // meters per pixel at given location and zoom level.
+    final float mpp =
         (float) AndroidMercatorProjection.getMetersPerPixel(zoom, LatLng.fromDouble(location
             .getLatitude(), location.getLongitude()));
-    float scaleInMeters = mpp * PREFERRED_WIDTH * density;
+    final DistanceUnits userDistanceUnits = userPrefs.getDistanceUnits(); // thread-safety copy
+    DistanceUnits distanceUnits = userDistanceUnits;
+    final float preferredScaleInMeters = mpp * PREFERRED_WIDTH * density;
+    final float preferredScaleInUnits = (float)(distanceUnits.getDistance(preferredScaleInMeters));
 
-    // Use user prefs to determine units to show.
-    DistanceUnits distanceUnits = userPrefs.getDistanceUnits();
-    DistanceUnits finalDistanceUnits = distanceUnits;
-
-    // Round to nearest whole unit.
-    // If scaleInMeters is less than 1 convert to short units.
-    int scaleInUnits = (int) distanceUnits.getDistance(scaleInMeters);
-    scaleInUnits = (int) (scaleInUnits + 0.5);
-    if (scaleInUnits < 1) {
-      finalDistanceUnits = distanceUnits.getShortDistance();
-      scaleInUnits = (int) finalDistanceUnits.getDistance(scaleInMeters);
+    // Determine whether smaller units are needed (ft instead of nm/mi, ...)
+    int scaleInUnits;
+    if (preferredScaleInUnits < 1) {
+      distanceUnits = distanceUnits.getShortDistance();
+      scaleInUnits = (int)(distanceUnits.getDistance(preferredScaleInMeters) + 0.5);
+    } else {
+      scaleInUnits = (int)(preferredScaleInUnits + 0.5);
     }
-    actualWidth = (float) (scaleInUnits / (finalDistanceUnits.distanceMultiplier * 
-    		                               mpp * density));
 
-    String units = finalDistanceUnits.distanceAbbreviation;
-    String result = null;
-    result = String.format("%d %s", scaleInUnits, units);
+    // Try to obtain a rounded distance with as many trailing zeroes as possible
+    int trailingZeroes = (int) Math.log10(scaleInUnits);
+    while (trailingZeroes > 0) {
+      int leadingDigits = (int) (scaleInUnits / Math.pow(10, trailingZeroes));
+      int roundedDistance;
+      float width;
+      do {
+        roundedDistance = (int)(leadingDigits * Math.pow(10, trailingZeroes));
+        width = (float)(roundedDistance / (distanceUnits.distanceMultiplier *mpp * density));
+        ++leadingDigits;
+      } while (width < MIN_WIDTH);
+
+      if (width <= MAX_WIDTH) {
+        scaleInUnits = roundedDistance;
+        break;
+      }
+
+      --trailingZeroes;
+    }
+
+    // Prepare final scale text
+    actualWidth = (float) (scaleInUnits / (distanceUnits.distanceMultiplier * mpp * density));
+    final String units = distanceUnits.distanceAbbreviation;
+    final String scaleText = String.format("%d %s", scaleInUnits, units);
+
+    // Update cached values
     previousLocation = location;
     previousZoom = zoom;
-    previousScaleText = result;
-    previousDistanceUnits = distanceUnits;
-    Log.i(TAG, String.format("Zoom: %.1f New scale: %s", zoom, result));
-    return result;
+    previousScaleText = scaleText;
+    previousDistanceUnits = userDistanceUnits;
+
+    Log.i(TAG, String.format("Zoom: %.1f New scale: %s Width: %.1f", zoom, scaleText, actualWidth));
+    return scaleText;
+  }
+
+  /**
+   * Checks if cached scale text is still valid.  Cached result is valid if the location has changed
+   * less than {@code ZOOM_UPDATE_DISTANCE} and units are unchanged.
+   */
+  private synchronized boolean scaleTextIsCached(final Location location, final double zoom) {
+    return (null != previousLocation && null != previousScaleText && null != previousDistanceUnits
+            && zoom == previousZoom && previousDistanceUnits == userPrefs.getDistanceUnits()
+            && previousLocation.distanceTo(location) < ZOOM_UPDATE_DISTANCE);
   }
 }
