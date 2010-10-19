@@ -22,13 +22,51 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.*;
 
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.PosixParser;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.PosixParser;
+
 /**
  * Parses airports from compiled AFD file.
  *
  */
 public class AfdCommParser {
+  private final static Options OPTIONS = new Options();
+
+  private final static String HELP_OPTION = "help";
+  private final static String AFD_OPTION = "afd";
+  private final static String IATA_TO_ICAO_OPTION = "iata_to_icao";
+  private final static String AVIATION_DB_OPTION = "aviation_db";
+
+  static {
+    OPTIONS.addOption("h", "help", false, "Print this message.");
+    OPTIONS.addOption(OptionBuilder.withLongOpt(AFD_OPTION)
+                                   .withDescription("Airport/Facility Directory text file.")
+                                   .hasArg()
+                                   .isRequired()
+                                   .withArgName("afd.txt")
+                                   .create());
+    OPTIONS.addOption(OptionBuilder.withLongOpt(IATA_TO_ICAO_OPTION)
+                                   .withDescription("IATA to ICAO codes text file.")
+                                   .hasArg()
+                                   .isRequired()
+                                   .withArgName("iata_to_icao.txt")
+                                   .create());
+    OPTIONS.addOption(OptionBuilder.withLongOpt(AVIATION_DB_OPTION)
+                                   .withDescription("FlightMap aviation database")
+                                   .hasArg()
+                                   .isRequired()
+                                   .withArgName("aviation.db")
+                                   .create());
+  }
+
+
   private Connection dbConn;
-//  private final String runwaySourceFile;
   private final String dbFile;
   private final Map<String, String> iataToIcao = new HashMap<String, String>();
   private final Map<String, String> icaoToIata = new HashMap<String, String>();
@@ -199,15 +237,34 @@ public class AfdCommParser {
     }
   }
 
+  private static void printHelp(final CommandLine line) {
+    final HelpFormatter formatter = new HelpFormatter();
+    formatter.setWidth(100);
+    formatter.printHelp("AfdCommParser", OPTIONS, true);
+  }
+
   public static void main(String args[]) {
-    //TODO: Use GetOpt
-    if (args.length != 3) {
-      System.err.println("Usage: java AfdCommParser <afd text file>" +
-                         " <iata to icao> <DB file>");
+    CommandLine line = null;
+    try {
+      final CommandLineParser parser = new PosixParser();
+      line = parser.parse(OPTIONS, args);
+    } catch (ParseException pEx) {
+      System.err.println(pEx.getMessage());
+      printHelp(line);
       System.exit(1);
     }
 
-    (new AfdCommParser(args[0], args[1], args[2])).execute();
+    if (line.hasOption(HELP_OPTION)) {
+      printHelp(line);
+      System.exit(0);
+    }
+
+    final String afdFile =  line.getOptionValue(AFD_OPTION);
+    final String iataToIcaoFile = line.getOptionValue(IATA_TO_ICAO_OPTION);
+    final String dbFile = line.getOptionValue(AVIATION_DB_OPTION);
+
+
+    (new AfdCommParser(afdFile, iataToIcaoFile, dbFile)).execute();
   }
 
 }

@@ -22,6 +22,14 @@ import com.google.flightmap.common.data.LatLng;
 import com.google.flightmap.common.data.Runway;
 import com.google.flightmap.db.JdbcAviationDbAdapter;
 
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.PosixParser;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.PosixParser;
 import org.apache.commons.lang.WordUtils;
 
 import java.io.*;
@@ -36,6 +44,14 @@ import java.util.Map;
  *
  */
 public class AviationMasterRecordParser {
+  // Command line options
+  private final static Options OPTIONS = new Options();
+  private final static String HELP_OPTION = "help";
+  private final static String AIRPORT_MR_OPTION = "airports";
+  private final static String RUNWAY_MR_OPTION = "runways";
+  private final static String IATA_TO_ICAO_OPTION = "iata_to_icao";
+  private final static String AVIATION_DB_OPTION = "aviation_db";
+
   // Database metadata
   private final static int DB_SCHEMA_VERSION = 1;
   private final static long DB_EXPIRATION_TIMESTAMP = 1290070860000L; // 18 Nov 2010 09:01:00 GMT
@@ -83,6 +99,33 @@ public class AviationMasterRecordParser {
   private final static Map<String, String> RUNWAY_END_PROPERTIES_LABEL_MAP;
 
   static {
+    // Command Line options definitions
+    OPTIONS.addOption("h", "help", false, "Print this message.");
+    OPTIONS.addOption(OptionBuilder.withLongOpt(AIRPORT_MR_OPTION)
+                                   .withDescription("FAA Airport Master Record file.")
+                                   .hasArg()
+                                   .isRequired()
+                                   .withArgName("airports.xls")
+                                   .create());
+    OPTIONS.addOption(OptionBuilder.withLongOpt(RUNWAY_MR_OPTION)
+                                   .withDescription("FAA Runway Master Record file.")
+                                   .hasArg()
+                                   .isRequired()
+                                   .withArgName("runways.xls")
+                                   .create());
+    OPTIONS.addOption(OptionBuilder.withLongOpt(IATA_TO_ICAO_OPTION)
+                                   .withDescription("IATA to ICAO codes text file.")
+                                   .hasArg()
+                                   .isRequired()
+                                   .withArgName("iata_to_icao.txt")
+                                   .create());
+    OPTIONS.addOption(OptionBuilder.withLongOpt(AVIATION_DB_OPTION)
+                                   .withDescription("FlightMap aviation database")
+                                   .hasArg()
+                                   .isRequired()
+                                   .withArgName("aviation.db")
+                                   .create());
+
     // Airport property labels
     AIRPORT_PROPERTIES_LABEL_MAP = new HashMap<String, String>();
     AIRPORT_PROPERTIES_LABEL_MAP.put(AIRPORT_BEACON_COLOR_HEADER, "Beacon color");
@@ -123,7 +166,7 @@ public class AviationMasterRecordParser {
   private Connection dbConn;
   private final String airportSourceFile;
   private final String runwaySourceFile;
-  private final String targetFile;
+  private final String dbFile;
   private final Map<String, String> airportIataToIcaoCodes = new HashMap<String, String>();
   private final Map<String, Integer> airportSiteNumberToDbId = new HashMap<String, Integer>();
 
@@ -140,16 +183,16 @@ public class AviationMasterRecordParser {
   /**
    * @param airportSourceFile
    *          FAA Form 5010, Airport Master Record file
-   * @param targetFile
+   * @param dbFile
    *          Target SQLite filename. Existing data is silently overwritten.
    */
   public AviationMasterRecordParser(final String airportSourceFile,
                                     final String runwaySourceFile,
                                     final String iataToIcaoFile,
-                                    final String targetFile) {
+                                    final String dbFile) {
     this.airportSourceFile = airportSourceFile;
     this.runwaySourceFile = runwaySourceFile;
-    this.targetFile = targetFile;
+    this.dbFile = dbFile;
     try {
       final BufferedReader in = new BufferedReader(new FileReader(iataToIcaoFile));
       String line;
@@ -817,7 +860,7 @@ public class AviationMasterRecordParser {
    */
   private Connection initDB() throws ClassNotFoundException, SQLException {
     Class.forName("org.sqlite.JDBC");
-    return DriverManager.getConnection("jdbc:sqlite:" + targetFile);
+    return DriverManager.getConnection("jdbc:sqlite:" + dbFile);
   }
 
   /**
@@ -1099,15 +1142,35 @@ public class AviationMasterRecordParser {
     }
   }
 
+  private static void printHelp(final CommandLine line) {
+    final HelpFormatter formatter = new HelpFormatter();
+    formatter.setWidth(100);
+    formatter.printHelp("AviationMasterRecordParser", OPTIONS, true);
+  }
+
   public static void main(String args[]) {
-    //TODO: Use GetOpt
-    if (args.length != 4) {
-      System.err.println("Usage: java AviationMasterRecordParser <airport master record file>" +
-                         " <runway master record file> <iata to icao> <DB file>");
+    CommandLine line = null;
+    try {
+      final CommandLineParser parser = new PosixParser();
+      line = parser.parse(OPTIONS, args);
+    } catch (ParseException pEx) {
+      System.err.println(pEx.getMessage());
+      printHelp(line);
       System.exit(1);
     }
 
-    (new AviationMasterRecordParser(args[0], args[1], args[2], args[3])).execute();
+    if (line.hasOption(HELP_OPTION)) {
+      printHelp(line);
+      System.exit(0);
+    }
+
+    final String airportSourceFile = line.getOptionValue(AIRPORT_MR_OPTION);
+    final String runwaySourceFile = line.getOptionValue(RUNWAY_MR_OPTION);
+    final String iataToIcaoFile = line.getOptionValue(IATA_TO_ICAO_OPTION);
+    final String dbFile = line.getOptionValue(AVIATION_DB_OPTION);
+
+    (new AviationMasterRecordParser(airportSourceFile, runwaySourceFile, iataToIcaoFile, dbFile))
+        .execute();
   }
 
 }

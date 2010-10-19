@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;  // TODO: Remove (See doSearch())
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -396,7 +397,12 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
     } catch (SQLException sqlEx) {
       throw new RuntimeException(sqlEx);
     }
+  }
 
+
+  @Override
+  public Map<Integer, Integer> doSearch(final String query) {
+    throw new RuntimeException("This method should not be in AviationDbAdapter. TODO: REMOVE");
   }
 
 }
