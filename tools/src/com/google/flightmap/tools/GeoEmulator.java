@@ -1,3 +1,5 @@
+package com.google.flightmap.tools;
+
 import javax.xml.parsers.*;
 import org.w3c.dom.*;
 import java.io.*;
@@ -8,8 +10,6 @@ import java.net.Socket;
 import java.net.InetAddress;
 import java.io.PrintStream;
 import java.io.BufferedOutputStream;
-
-package com.google.flightmap.tools;
 
 class Trackpoint implements Comparable<Trackpoint> {
   public final double lng;
