@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.flightmap.parsing;
+package com.google.flightmap.parsing.faa.afd;
 
 import java.io.*;
 import java.sql.*;
