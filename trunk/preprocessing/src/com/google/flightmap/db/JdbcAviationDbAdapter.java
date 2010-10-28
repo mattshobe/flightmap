@@ -18,6 +18,7 @@ package com.google.flightmap.db;
 
 import com.google.flightmap.common.AviationDbAdapter;
 import com.google.flightmap.common.data.*;
+import com.google.flightmap.parsing.db.AviationDbReader;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -26,6 +27,7 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;  // TODO: Remove (See doSearch())
@@ -39,20 +41,28 @@ import java.util.TreeSet;
  * thread-safe.  It is rather intended to be used during preprocessing, mainly to populate the
  * aviation database.
  */
-public class JdbcAviationDbAdapter implements AviationDbAdapter {
+public class JdbcAviationDbAdapter implements AviationDbAdapter, AviationDbReader {
+  /**
+   * Approximate number of airports in db.  The accuracy of this value is not critical: it is only
+   * Used for optimization reasons (for instance, to initialize collections such as ArrayLists).
+   */
+  private final static int APPROXIMATE_AIRPORT_COUNT = 19755; // Last update: 28 Oct 2010
+
   private final Connection dbConn;
 
+  private PreparedStatement getAirportCommsStmt;
   private PreparedStatement getAirportDataFromIdStmt;
   private PreparedStatement getAirportIdFromIcaoStmt;
   private PreparedStatement getAirportIdsWithCityLikeStmt;
   private PreparedStatement getAirportIdsWithNameLikeStmt;
   private PreparedStatement getAirportIdsInCellsStmt;
-  private PreparedStatement getRunwayEndPropertiesStmt;
   private PreparedStatement getAirportPropertiesStmt;
   private PreparedStatement getConstantStmt;
+  private PreparedStatement getRunwayEndIdStatement;
+  private PreparedStatement getRunwayIdStatement;
   private PreparedStatement getRunwaysStmt;
+  private PreparedStatement getRunwayEndPropertiesStmt;
   private PreparedStatement getRunwayEndsStmt;
-  private PreparedStatement getAirportCommsStmt;
   private PreparedStatement getMetadataStmt;
 
   // TODO(aristidis): Eliminate code duplication (see AndroidAviationDbAdapter)
@@ -92,31 +102,30 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
       }
 
       getAirportDataFromIdStmt.setInt(1, airportId);
-      ResultSet airportData = getAirportDataFromIdStmt.executeQuery();
+      final ResultSet rs = getAirportDataFromIdStmt.executeQuery();
 
-      if (! airportData.next()) {
+      if (!rs.next()) {
+        rs.close();
         return null;
       }
 
-      final String icao = airportData.getString("icao");
-      final String name = airportData.getString("name");
-      final int typeConstantId = airportData.getInt("type");
-      final String city = airportData.getString("city");
-      final int rank = airportData.getInt("rank");
-
+      final String icao = rs.getString("icao");
+      final String name = rs.getString("name");
+      final int typeConstantId = rs.getInt("type");
+      final String city = rs.getString("city");
+      final int rank = rs.getInt("rank");
+      final int latE6 = rs.getInt("lat");
+      final int lngE6 = rs.getInt("lng");
+      final boolean isOpen = rs.getInt("is_open") == 1;
+      final boolean isPublic = rs.getInt("is_public") == 1;
+      final boolean isTowered = rs.getInt("is_towered") == 1;
+      final boolean isMilitary = rs.getInt("is_military") == 1;
+      rs.close();
       final String typeString = getConstant(typeConstantId);
       final Airport.Type type = getAirportType(typeString);
-      final int latE6 = airportData.getInt("lat");
-      final int lngE6 = airportData.getInt("lng");
-      final boolean isOpen = airportData.getInt("is_open") == 1;
-      final boolean isPublic = airportData.getInt("is_public") == 1;
-      final boolean isTowered = airportData.getInt("is_towered") == 1;
-      final boolean isMilitary = airportData.getInt("is_military") == 1;
-
-      final Airport airport =
-          new Airport(airportId, icao, name, type, city, new LatLng(latE6, lngE6), isOpen, isPublic,
-              isTowered, isMilitary, getRunways(airportId), rank);
-
+      final Airport airport = new Airport(
+          airportId, icao, name, type, city, new LatLng(latE6, lngE6), isOpen, isPublic, isTowered,
+          isMilitary, getRunways(airportId), rank);
       return airport;
     } catch (SQLException sqlEx) {
       throw new RuntimeException(sqlEx);
@@ -131,14 +140,25 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
             "SELECT _id FROM airports WHERE icao = ?");
         }
       getAirportIdFromIcaoStmt.setString(1, airportICAO);
-      ResultSet airportId = getAirportIdFromIcaoStmt.executeQuery();
-
-      if (!airportId.next()) {
-        return -1;
-        }
-      final int id = airportId.getInt("_id");
-
+      final ResultSet rs = getAirportIdFromIcaoStmt.executeQuery();
+      final int id = rs.next() ? rs.getInt("_id") : -1;
+      rs.close();
       return id;
+    } catch (SQLException sqlEx) {
+      throw new RuntimeException(sqlEx);
+    }
+  }
+
+  @Override
+  public List<Integer> getAllAirportIds() {
+    try {
+      final ResultSet rs = dbConn.createStatement().executeQuery("SELECT _id FROM airports");
+      final List<Integer> ids = new ArrayList<Integer>(APPROXIMATE_AIRPORT_COUNT);
+      while (rs.next()) {
+        ids.add(rs.getInt("_id"));
+      }
+      rs.close();
+      return ids;
     } catch (SQLException sqlEx) {
       throw new RuntimeException(sqlEx);
     }
@@ -152,11 +172,12 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
             "SELECT _id FROM airports WHERE city LIKE ?");
       }
       getAirportIdsWithCityLikeStmt.setString(1, pattern);
-      ResultSet airportIdsResultSet = getAirportIdsWithCityLikeStmt.executeQuery();
-      List<Integer> airportIds = new LinkedList<Integer>();
-      while (airportIdsResultSet.next()) {
-        airportIds.add(airportIdsResultSet.getInt("_id"));
+      final ResultSet rs = getAirportIdsWithCityLikeStmt.executeQuery();
+      final List<Integer> airportIds = new LinkedList<Integer>();
+      while (rs.next()) {
+        airportIds.add(rs.getInt("_id"));
       }
+      rs.close();
       return airportIds;
     } catch (SQLException sqlEx) {
       throw new RuntimeException(sqlEx);
@@ -171,11 +192,12 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
             "SELECT _id FROM airports WHERE name LIKE ?");
       }
       getAirportIdsWithNameLikeStmt.setString(1, pattern);
-      ResultSet airportIdsResultSet = getAirportIdsWithNameLikeStmt.executeQuery();
-      List<Integer> airportIds = new LinkedList<Integer>();
-      while (airportIdsResultSet.next()) {
-        airportIds.add(airportIdsResultSet.getInt("_id"));
+      final ResultSet rs = getAirportIdsWithNameLikeStmt.executeQuery();
+      final List<Integer> airportIds = new LinkedList<Integer>();
+      while (rs.next()) {
+        airportIds.add(rs.getInt("_id"));
       }
+      rs.close();
       return airportIds;
     } catch (SQLException sqlEx) {
       throw new RuntimeException(sqlEx);
@@ -188,13 +210,11 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
       if (getConstantStmt == null) {
         getConstantStmt = dbConn.prepareStatement("SELECT constant FROM constants WHERE _id = ?");
       }
-
       getConstantStmt.setInt(1, constantId);
-      final ResultSet constant = getConstantStmt.executeQuery();
-      if (!constant.next()) {
-        return null;
-      }
-      return constant.getString("constant");
+      final ResultSet rs = getConstantStmt.executeQuery();
+      final String constant = rs.next() ? rs.getString("constant") : null;
+      rs.close();
+      return constant;
     } catch (SQLException sqlEx) {
       throw new RuntimeException(sqlEx);
     }
@@ -207,20 +227,19 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
     }
 
     getRunwaysStmt.setInt(1, airportId);
-    final ResultSet runwayData = getRunwaysStmt.executeQuery();
+    final ResultSet rs = getRunwaysStmt.executeQuery();
     final TreeSet<Runway> runways = new TreeSet<Runway>(Collections.reverseOrder());
-    while (runwayData.next()) {
-      final int runwayId = runwayData.getInt("_id");
-      final String runwayLetters = runwayData.getString("letters");
-      final int runwayLength = runwayData.getInt("length");
-      final int runwayWidth = runwayData.getInt("width");
-      final String runwaySurface = getConstant(runwayData.getInt("surface"));
-
+    while (rs.next()) {
+      final int runwayId = rs.getInt("_id");
+      final String runwayLetters = rs.getString("letters");
+      final int runwayLength = rs.getInt("length");
+      final int runwayWidth = rs.getInt("width");
+      final String runwaySurface = getConstant(rs.getInt("surface"));
       final SortedSet<RunwayEnd> runwayEnds = getRunwayEnds(runwayId);
-
-      runways.add(new Runway(airportId, runwayLetters, runwayLength, runwayWidth, runwaySurface,
-          runwayEnds));
+      runways.add(new Runway(
+            airportId, runwayLetters, runwayLength, runwayWidth, runwaySurface, runwayEnds));
     }
+    rs.close();
 
     return runways;
   }
@@ -230,64 +249,56 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
       getRunwayEndsStmt = dbConn.prepareStatement(
           "SELECT _id, letters FROM runway_ends WHERE runway_id = ?");
     }
-
     getRunwayEndsStmt.setInt(1, runwayId);
-    final ResultSet runwayEndData = getRunwayEndsStmt.executeQuery();
-
+    final ResultSet rs = getRunwayEndsStmt.executeQuery();
     final TreeSet<RunwayEnd> runwayEnds = new TreeSet<RunwayEnd>();
-
-    while (runwayEndData.next()) {
-      final int runwayEndId = runwayEndData.getInt("_id");
-      final String runwayEndLetters = runwayEndData.getString("letters");
+    while (rs.next()) {
+      final int runwayEndId = rs.getInt("_id");
+      final String runwayEndLetters = rs.getString("letters");
       runwayEnds.add(new RunwayEnd(runwayEndId, runwayEndLetters));
     }
-
+    rs.close();
     return runwayEnds;
   }
 
   /**
    * Returns a lits of airports in the given cells with rank >= {@code minRank}.
    */
-  public LinkedList<Airport> getAirportsInCells(final int startCell,
-                                                final int endCell,
-                                                final int minRank) {
+  public LinkedList<Airport> getAirportsInCells(final int startCell, final int endCell,
+      final int minRank) {
     try {
       if (getAirportIdsInCellsStmt == null) {
         getAirportIdsInCellsStmt = dbConn.prepareStatement(
           "SELECT _id FROM airports WHERE cell_id >= ? AND cell_id < ? AND rank >= ?");
       }
-
       getAirportIdsInCellsStmt.setInt(1, startCell);
       getAirportIdsInCellsStmt.setInt(2, endCell);
       getAirportIdsInCellsStmt.setInt(3, minRank);
-
-      ResultSet airportIds = getAirportIdsInCellsStmt.executeQuery();
-      LinkedList<Airport> airports = new LinkedList<Airport>();
-      while (airportIds.next()) {
-        final int id = airportIds.getInt("_id");
+      final ResultSet rs = getAirportIdsInCellsStmt.executeQuery();
+      final LinkedList<Airport> airports = new LinkedList<Airport>();
+      while (rs.next()) {
+        final int id = rs.getInt("_id");
         airports.add(getAirport(id));
       }
+      rs.close();
       return airports;
     } catch (SQLException sqlEx) {
       throw new RuntimeException(sqlEx);
     }
   }
   
-  public HashMap<String, String> getAirportProperties(final int airportId) {
+  public Map<String, String> getAirportProperties(final int airportId) {
     try {
       if (getAirportPropertiesStmt == null) {
         getAirportPropertiesStmt = dbConn.prepareStatement(
             "SELECT key, value FROM airport_properties WHERE airport_id = ?");
       }
-
       getAirportPropertiesStmt.setInt(1, airportId);
-      ResultSet airportPropertyData = getAirportPropertiesStmt.executeQuery();
-
-      HashMap<String, String> airportProperties = new HashMap<String, String>();
-
-      while (airportPropertyData.next()) {
-        final int keyConstantId = airportPropertyData.getInt("key");
-        final int valueConstantId = airportPropertyData.getInt("value");
+      final ResultSet rs = getAirportPropertiesStmt.executeQuery();
+      final Map<String, String> airportProperties = new HashMap<String, String>();
+      while (rs.next()) {
+        final int keyConstantId = rs.getInt("key");
+        final int valueConstantId = rs.getInt("value");
         final String key = getConstant(keyConstantId);
         String value;
         if (INTEGER_AIRPORT_PROPERTIES.contains(key)) {
@@ -297,13 +308,14 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
         }
         airportProperties.put(key, value);
       }
+      rs.close();
       return airportProperties;
     } catch (SQLException sqlEx) {
       throw new RuntimeException(sqlEx);
     }
   }
 
-  public HashMap<String, String> getRunwayEndProperties(int runwayEndId) {
+  public Map<String, String> getRunwayEndProperties(int runwayEndId) {
     try {
       if (getRunwayEndPropertiesStmt == null) {
         getRunwayEndPropertiesStmt = dbConn.prepareStatement(
@@ -313,7 +325,7 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
       getRunwayEndPropertiesStmt.setInt(1, runwayEndId);
       ResultSet runwayEndPropertyData = getRunwayEndPropertiesStmt.executeQuery();
 
-      HashMap<String, String> runwayEndProperties = new HashMap<String, String>();
+      final Map<String, String> runwayEndProperties = new HashMap<String, String>();
 
       while (runwayEndPropertyData.next()) {
         final int keyConstantId = runwayEndPropertyData.getInt("key");
@@ -362,17 +374,17 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
         getAirportCommsStmt = dbConn.prepareStatement(
             "SELECT identifier, frequency, remarks FROM airport_comm WHERE airport_id = ?");
       }
-
       getAirportCommsStmt.setInt(1, airportId);
-      ResultSet airportComms = getAirportCommsStmt.executeQuery();
+      final ResultSet rs = getAirportCommsStmt.executeQuery();
       final List<Comm> comms = new LinkedList<Comm>();
-      while (airportComms.next()) {
-        final String identifier = airportComms.getString("identifier");
-        final String frequency = airportComms.getString("frequency");
-        final String remarks = airportComms.getString("remarks");
+      while (rs.next()) {
+        final String identifier = rs.getString("identifier");
+        final String frequency = rs.getString("frequency");
+        final String remarks = rs.getString("remarks");
         final Comm comm = new Comm(identifier, frequency, remarks);
         comms.add(comm);
       }
+      rs.close();
       return comms;
     } catch (SQLException sqlEx) {
       throw new RuntimeException(sqlEx);
@@ -386,23 +398,54 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter {
         getMetadataStmt = dbConn.prepareStatement(
             "SELECT value FROM metadata WHERE key = ?");
       }
-
       getMetadataStmt.setString(1, key);
-      ResultSet metadataValues = getMetadataStmt.executeQuery();
-      if (metadataValues.next()) {
-        return metadataValues.getString("value");
-      } else {
-        return null;
-      }
+      final ResultSet rs = getMetadataStmt.executeQuery();
+      final String metadata = rs.next() ? rs.getString("value") : null;
+      rs.close();
+      return metadata;
     } catch (SQLException sqlEx) {
       throw new RuntimeException(sqlEx);
     }
   }
-
 
   @Override
   public Map<Integer, Integer> doSearch(final String query) {
     throw new RuntimeException("This method should not be in AviationDbAdapter. TODO: REMOVE");
   }
 
+  @Override
+  public int getRunwayId(final int airportId, final String letters) {
+    try {
+      if (getRunwayIdStatement == null) {
+        getRunwayIdStatement = dbConn.prepareStatement(
+            "SELECT _id FROM runways WHERE airport_id = ? AND letters = ?");
+      }
+      getRunwayIdStatement.setInt(1, airportId);
+      getRunwayIdStatement.setString(2, letters);
+      final ResultSet rs = getRunwayIdStatement.executeQuery();
+      final int id = rs.next() ? rs.getInt("_id") : -1;
+      rs.close();
+      return id;
+    } catch (SQLException sqlEx) {
+      throw new RuntimeException(sqlEx);
+    }
+  }
+
+  @Override
+  public int getRunwayEndId(final int runwayId, final String letters) {
+    try {
+      if (getRunwayEndIdStatement == null) {
+        getRunwayEndIdStatement = dbConn.prepareStatement(
+            "SELECT _id FROM runway_ends WHERE runway_id = ? AND letters = ?");
+      }
+      getRunwayEndIdStatement.setInt(1, runwayId);
+      getRunwayEndIdStatement.setString(2, letters);
+      final ResultSet rs = getRunwayEndIdStatement.executeQuery();
+      final int id = rs.next() ? rs.getInt("_id") : -1;
+      rs.close();
+      return id;
+    } catch (SQLException sqlEx) {
+      throw new RuntimeException(sqlEx);
+    }
+  }
 }

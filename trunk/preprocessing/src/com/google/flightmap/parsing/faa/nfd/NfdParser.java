@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.flightmap.parsing;
+package com.google.flightmap.parsing.faa.nfd;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
