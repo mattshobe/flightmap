@@ -132,18 +132,23 @@ public class ZoomScale {
     final float mpp =
         (float) AndroidMercatorProjection.getMetersPerPixel(zoom, LatLng.fromDouble(location
             .getLatitude(), location.getLongitude()));
-    final DistanceUnits userDistanceUnits = userPrefs.getDistanceUnits(); // thread-safety copy
-    DistanceUnits distanceUnits = userDistanceUnits;
+    final DistanceUnits distanceUnits = userPrefs.getDistanceUnits();
     final float preferredScaleInMeters = mpp * PREFERRED_WIDTH * density;
-    final float preferredScaleInUnits = (float)(distanceUnits.getDistance(preferredScaleInMeters));
+    final float preferredScaleInUnits = (float) (distanceUnits.getDistance(preferredScaleInMeters));
 
     // Determine whether smaller units are needed (ft instead of nm/mi, ...)
+    String units;
     int scaleInUnits;
+    float oneMeterPixelWidth;
     if (preferredScaleInUnits < 1) {
-      distanceUnits = distanceUnits.getShortDistance();
-      scaleInUnits = (int)(distanceUnits.getDistance(preferredScaleInMeters) + 0.5);
+      // Use short units.
+      units = distanceUnits.shortDistanceAbbreviation;
+      scaleInUnits = (int) (distanceUnits.getShortDistance(preferredScaleInMeters) + 0.5);
+      oneMeterPixelWidth = (float) (distanceUnits.getShortDistance(1) * mpp * density);
     } else {
-      scaleInUnits = (int)(preferredScaleInUnits + 0.5);
+      units = distanceUnits.distanceAbbreviation;
+      scaleInUnits = (int) (preferredScaleInUnits + 0.5);
+      oneMeterPixelWidth = (float) (distanceUnits.getDistance(1) * mpp * density);
     }
 
     // Try to obtain a rounded distance with as many trailing zeroes as possible
@@ -153,8 +158,8 @@ public class ZoomScale {
       int roundedDistance;
       float width;
       do {
-        roundedDistance = (int)(leadingDigits * Math.pow(10, trailingZeroes));
-        width = (float)(roundedDistance / (distanceUnits.distanceMultiplier *mpp * density));
+        roundedDistance = (int) (leadingDigits * Math.pow(10, trailingZeroes));
+        width = (float) (roundedDistance / oneMeterPixelWidth);
         ++leadingDigits;
       } while (width < MIN_WIDTH);
 
@@ -167,27 +172,27 @@ public class ZoomScale {
     }
 
     // Prepare final scale text
-    actualWidth = (float) (scaleInUnits / (distanceUnits.distanceMultiplier * mpp * density));
-    final String units = distanceUnits.distanceAbbreviation;
+    actualWidth = (float) (scaleInUnits / oneMeterPixelWidth);
     final String scaleText = String.format("%d %s", scaleInUnits, units);
 
     // Update cached values
     previousLocation = location;
     previousZoom = zoom;
     previousScaleText = scaleText;
-    previousDistanceUnits = userDistanceUnits;
+    previousDistanceUnits = distanceUnits;
 
     Log.i(TAG, String.format("Zoom: %.1f New scale: %s Width: %.1f", zoom, scaleText, actualWidth));
     return scaleText;
   }
 
   /**
-   * Checks if cached scale text is still valid.  Cached result is valid if the location has changed
-   * less than {@code ZOOM_UPDATE_DISTANCE} and units are unchanged.
+   * Checks if cached scale text is still valid. Cached result is valid if the
+   * location has changed less than {@code ZOOM_UPDATE_DISTANCE} and units are
+   * unchanged.
    */
   private synchronized boolean scaleTextIsCached(final Location location, final double zoom) {
     return (null != previousLocation && null != previousScaleText && null != previousDistanceUnits
-            && zoom == previousZoom && previousDistanceUnits == userPrefs.getDistanceUnits()
-            && previousLocation.distanceTo(location) < ZOOM_UPDATE_DISTANCE);
+        && zoom == previousZoom && previousDistanceUnits == userPrefs.getDistanceUnits() && previousLocation
+        .distanceTo(location) < ZOOM_UPDATE_DISTANCE);
   }
 }

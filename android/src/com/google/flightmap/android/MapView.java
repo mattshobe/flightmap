@@ -584,7 +584,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       String speedUnits = " " + distanceUnits.speedAbbreviation;
 
       if (location.hasSpeed()) {
-        speed = String.format("%.0f", location.getSpeed() * distanceUnits.speedMultiplier);
+        speed = String.format("%.0f", distanceUnits.getSpeed(location.getSpeed()));
       }
       if (location.hasBearing()) {
         // Show numeric display relative to magnetic north.

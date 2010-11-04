@@ -79,65 +79,87 @@ public class NavigationUtil {
 
   /**
    * Simplifies display of distances and speeds in various units.
+   * <p>
+   * Short distance units are used when the main unit distance is less than 1.0.
+   * Rather than showing fractional units, switch to a shorter unit (e.g. go
+   * from kilometers to meters).
+   * <p>
+   * Note there are no short speed units. There hasn't been a need for them, but
+   * they could be added here later if needed.
    */
   public enum DistanceUnits {
-    MILES("mi", METERS_TO_MILE, "mph", METERS_PER_SEC_TO_MPH), NAUTICAL_MILES(
-    	"nm", METERS_TO_NM, "kts", METERS_PER_SEC_TO_KNOTS), KILOMETERS(
-    	"km", METERS_TO_KM, "kph", METERS_PER_SEC_TO_KPH), SHORT_MILES(
-        "ft", METERS_TO_FEET, "mph", METERS_PER_SEC_TO_MPH), SHORT_NM(
-        "ft", METERS_TO_FEET, "kts", METERS_PER_SEC_TO_KNOTS), SHORT_KM(
-        "m", METERS, "kph", METERS_PER_SEC_TO_KPH);
-    
+    MILES("mi", METERS_TO_MILE, "ft", METERS_TO_FEET, "mph", METERS_PER_SEC_TO_MPH),
+    NAUTICAL_MILES("nm", METERS_TO_NM, "ft", METERS_TO_FEET, "kts", METERS_PER_SEC_TO_KNOTS),
+    KILOMETERS("km", METERS_TO_KM, "m", METERS, "kph", METERS_PER_SEC_TO_KPH);
+
     /** Distance abbreviation such as mi or nm. */
     public final String distanceAbbreviation;
+    /** Short distance abbreviation such as ft or m. */
+    public final String shortDistanceAbbreviation;
     /** Speed abbreviation such as mph or kts. */
     public final String speedAbbreviation;
+
     /** Multiply meters by this value to convert to this unit distance. */
-    public final double distanceMultiplier;
+    private final double perMeter;
+    /** Multiply meters by this value to convert to short unit distance. */
+    private final double shortDistancePerMeter;
     /** Multiply meters per second by this value to convert to this unit speed. */
-    public final double speedMultiplier;
+    private final double perMetersPerSecond;
 
     /**
      * @param distanceAbbreviation abbreviation for distance units.
-     * @param distanceMultiplier multiply meters by this to convert.
+     * @param perMeter multiply meters by this to convert to this unit.
+     * @param shortDistanceAbbreviation abbreviation for short distance units.
+     * @param shortDistancePerMeter multiply meters by this to convert to this
+     *        short distance unit.
      * @param speedAbbreviation abbreviation for speed units.
-     * @param speedMultiplier multiply meters-per-second by this to convert.
+     * @param perMetersPerSecond multiply meters-per-second by this to convert
+     *        to this unit.
      */
-    private DistanceUnits(String distanceAbbreviation, double distanceMultiplier,
-        String speedAbbreviation, double speedMultiplier) {
+    private DistanceUnits(String distanceAbbreviation, double perMeter,
+        String shortDistanceAbbreviation, double shortDistancePerMeter, String speedAbbreviation,
+        double perMetersPerSecond) {
       this.distanceAbbreviation = distanceAbbreviation;
-      this.distanceMultiplier = distanceMultiplier;
+      this.perMeter = perMeter;
+      this.shortDistanceAbbreviation = shortDistanceAbbreviation;
+      this.shortDistancePerMeter = shortDistancePerMeter;
       this.speedAbbreviation = speedAbbreviation;
-      this.speedMultiplier = speedMultiplier;
+      this.perMetersPerSecond = perMetersPerSecond;
     }
 
     /**
-     * Returns {@code DistanceUnits} convert to this unit's short values.
-     */
-    public DistanceUnits getShortDistance() {
-      if (this == MILES) {
-    	  return this.SHORT_MILES;
-      }
-      else if (this == NAUTICAL_MILES) {
-    	  return this.SHORT_NM;
-      }
-      else {
-    	  return this.SHORT_KM;
-      }
-    }
-    
-    /**
-     * Returns {@code meters} convert to this unit's distance.
+     * Returns {@code meters} converted to this unit's distance.
      */
     public double getDistance(double meters) {
-      return meters * distanceMultiplier;
+      return meters * perMeter;
+    }
+
+    /**
+     * Returns {@code distanceUnits} in meters.
+     */
+    public double getMeters(double distanceUnits) {
+      return distanceUnits / perMeter;
+    }
+
+    /**
+     * Returns {@code meters} converted to this unit's short distance.
+     */
+    public double getShortDistance(double meters) {
+      return meters * shortDistancePerMeter;
+    }
+
+    /**
+     * Returns {@code shortDistanceUnits} in meters.
+     */
+    public double getMetersFromShortDistance(double shortDistanceUnits) {
+      return shortDistanceUnits / shortDistancePerMeter;
     }
 
     /**
      * Returns {@code metersPerSecond} converted to this unit's speed.
      */
     public double getSpeed(double metersPerSecond) {
-      return metersPerSecond * speedMultiplier;
+      return metersPerSecond * perMetersPerSecond;
     }
   }
 
