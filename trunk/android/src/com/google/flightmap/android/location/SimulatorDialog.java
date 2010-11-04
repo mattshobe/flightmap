@@ -166,11 +166,11 @@ public class SimulatorDialog extends Dialog implements Button.OnClickListener {
     switch (v.getId()) {
       case R.id.sim_speed_increment:
         simulator
-            .setDesiredSpeed((float) (simulator.getDesiredSpeed() + (10.0 / units.speedMultiplier)));
+            .setDesiredSpeed((float) (simulator.getDesiredSpeed() + (10.0 / units.getSpeed(1))));
         break;
       case R.id.sim_speed_decrement:
         simulator
-            .setDesiredSpeed((float) (simulator.getDesiredSpeed() - (10.0 / units.speedMultiplier)));
+            .setDesiredSpeed((float) (simulator.getDesiredSpeed() - (10.0 / units.getSpeed(1))));
         break;
       case R.id.sim_stop:
         simulator.stopMoving();
