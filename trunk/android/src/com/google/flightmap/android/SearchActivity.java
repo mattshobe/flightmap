@@ -60,6 +60,7 @@ public class SearchActivity extends ListActivity {
 
   private AviationDbAdapter aviationDbAdapter;
   private UserPrefs userPrefs;
+  public Map<Integer, Integer> searchResults;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -117,7 +118,7 @@ public class SearchActivity extends ListActivity {
   private void doSearch(String query) {
     // Maps each airport using the airport.id as the key with the value
     // being the rank of the result.
-    Map<Integer, Integer> searchResults = aviationDbAdapter.doSearch(query);
+    searchResults = aviationDbAdapter.doSearch(query);
     if (searchResults.isEmpty()) {
       String[] items = {query + " not found"};
       setListAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, items));
