@@ -37,6 +37,7 @@ import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -112,6 +113,15 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   // Coordinates to draw the aircraft on the map.
   private int aircraftX;
   private int aircraftY;
+
+  // Fields relating to touch events.
+  private float touchX;
+  private float touchY;
+  private static final int INVALID_POINTER_ID = -1;
+  private int activePointerId = INVALID_POINTER_ID;
+
+  // True when panning.
+  private volatile boolean isPanning;
 
   // Underlying surface for this view.
   private volatile SurfaceHolder holder;
@@ -237,30 +247,74 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     PANEL_DIGITS_PAINT.setTextSize(26 * density);
     PANEL_UNITS_PAINT.setTextSize(18 * density);
   }
+  
+  public void stopPanning() {
+    if (!isPanning) {
+      return;
+    }
+    isPanning = false;
+    Canvas c = holder.lockCanvas(null);
+    synchronized (holder) {
+      resetAircraftPosition(c.getWidth(), c.getHeight());
+    }
+    holder.unlockCanvasAndPost(c);
+  }
 
   @Override
   public boolean onTouchEvent(MotionEvent event) {
-    if (event.getAction() != MotionEvent.ACTION_DOWN) {
-      return false;
-    }
-    // See if an airport was tapped.
-    Collection<Airport> airportsNearTap;
-    airportsNearTap =
-        getAirportsNearScreenPoint(new Point(Math.round(event.getX()), Math.round(event.getY())));
-    if (!airportsNearTap.isEmpty()) {
-      for (Airport airport : airportsNearTap) {
-        Log.i(TAG, "Airport near tap: " + airport);
-      }
+    final int action = event.getAction();
+    switch (action & MotionEvent.ACTION_MASK) {
+      case MotionEvent.ACTION_DOWN:
+        // See if an airport was tapped.
+        Collection<Airport> airportsNearTap;
+        airportsNearTap =
+            getAirportsNearScreenPoint(new Point(Math.round(event.getX()), Math.round(event.getY())));
+        if (!airportsNearTap.isEmpty()) {
+          Airport airport = chooseSingleAirport(airportsNearTap);
+          if (airport != null) {
+            showTapcard(airport);
+          }
+          return true;
+        }
 
-      Airport airport = chooseSingleAirport(airportsNearTap);
-      if (airport != null) {
-        showTapcard(airport);
-      }
-      return true;
-    }
+        // Only get here if the user tapped in a blank area of the map.
+        touchX = event.getX();
+        touchY = event.getY();
+        activePointerId = event.getPointerId(0);
+        showZoomController();
+        break;
 
-    // Only get here if the user tapped in a blank area of the map.
-    showZoomController();
+      case MotionEvent.ACTION_MOVE:
+        int pointerIndex = event.findPointerIndex(activePointerId);
+        final float x = event.getX(pointerIndex);
+        final float y = event.getY(pointerIndex);
+        aircraftX += x - touchX;
+        aircraftY += y - touchY;
+        setRedrawNeeded(true);
+        isPanning = true;
+        touchX = x;
+        touchY = y;
+        break;
+
+      case MotionEvent.ACTION_UP:
+      case MotionEvent.ACTION_CANCEL:
+        activePointerId = INVALID_POINTER_ID;
+        break;
+
+      // There were multiple pointers down, and one of them went up.
+      case MotionEvent.ACTION_POINTER_UP:
+        final int pointerId = (event.getAction() & MotionEvent.ACTION_POINTER_ID_MASK) //
+            >> MotionEvent.ACTION_POINTER_ID_SHIFT;
+        if (pointerId == activePointerId) {
+          // The pointer we were tracking went up. Pick a new one.
+          pointerIndex = event.findPointerIndex(pointerId);
+          final int newIndex = pointerIndex == 0 ? 1 : 0;
+          touchX = event.getX(newIndex);
+          touchY = event.getY(newIndex);
+          activePointerId = event.getPointerId(newIndex);
+        }
+        break;
+    }
     return true;
   }
 
@@ -371,15 +425,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    */
   @Override
   public synchronized void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-    if (mainActivity.userPrefs.isNorthUp()) {
-      // Center the aircraft on the screen.
-      aircraftX = width / 2;
-      aircraftY = height / 2;
-    } else {
-      // Center the aircraft horizontally, and 3/4 of the way down vertically.
-      aircraftX = width / 2;
-      aircraftY = height - (height / 4);
-    }
+    resetAircraftPosition(width, height);
 
     // Update pixel coordinates of screen corners.
     // 
@@ -391,6 +437,22 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     screenCorners[2].y = height - 1;
     screenCorners[3].y = height - 1;
     createTopPanelPath(width);
+  }
+
+  /**
+   * Resets aircraft screen position (typically used when snapping back after
+   * panning).
+   */
+  private synchronized void resetAircraftPosition(int width, int height) {
+    if (mainActivity.userPrefs.isNorthUp()) {
+      // Center the aircraft on the screen.
+      aircraftX = width / 2;
+      aircraftY = height / 2;
+    } else {
+      // Center the aircraft horizontally, and 3/4 of the way down vertically.
+      aircraftX = width / 2;
+      aircraftY = height - (height / 4);
+    }
   }
 
   @Override
@@ -501,8 +563,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     // Copy for thread safety.
     final boolean isTrackUp = !mainActivity.userPrefs.isNorthUp();
 
-    // Update bearing (if possible)
-    if (location.hasBearing()) {
+    // Update bearing (if possible). Do not change bearing while panning.
+    if (location.hasBearing() && !isPanning) {
       lastBearing = location.getBearing();
     }
 
@@ -519,8 +581,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     Point locationPoint = AndroidMercatorProjection.toPoint(zoomCopy, locationLatLng);
     c.translate(-locationPoint.x, -locationPoint.y);
 
-    // Draw airports.
-    final int width = c.getWidth();
+    //
+    // Initialize transform to draw airports.
+    //
 
     // Set orientation to North or last known bearing
     final float orientation = isTrackUp ? lastBearing : 0;
@@ -610,6 +673,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       c.drawText(speedUnits, textWidth + PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_UNITS_PAINT);
 
       // Draw track.
+      final int width = c.getWidth();
       final float center = width / 2.0f;
       PANEL_DIGITS_PAINT.setTextAlign(Paint.Align.CENTER);
       c.drawText(track, center, PANEL_TEXT_BASELINE, PANEL_DIGITS_PAINT);
