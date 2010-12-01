@@ -155,6 +155,11 @@ public class MainActivity extends Activity {
     mapView.restoreInstanceState(savedInstanceState);
   }
 
+  @Override
+  public void onBackPressed() {
+    mapView.stopPanning();
+  }
+  
   private void showDisclaimerView() {
     setContentView(R.layout.disclaimer);
 
