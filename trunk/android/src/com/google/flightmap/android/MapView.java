@@ -119,8 +119,16 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   private float touchY;
   private static final int INVALID_POINTER_ID = -1;
   private int activePointerId = INVALID_POINTER_ID;
+  private LatLng pannedToLocation; // New map anchor from panning.
+  /**
+   * True if the last touch event was a move.
+   */
+  private volatile boolean previousTouchWasMove;
 
-  // True when panning.
+  /**
+   * True when the user has panned at all. Stays true across multiple touch
+   * events until panning is cancelled.
+   */
   private volatile boolean isPanning;
 
   // Underlying surface for this view.
@@ -247,17 +255,24 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     PANEL_DIGITS_PAINT.setTextSize(26 * density);
     PANEL_UNITS_PAINT.setTextSize(18 * density);
   }
-  
-  public void stopPanning() {
+
+  /**
+   * Stops panning.
+   * 
+   * @return true if was panning prior to this call.
+   */
+  public boolean stopPanning() {
     if (!isPanning) {
-      return;
+      return false;
     }
     isPanning = false;
+    previousTouchWasMove = false;
     Canvas c = holder.lockCanvas(null);
     synchronized (holder) {
       resetAircraftPosition(c.getWidth(), c.getHeight());
     }
     holder.unlockCanvasAndPost(c);
+    return true;
   }
 
   @Override
@@ -265,6 +280,22 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     final int action = event.getAction();
     switch (action & MotionEvent.ACTION_MASK) {
       case MotionEvent.ACTION_DOWN:
+        activePointerId = event.getPointerId(0);
+        touchX = event.getX();
+        touchY = event.getY();
+        previousTouchWasMove = false;
+        Log.i(TAG, "action down - previous was move = false");
+        break;
+
+      case MotionEvent.ACTION_UP:
+        Log.i(TAG, "action up - previous was move =" + previousTouchWasMove);
+        if (previousTouchWasMove) {
+          // Don't do tapcard action right after a move.
+          previousTouchWasMove = false;
+          break;
+        }
+        Log.i(TAG, "action up - about to show tapcard or zoom controller");
+
         // See if an airport was tapped.
         Collection<Airport> airportsNearTap;
         airportsNearTap =
@@ -278,9 +309,6 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         }
 
         // Only get here if the user tapped in a blank area of the map.
-        touchX = event.getX();
-        touchY = event.getY();
-        activePointerId = event.getPointerId(0);
         showZoomController();
         break;
 
@@ -288,17 +316,26 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         int pointerIndex = event.findPointerIndex(activePointerId);
         final float x = event.getX(pointerIndex);
         final float y = event.getY(pointerIndex);
-        aircraftX += x - touchX;
-        aircraftY += y - touchY;
+
+        // Ignore very small moves, since they may actually be taps.
+        float deltaX = x - touchX;
+        float deltaY = y - touchY;
+        if (Math.max(Math.abs(deltaX), Math.abs(deltaY)) < 10) {
+          Log.i(TAG, "move - small move, previous was move = false");
+          break;
+        }
+        previousTouchWasMove = true;
+        aircraftX += deltaX;
+        aircraftY += deltaY;
         setRedrawNeeded(true);
         isPanning = true;
         touchX = x;
         touchY = y;
         break;
 
-      case MotionEvent.ACTION_UP:
       case MotionEvent.ACTION_CANCEL:
         activePointerId = INVALID_POINTER_ID;
+        previousTouchWasMove = false;
         break;
 
       // There were multiple pointers down, and one of them went up.
@@ -312,6 +349,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
           touchX = event.getX(newIndex);
           touchY = event.getY(newIndex);
           activePointerId = event.getPointerId(newIndex);
+          previousTouchWasMove = false;
         }
         break;
     }
