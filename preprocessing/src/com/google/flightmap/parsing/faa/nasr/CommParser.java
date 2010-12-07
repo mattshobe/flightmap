@@ -198,7 +198,16 @@ public class CommParser {
     if (comm == null) {
       return;
     }
-    dbWriter.insertAirportComm(comm.airportId, comm.identifier, comm.frequency, comm.remarks);
+    try {
+      final int frequency = Integer.parseInt(comm.frequency.split("\\.")[0]);
+      if (frequency < 108 || frequency > 137) {
+        System.out.println("Skipping (military?) frequency: " + comm.frequency);
+        return;
+      }
+      dbWriter.insertAirportComm(comm.airportId, comm.identifier, comm.frequency, comm.remarks);
+    } catch (NumberFormatException nfe) {
+      System.err.println("Could not parse frequency: " + comm.frequency);
+    }
   }
 
   private static void printHelp(final CommandLine line) {
