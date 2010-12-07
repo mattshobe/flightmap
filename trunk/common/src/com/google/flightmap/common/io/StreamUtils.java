@@ -37,6 +37,11 @@ public class StreamUtils {
   private final static int DEFAULT_BUFFER_SIZE = 10240;
 
   /**
+   *  Utility class: default and only constructor is private.
+   */
+  private StreamUtils() { }
+
+  /**
    * Pipe data from {@code in} to {@code out} using {@code buf} as a data buffer.
    */
   public static void pipe(final InputStream in, final OutputStream out, final byte[] buf)
