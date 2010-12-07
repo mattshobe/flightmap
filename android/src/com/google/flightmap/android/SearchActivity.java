@@ -19,6 +19,7 @@ package com.google.flightmap.android;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +52,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.SimpleAdapter;
 
 /**
  * Activity for search within MainActivity.
@@ -65,7 +67,7 @@ public class SearchActivity extends ListActivity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    setContentView(R.layout.search);
+    setContentView(R.layout.search_main);
 
     userPrefs = new UserPrefs(getApplication());
     try {
@@ -87,11 +89,17 @@ public class SearchActivity extends ListActivity {
   @Override
   protected void onListItemClick(ListView l, View v, int position, long id) {
     super.onListItemClick(l, v, position, id);
-    String content = (String) getListView().getItemAtPosition(position);
-    String icao = content.split(" ")[0];
-    int airportId = aviationDbAdapter.getAirportIdByIcao(icao);
-    if (airportId != -1) {
-      showTapcard(airportId);
+    int airportId = -1;
+    try {
+      HashMap<String,String> content = (HashMap<String,String>) getListView().getItemAtPosition(position);
+      String icao = content.get("line1").split(" ")[0];
+      airportId = aviationDbAdapter.getAirportIdByIcao(icao);
+    } finally {
+      if (airportId != -1) {
+        showTapcard(airportId);
+      }
+      else
+        return;
     }
   }
 
@@ -151,16 +159,20 @@ public class SearchActivity extends ListActivity {
         }
       });
       int airportCount = 0;
-      String[] airportList = new String[airportIds.size()];
+      ArrayList<HashMap<String,String>> airportList = new ArrayList<HashMap<String,String>>();
       for (Iterator<Integer> iter = airportIds.iterator(); iter.hasNext();) {
         int id = iter.next();
         Airport airport = aviationDbAdapter.getAirport(id);
-        String showName = airport.icao + " " + airport.name;
-        airportList[airportCount] = showName;
+        HashMap<String,String> item = new HashMap<String,String>();
+        item.put("line1", airport.icao + " " + airport.name);
+        item.put("line2", airport.city);
+        airportList.add(item);
         airportCount++;
       }
-      setListAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1,
-          airportList));
+      
+      setListAdapter(new SimpleAdapter(this, airportList,
+          android.R.layout.two_line_list_item, new String[] {"line1", "line2"}, 
+          new int[] {android.R.id.text1, android.R.id.text2}));
     }
   }
 
