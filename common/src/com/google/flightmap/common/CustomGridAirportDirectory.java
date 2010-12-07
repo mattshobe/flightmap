@@ -63,8 +63,6 @@ public class CustomGridAirportDirectory extends AbstractAirportDirectory {
       for (Airport airport : airportsInCells) {
         if (area.contains(airport.location)) {
           airportsInArea.add(airport);
-        } else {
-          System.out.println("Outside of rectangle - " + airport);
         }
       }
     }

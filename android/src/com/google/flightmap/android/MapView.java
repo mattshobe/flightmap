@@ -37,8 +37,8 @@ import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
-import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.FrameLayout;
@@ -89,6 +89,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   private static final int MIN_ZOOM = 4;
   private static final int MAX_ZOOM = 12;
   private static final float ZOOM_STEP = 0.5f;
+  private static final double LOG_OF_2 = Math.log(2);
 
   private ZoomButtonsController zoomController;
   private float zoom = 10;
@@ -120,6 +121,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   private static final int INVALID_POINTER_ID = -1;
   private int activePointerId = INVALID_POINTER_ID;
   private LatLng pannedToLocation; // New map anchor from panning.
+  private final ScaleGestureDetector scaleDetector;
+
   /**
    * True if the last touch event was a move.
    */
@@ -222,6 +225,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     nonToweredPaint.setColor(res.getColor(R.color.NonToweredAirport));
     // Set up airplane image.
     airplaneImage = centerImage(res.getDrawable(R.drawable.aircraft));
+    // Set up scale gesture detector.
+    scaleDetector = new ScaleGestureDetector(mainActivity, new ScaleListener());
   }
 
   /**
@@ -277,6 +282,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
 
   @Override
   public boolean onTouchEvent(MotionEvent event) {
+    // Let the ScaleGestureDetector inspect all events.
+    scaleDetector.onTouchEvent(event);
+
     final int action = event.getAction();
     switch (action & MotionEvent.ACTION_MASK) {
       case MotionEvent.ACTION_DOWN:
@@ -284,17 +292,14 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         touchX = event.getX();
         touchY = event.getY();
         previousTouchWasMove = false;
-        Log.i(TAG, "action down - previous was move = false");
         break;
 
       case MotionEvent.ACTION_UP:
-        Log.i(TAG, "action up - previous was move =" + previousTouchWasMove);
         if (previousTouchWasMove) {
           // Don't do tapcard action right after a move.
           previousTouchWasMove = false;
           break;
         }
-        Log.i(TAG, "action up - about to show tapcard or zoom controller");
 
         // See if an airport was tapped.
         Collection<Airport> airportsNearTap;
@@ -313,6 +318,11 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         break;
 
       case MotionEvent.ACTION_MOVE:
+        // Only move if the ScaleGestureDetector isn't processing a gesture.
+        if (scaleDetector.isInProgress()) {
+          break;
+        }
+
         int pointerIndex = event.findPointerIndex(activePointerId);
         final float x = event.getX(pointerIndex);
         final float y = event.getY(pointerIndex);
@@ -321,7 +331,6 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         float deltaX = x - touchX;
         float deltaY = y - touchY;
         if (Math.max(Math.abs(deltaX), Math.abs(deltaY)) < 10) {
-          Log.i(TAG, "move - small move, previous was move = false");
           break;
         }
         previousTouchWasMove = true;
@@ -927,5 +936,19 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   @Override
   public void hasProgressed(int unused) {
     // GetAirportsInRectangleTask does not give intermediate progress.
+  }
+
+  /**
+   * Listens for scale gesture events.
+   */
+  private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
+    @Override
+    public boolean onScale(ScaleGestureDetector detector) {
+      float scaleFactor = detector.getScaleFactor();
+      double zoomDelta = Math.log(scaleFactor) / LOG_OF_2;
+      setZoom((float) (getZoom() + zoomDelta));
+      setRedrawNeeded(true);
+      return true;
+    }
   }
 }
