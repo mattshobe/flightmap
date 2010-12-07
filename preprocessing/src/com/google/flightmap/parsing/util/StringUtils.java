@@ -19,6 +19,12 @@ package com.google.flightmap.parsing.util;
 import org.apache.commons.lang.WordUtils;
 
 public class StringUtils {
+
+  /**
+   * Pipe data from {@code in} to {@code out} using {@code buf} as a data buffer.
+   */
+  private StringUtils() { }
+
   /**
    * Returns mixed-case version of {@code text}.
    * <p>

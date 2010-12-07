@@ -25,6 +25,7 @@ import com.google.flightmap.db.JdbcAviationDbAdapter;
 import com.google.flightmap.db.JdbcAviationDbWriter;
 import com.google.flightmap.parsing.db.AviationDbWriter;
 import com.google.flightmap.parsing.db.AviationDbReader;
+import com.google.flightmap.parsing.util.IcaoUtils;
 import com.google.flightmap.parsing.util.IndexedArray;
 import com.google.flightmap.parsing.util.StringUtils;
 
@@ -74,6 +75,7 @@ public class AviationMasterRecordParser {
   private final static String AIRPORT_LATITUDE_HEADER = "ARPLatitudeS";
   private final static String AIRPORT_STATUS_HEADER = "AirportStatusCode"; // O, CP, CI
   private final static String AIRPORT_CONTROL_TOWER_HEADER = "ATCT";
+  private final static String AIRPORT_CTAF_HEADER = "CTAFFrequency";
   // Airport property headers
   private final static String AIRPORT_ELEVATION_HEADER = "ARPElevation";
   private final static String AIRPORT_BEACON_COLOR_HEADER = "BeaconColor";
@@ -155,7 +157,7 @@ public class AviationMasterRecordParser {
   private final AviationDbReader dbReader;
   private final String airportSourceFile;
   private final String runwaySourceFile;
-  private final Map<String, String> iataToIcao = new HashMap<String, String>();
+  private final Map<String, String> iataToIcao;
   private final Map<String, Integer> siteNumberToId = new HashMap<String, Integer>();
 
   /**
@@ -172,7 +174,7 @@ public class AviationMasterRecordParser {
     dbWriter = new JdbcAviationDbWriter(new File(dbFile));
     dbWriter.open();
     dbReader = new JdbcAviationDbAdapter(dbWriter.getConnection());
-    parseIataToIcao(iataToIcaoFile);
+    iataToIcao = IcaoUtils.parseIataToIcao(iataToIcaoFile);
   }
 
   /**
@@ -214,41 +216,21 @@ public class AviationMasterRecordParser {
    * @throws Exception Something went wrong...
    */
   private void execute() throws Exception {
-    System.err.println("dbWriter.initAndroidMetadataTable();");
+    System.out.println("dbWriter.initAndroidMetadataTable();");
     dbWriter.initAndroidMetadataTable();
-    System.err.println("dbWriter.initMetadataTable();");
+    System.out.println("dbWriter.initMetadataTable();");
     dbWriter.initMetadataTable();
-    System.err.println("dbWriter.initConstantsTable();");
+    System.out.println("dbWriter.initConstantsTable();");
     dbWriter.initConstantsTable();
-    System.err.println("addAirportDataToDb();");
+    System.out.println("addAirportDataToDb();");
     addAirportDataToDb();
-    System.err.println("addRunwayDataToDb();");
+    System.out.println("addRunwayDataToDb();");
     addRunwayDataToDb();
-    System.err.println("rankAirportsInDb();");
+    System.out.println("rankAirportsInDb();");
     rankAirportsInDb();
-    System.err.println("dbWriter.close();");
+    System.out.println("dbWriter.close();");
     dbWriter.close();
   }
-
-  /**
-   * Parses IATA to ICAO file and populates {@code iataToIcao} field.
-   */
-  private void parseIataToIcao(final String iataToIcaoFile) throws IOException {
-    BufferedReader in = null;
-    try {
-      in = new BufferedReader(new FileReader(iataToIcaoFile));
-      String line;
-      while ((line = in.readLine()) != null) {
-        final String[] codes = line.split(" ");
-        iataToIcao.put(codes[0], codes[1]);
-      }
-    } finally {
-      if (in != null) {
-        in.close();
-      }
-    }
-  }
-
 
   /**
    * Iterates over all airports and updates their rank according to their properties.  Typically,
@@ -315,6 +297,7 @@ public class AviationMasterRecordParser {
       removeEnclosingQuotes(headers);
       final IndexedArray<String, String> fields = new IndexedArray<String, String>(headers);
       dbWriter.initAirportTables();
+      dbWriter.initAirportCommTable();
       dbWriter.beginTransaction();
       // Parse airport lines
       while ((line = in.readLine()) != null) {
@@ -361,6 +344,13 @@ public class AviationMasterRecordParser {
         // Map SiteNumber to icao code for future reference by runway parser
         final String siteNumber = fields.tryGet(AIRPORT_SITE_NUMBER_HEADER);
         siteNumberToId.put(siteNumber, id);
+
+
+        // Common traffic advisory frequency. (CTAF)
+        final String ctaf = fields.tryGet(AIRPORT_CTAF_HEADER);
+        if (ctaf != null) {
+          dbWriter.insertAirportComm(id, "CTAF", ctaf, null);
+        }
 
         // Additional properties
         // Elevation
@@ -441,6 +431,7 @@ public class AviationMasterRecordParser {
         final Integer airportId = siteNumberToId.get(siteNumber);
         if (airportId == null) {
           System.err.println("Could not find airport id for site number: " + siteNumber);
+          continue;
         }
         // Insert new runway in db
         final String letters = fields.get(RUNWAY_LETTERS_HEADER).substring(1); // Remove first '

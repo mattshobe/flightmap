@@ -39,6 +39,7 @@ limitations under the License.
         <pathelement location="${lib.dir}/commons-cli.jar"/>
         <pathelement location="${lib.dir}/commons-lang.jar"/>
         <pathelement location="${lib.dir}/flightmap-common.jar"/>
+        <pathelement location="${lib.dir}/guava.jar"/>
         <pathelement location="${lib.dir}/opencsv.jar"/>
         <pathelement location="${lib.dir}/sqlitejdbc.jar"/>
       </classpath>

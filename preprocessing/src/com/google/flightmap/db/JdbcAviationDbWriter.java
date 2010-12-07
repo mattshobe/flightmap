@@ -26,6 +26,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,14 +34,15 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
   private final static String SQL_LITE_DRIVER = "org.sqlite.JDBC";
 
   // Database metadata
-  private final static int DB_SCHEMA_VERSION = 1;
-  private final static long DB_EXPIRATION_TIMESTAMP = 1290070860000L; // 18 Nov 2010 09:01:00 GMT
+  private final static int DB_SCHEMA_VERSION = 2;
+  private final static long DB_EXPIRATION_TIMESTAMP = 1294909260000L; // 13 Jan 2011 09:01:00 GMT
 
   private final File file;
   private Connection dbConn;
 
   // Frequent SQL Prepared Statements
   private PreparedStatement getConstantIdStatement;
+  private PreparedStatement insertAirportCommStatement;
   private PreparedStatement insertAirportPropertyStatement;
   private PreparedStatement insertAirportStatement;
   private PreparedStatement insertConstantStatement;
@@ -72,6 +74,8 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
   private  void resetPreparedStatements() {
     tryClose(getConstantIdStatement);
     getConstantIdStatement = null;
+    tryClose(insertAirportCommStatement);
+    insertAirportCommStatement = null;
     tryClose(insertAirportPropertyStatement);
     insertAirportPropertyStatement = null;
     tryClose(insertAirportStatement);
@@ -136,8 +140,6 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
     dbConn.rollback();
   }
 
-
-
   @Override
   public synchronized void initAirportTables() throws SQLException {
     Statement stat = null;
@@ -172,6 +174,28 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
                          "value INTEGER NOT NULL);");
       stat.executeUpdate("CREATE INDEX airport_properties_airport_id_index ON " +
                          "airport_properties (airport_id)");
+    } finally {
+      if (stat != null) {
+        stat.close();
+      }
+    }
+  }
+
+  @Override
+  public synchronized void initAirportCommTable() throws SQLException {
+    Statement stat = null;
+    try {
+      stat = dbConn.createStatement();
+      stat.executeUpdate("DROP TABLE IF EXISTS airport_comm");
+      stat.executeUpdate("DROP INDEX IF EXISTS airport_comm_airport_id_index;");
+      stat.executeUpdate("CREATE TABLE airport_comm (" +
+                         "_id INTEGER PRIMARY KEY ASC, " +
+                         "airport_id INTEGER NOT NULL, " +
+                         "identifier TEXT NOT NULL, " +
+                         "frequency TEXT NOT NULL, " +
+                         "remarks TEXT);");
+      stat.executeUpdate("CREATE INDEX airport_comm_airport_id_index ON " +
+                         "airport_comm (airport_id)");
     } finally {
       if (stat != null) {
         stat.close();
@@ -341,27 +365,37 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
     insertAirportStatement.executeUpdate();
   }
 
-  /**
-   * Inserts new airport property.
-   * <p>
-   * Both {@code key} and {@code value} are converted to constants.
-   * If {@code value} can be parsed as an integer, the latter is stored directly.
-   *
-   * @return {@code true} if {@code value} was converted to a constant, {@code false} otherwise.
-   */
-  public synchronized boolean insertAirportProperty(final int airportId, final String key,
+  @Override
+  public synchronized boolean insertAirportProperty(final int id, final String key,
       final String value) throws SQLException {
     if (insertAirportPropertyStatement == null) {
       insertAirportPropertyStatement = dbConn.prepareStatement(
           "INSERT INTO airport_properties (key, value, airport_id) VALUES (?, ?,?)");
     }
-    insertAirportPropertyStatement.setInt(3, airportId);
+    insertAirportPropertyStatement.setInt(3, id);
     return insertProperty(insertAirportPropertyStatement, key, value);
   }
 
-  /**
-   * Update rank of airport.
-   */
+  @Override
+  public synchronized void insertAirportComm(final int id, final String identifier,
+      final String frequency, final String remarks) throws SQLException {
+    if (insertAirportCommStatement == null) {
+      insertAirportCommStatement = dbConn.prepareStatement(
+          "INSERT INTO airport_comm (airport_id, identifier, frequency, remarks) " +
+          "VALUES (?, ?, ?, ?)");
+    }
+    insertAirportCommStatement.setInt(1, id);
+    insertAirportCommStatement.setString(2, identifier);
+    insertAirportCommStatement.setString(3, frequency);
+    if (remarks != null) {
+      insertAirportCommStatement.setString(4, remarks);
+    } else {
+      insertAirportCommStatement.setNull(4, Types.VARCHAR);
+    }
+    insertAirportCommStatement.executeUpdate();
+  }
+
+  @Override
   public synchronized void updateAirportRank(final int id, final int rank) throws SQLException {
     if (updateAirportRankStatement == null) {
       updateAirportRankStatement = 

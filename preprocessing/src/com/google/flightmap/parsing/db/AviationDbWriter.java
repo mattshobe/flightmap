@@ -67,6 +67,11 @@ public interface AviationDbWriter {
   public void initAirportTables() throws SQLException;
 
   /**
+   * Creates database table that will hold airport comm data.  Deletes existing table.
+   */
+  public void initAirportCommTable() throws SQLException;
+
+  /**
    * Create metadata db table, needed by android.
    */
   public void initAndroidMetadataTable() throws SQLException;
@@ -105,7 +110,18 @@ public interface AviationDbWriter {
    *
    * @return {@code true} if {@code value} was converted to a constant, {@code false} otherwise.
    */
-  public boolean insertAirportProperty(int airportId, String key, String value) throws SQLException;
+  public boolean insertAirportProperty(int id, String key, String value) throws SQLException;
+
+  /**
+   * Adds a comm entry for an airport.
+   *
+   * @param id Airport id
+   * @param identifier Station identifier (eg. "TWR")
+   * @param frequency Station frequency (eg. "122.5")
+   * @param remarks Additional remarks (eg. "N-S")
+   */
+  public void insertAirportComm(int id, String identifier, String frequency, String remarks)
+      throws SQLException;
 
   /**
    * Updates rank of airport.
