@@ -157,7 +157,11 @@ public class MainActivity extends Activity {
 
   @Override
   public void onBackPressed() {
-    mapView.stopPanning();
+    if (mapView.stopPanning()) {
+      return;
+    }
+    // Didn't need the back key to stop panning, so pass it along.
+    super.onBackPressed();
   }
   
   private void showDisclaimerView() {
