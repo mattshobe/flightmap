@@ -167,7 +167,6 @@ public class ZoomScale {
         scaleInUnits = roundedDistance;
         break;
       }
-
       --trailingZeroes;
     }
 
@@ -180,8 +179,6 @@ public class ZoomScale {
     previousZoom = zoom;
     previousScaleText = scaleText;
     previousDistanceUnits = distanceUnits;
-
-    Log.i(TAG, String.format("Zoom: %.1f New scale: %s Width: %.1f", zoom, scaleText, actualWidth));
     return scaleText;
   }
 

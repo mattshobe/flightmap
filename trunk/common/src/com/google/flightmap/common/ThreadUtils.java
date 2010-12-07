@@ -26,14 +26,12 @@ public class ThreadUtils {
   private ThreadUtils() { }
 
   /**
-   * Checks if current thread was interrupted.  Does not affect the value of the interrupted flag.
+   * Checks if current thread was interrupted.  Clears the interrupted flag.
    *
    * @throws InterruptedException Current thread was interrupted.
    */
   public static void checkIfInterrupted() throws InterruptedException {
-    if (Thread.currentThread().interrupted()) {
-      // DEBUG(aristidis)
-      System.err.println("Thread " + Thread.currentThread().getName() + " was interrupted...");
+    if (Thread.interrupted()) {
       throw new InterruptedException();
     } 
   }

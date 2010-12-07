@@ -103,10 +103,12 @@ public class CachedAirportDirectory extends AbstractAirportDirectory {
     // Cache miss: get new results.
     final LatLng areaNeCorner = area.getNeCorner();
     final LatLng areaSwCorner = area.getSwCorner();
+    final int dLat = areaNeCorner.lat - areaSwCorner.lat;
+    final int dLng = areaNeCorner.lng - areaSwCorner.lng;
     final LatLng cachedAreaNeCorner =
-        new LatLng(areaNeCorner.lat + 100000, areaNeCorner.lng + 100000);
+        new LatLng(areaNeCorner.lat + dLat / 2, areaNeCorner.lng + dLng / 2);
     final LatLng cachedAreaSwCorner =
-        new LatLng(areaSwCorner.lat - 100000, areaSwCorner.lng - 100000);
+        new LatLng(areaSwCorner.lat - dLat / 2, areaSwCorner.lng - dLng / 2);
     synchronized (this) {
       inProgressArea = new LatLngRect(cachedAreaNeCorner, cachedAreaSwCorner);
       inProgressRank = minRank;
