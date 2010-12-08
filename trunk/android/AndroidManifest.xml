@@ -22,6 +22,8 @@
       <meta-data android:name="android.app.searchable"
         android:resource="@xml/searchable" />
     </activity>
+    <provider android:name=".SearchSuggestionProvider"
+	  android:authorities="com.google.flightmap.android.SearchSuggestionProvider" />
     <activity android:name="TapcardActivity" android:label="@string/tapcard_activity" >
       <intent-filter>
         <action android:name="android.intent.action.VIEW" />
