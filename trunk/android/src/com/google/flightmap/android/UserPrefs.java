@@ -39,7 +39,6 @@ public class UserPrefs {
   private static final String SHOW_PRIVATE = "Show_Private";
   private static final String SHOW_HELIPORT = "Show_Heliports";
   private static final String RUNWAY_LENGTH = "Runway_Length";
-  private static final String CLEAR_SEARCH_HISTORY = "Clear_Search_History";
 
   // Preference values. These match values in arrays.xml
   private static final String DISTANCE_UNITS_MILES = "1";
