@@ -21,7 +21,7 @@
   <string name="preferences">Preferences</string>
   <string name="preferences_short">Prefs</string>
   <string name="search_activity">Search results</string>
-  <string name="search_hint">Search by ICAO</string>
+  <string name="search_hint">ICAO or Airport</string>
   <string name="simulator">Simulator</string>
   <string name="simulator_short">Sim</string>
   <string name="simulator_stop">Stop</string>

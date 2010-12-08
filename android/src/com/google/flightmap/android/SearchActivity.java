@@ -48,6 +48,7 @@ import com.google.flightmap.common.data.Airport;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.provider.SearchRecentSuggestions;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -111,7 +112,11 @@ public class SearchActivity extends ListActivity {
 
   private void handleIntent(Intent intent) {
     if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
-      String query = intent.getStringExtra(SearchManager.USER_QUERY);
+      String query = intent.getStringExtra(SearchManager.QUERY);
+      SearchRecentSuggestions suggestions = 
+        new SearchRecentSuggestions(this, SearchSuggestionProvider.AUTHORITY, 
+            SearchSuggestionProvider.MODE);
+      suggestions.saveRecentQuery(query, null);
       doSearch(query);
     }
   }
@@ -126,6 +131,7 @@ public class SearchActivity extends ListActivity {
   private void doSearch(String query) {
     // Maps each airport using the airport.id as the key with the value
     // being the rank of the result.
+
     searchResults = aviationDbAdapter.doSearch(query);
     if (searchResults.isEmpty()) {
       String[] items = {query + " not found"};
@@ -181,4 +187,14 @@ public class SearchActivity extends ListActivity {
     tapcardIntent.putExtra(TapcardActivity.AIRPORT_ID, airportId);
     this.startActivity(tapcardIntent);
   }
+
+  public void clearSearchHistory() {
+    // TODO: Enable clearSearchHistory in preferences.
+    SearchRecentSuggestions suggestions = 
+     new SearchRecentSuggestions(this, 
+        SearchSuggestionProvider.AUTHORITY, 
+        SearchSuggestionProvider.MODE);
+    suggestions.clearHistory();
+}
+
 }
