@@ -605,8 +605,6 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       simulatorMessage.setVisibility(GONE);
     }
 
-    LatLng locationLatLng = LatLng.fromDouble(location.getLatitude(), location.getLongitude());
-
     // Copy for thread safety.
     final boolean isTrackUp = !mainActivity.userPrefs.isNorthUp();
 
@@ -625,7 +623,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     // Get location pixel coordinates. Then set translation so everything is
     // drawn relative to the current location.
     final float zoomCopy = getZoom(); // copy for thread safety.
+    LatLng locationLatLng = LatLng.fromDouble(location.getLatitude(), location.getLongitude());
     Point locationPoint = AndroidMercatorProjection.toPoint(zoomCopy, locationLatLng);
+
     c.translate(-locationPoint.x, -locationPoint.y);
 
     //
@@ -893,6 +893,13 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     setZoom(savedInstanceState.getFloat(ZOOM_LEVEL));
   }
 
+
+  public synchronized void onDestroy() {
+    if (getAirportsTask != null && getAirportsTask.isQueryInProgress()) {
+      cancelQueryInProgress();
+    }
+  }
+
   private synchronized void updateAirportsOnScreen(LatLngRect screenArea, int minimumAirportRank) {
     // Is there a query in progress?
     if (getAirportsTask != null && getAirportsTask.isQueryInProgress()) {
@@ -902,18 +909,23 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         Log.i(TAG, "updateAirportsOnScreen: Still waiting on query");
         return;
       }
-      // Cancel the in progress task. It's working on an answer we no longer
-      // need.
-      Log.i(TAG, "updateAirportsOnScreen: Cancel query in progress. " + getAirportsTask);
-      boolean cancelled = getAirportsTask.cancel(true);
-      if (!cancelled) {
-        Log.w(TAG, "updateAirportsOnScreen: FAILED to cancel query.");
-      }
+      cancelQueryInProgress();
     }
     // Have to make a new task here. Can't call execute again on an active task.
     getAirportsTask = new GetAirportsInRectangleTask(mainActivity.airportDirectory, this);
     getAirportsTask.execute(new GetAirportsInRectangleTask.QueryParams(screenArea,
         minimumAirportRank));
+  }
+
+  /**
+   * Cancel the in progress task. It's working on an answer we no longer need.
+   */
+  private synchronized void cancelQueryInProgress() {
+    Log.i(TAG, "Cancel query in progress. " + getAirportsTask);
+    boolean cancelled = getAirportsTask.cancel(true);
+    if (!cancelled) {
+      Log.w(TAG, "updateAirportsOnScreen: FAILED to cancel query.");
+    }
   }
 
   /**

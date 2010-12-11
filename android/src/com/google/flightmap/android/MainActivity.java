@@ -84,6 +84,7 @@ public class MainActivity extends Activity {
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
+    System.out.println("MainActivity.onCreate()");
     super.onCreate(savedInstanceState);
     flightMap = (FlightMap) getApplication();
     flightMap.setLocationHandler(new LocationHandler(
@@ -305,6 +306,7 @@ public class MainActivity extends Activity {
   @Override
   protected void onDestroy() {
     super.onDestroy();
+    mapView.onDestroy();
     if (airportDirectory != null) {
       airportDirectory.close();
     }
