@@ -120,8 +120,10 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   private float touchY;
   private static final int INVALID_POINTER_ID = -1;
   private int activePointerId = INVALID_POINTER_ID;
-  private LatLng pannedToLocation; // New map anchor from panning.
   private final ScaleGestureDetector scaleDetector;
+
+  // Panning changes the map anchor.
+  private LatLng mapAnchorLatLng;
 
   /**
    * True if the last touch event was a move.
@@ -172,6 +174,10 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    * Reused Point object in Mercator pixel space.
    */
   private final Point mercatorPoint = new Point();
+  /**
+   * Reused Point object in Screen pixel space.
+   */
+  private final Point touchPoint = new Point();
 
   // Magnetic variation w/ caching.
   private final CachedMagneticVariation magneticVariation = new CachedMagneticVariation();
@@ -266,12 +272,14 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    * 
    * @return true if was panning prior to this call.
    */
-  public boolean stopPanning() {
+  boolean stopPanning() {
     if (!isPanning) {
       return false;
     }
     isPanning = false;
     previousTouchWasMove = false;
+    setMapAnchorLatLng(null);
+    setRedrawNeeded(true);
     Canvas c = holder.lockCanvas(null);
     synchronized (holder) {
       resetAircraftPosition(c.getWidth(), c.getHeight());
@@ -318,7 +326,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         break;
 
       case MotionEvent.ACTION_MOVE:
-        // Only move if the ScaleGestureDetector isn't processing a gesture.
+        // Don't process as a swipe gesture if the ScaleGestureDetector is
+        // processing a scale gesture.
         if (scaleDetector.isInProgress()) {
           break;
         }
@@ -328,18 +337,17 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         final float y = event.getY(pointerIndex);
 
         // Ignore very small moves, since they may actually be taps.
-        float deltaX = x - touchX;
-        float deltaY = y - touchY;
+        // Round to int to match what Point uses.
+        int deltaX = Math.round(touchX - x);
+        int deltaY = Math.round(touchY - y);
         if (Math.max(Math.abs(deltaX), Math.abs(deltaY)) < 10) {
           break;
         }
         previousTouchWasMove = true;
-        aircraftX += deltaX;
-        aircraftY += deltaY;
-        setRedrawNeeded(true);
-        isPanning = true;
         touchX = x;
         touchY = y;
+        setRedrawNeeded(true);
+        panByPixelAmount(deltaX, deltaY);
         break;
 
       case MotionEvent.ACTION_CANCEL:
@@ -363,6 +371,29 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         break;
     }
     return true;
+  }
+
+  private synchronized void panByPixelAmount(final int deltaX, final int deltaY) {
+    isPanning = true;
+    Point mapAnchorPoint = AndroidMercatorProjection.toPoint(getZoom(), mapAnchorLatLng);
+    mapAnchorPoint.x += deltaX;
+    mapAnchorPoint.y += deltaY;
+    setMapAnchorLatLng(AndroidMercatorProjection.fromPoint(getZoom(), mapAnchorPoint));
+  }
+
+  private synchronized void panToScreenPoint(final float x, final float y) {
+    isPanning = true;
+    touchX = x;
+    touchY = y;
+    touchPoint.x = (int) (x + 0.5);
+    touchPoint.y = (int) (y + 0.5);
+    setMapAnchorLatLng(getLocationForPoint(touchPoint));
+
+
+    Log.i(TAG, "DEBUG: touch=" + touchX + "," + touchY + "  lat,lng=" + mapAnchorLatLng.latDeg()
+        + ", " + mapAnchorLatLng.lngDeg());
+
+
   }
 
   /**
@@ -620,13 +651,15 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       c.rotate(360 - lastBearing);
     }
 
-    // Get location pixel coordinates. Then set translation so everything is
-    // drawn relative to the current location.
+    // Get map anchor pixel coordinates. Then set translation so everything is
+    // drawn relative to the map anchor. When not panning, the map anchor is
+    // the aircraft location. When panning, it's the panned to location.
     final float zoomCopy = getZoom(); // copy for thread safety.
-    LatLng locationLatLng = LatLng.fromDouble(location.getLatitude(), location.getLongitude());
-    Point locationPoint = AndroidMercatorProjection.toPoint(zoomCopy, locationLatLng);
-
-    c.translate(-locationPoint.x, -locationPoint.y);
+    if (mapAnchorLatLng == null) {
+      mapAnchorLatLng = LatLng.fromDouble(location.getLatitude(), location.getLongitude());
+    }
+    Point mapAnchorPoint = AndroidMercatorProjection.toPoint(zoomCopy, mapAnchorLatLng);
+    c.translate(-mapAnchorPoint.x, -mapAnchorPoint.y);
 
     //
     // Initialize transform to draw airports.
@@ -635,7 +668,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     // Set orientation to North or last known bearing
     final float orientation = isTrackUp ? lastBearing : 0;
 
-    final LatLngRect screenArea = getScreenRectangle(zoomCopy, orientation, locationPoint);
+    final LatLngRect screenArea = getScreenRectangle(zoomCopy, orientation, mapAnchorPoint);
     final int minAirportRank = getMinimumAirportRank(zoomCopy);
     updateAirportsOnScreen(screenArea, minAirportRank);
 
@@ -667,7 +700,12 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       }
     }
     // Draw airplane.
-    c.translate(locationPoint.x, locationPoint.y);
+    c.translate(mapAnchorPoint.x, mapAnchorPoint.y);
+    // TODO - need to draw airplane at locationPoint. Another translate is
+    // needed here, then undo it
+    // before the c.translate(-aircraftX, -aircraftY) call below.
+
+
     // Rotate no matter what. If track up, this will make the airplane point to
     // the top of the screen. If north up, this will point the airplane at the
     // current track.
@@ -699,9 +737,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       if (location.hasBearing()) {
         // Show numeric display relative to magnetic north.
         float magneticTrack =
-            location.getBearing()
-                + magneticVariation.getMagneticVariation(locationLatLng, (float) location
-                    .getAltitude());
+            location.getBearing() + magneticVariation.getMagneticVariation(mapAnchorLatLng, //
+                (float) location.getAltitude());
         magneticTrack = (float) NavigationUtil.normalizeBearing(magneticTrack);
         track = String.format(" %03.0f%s", magneticTrack, DEGREES_SYMBOL);
       }
@@ -829,15 +866,13 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    * @return ground position, or null if {@code previousLocation} is null.
    */
   private synchronized LatLng getLocationForPoint(Point screenPoint) {
-    if (null == previousLocation) {
+    if (null == mapAnchorLatLng) {
       return null;
     }
-    final LatLng location =
-        LatLng.fromDouble(previousLocation.getLatitude(), previousLocation.getLongitude());
-    final Point locationPoint = AndroidMercatorProjection.toPoint(getZoom(), location);
+    final Point anchorPoint = AndroidMercatorProjection.toPoint(getZoom(), mapAnchorLatLng);
     final float orientation =
         mainActivity.userPrefs.isNorthUp() ? 0 : previousLocation.getBearing();
-    return getLocationForPoint(getZoom(), orientation, locationPoint, screenPoint);
+    return getLocationForPoint(getZoom(), orientation, anchorPoint, screenPoint);
   }
 
   /**
@@ -847,26 +882,26 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    * @param orientation bearing in degrees from {@code locationPoint} to the top
    *        center of the screen. Will be 0 when north-up, and the current track
    *        when track-up.
-   * @param locationPoint pixel coordinates of current location (in Mercator
-   *        pixel space as returned by {@link AndroidMercatorProjection#toPoint}
+   * @param anchorPoint pixel coordinates of anchor location (in Mercator pixel
+   *        space as returned by {@link AndroidMercatorProjection#toPoint}
    * @param screenPoint coordinates in screen pixel space (such as from a touch
    *        event).
    */
   private synchronized LatLng getLocationForPoint(final float zoom, final float orientation,
-      final Point locationPoint, final Point screenPoint) {
+      final Point anchorPoint, final Point screenPoint) {
     // The operations on screenMatrix are the opposite of the ones applied to
     // the canvas in drawMapOnCanvas().
     //
     // drawMapOnCanvas() does the following:
     // c.translate(aircraftX, aircraftY);
     // if (isTrackUp) c.rotate(360 - bearing);
-    // c.translate(-locationPoint.x, -locationPoint.y);
+    // c.translate(-mapAnchorPoint.x, -mapAnchorPoint.y);
     screenMatrix.reset();
     screenMatrix.postTranslate(-aircraftX, -aircraftY);
     if (!mainActivity.userPrefs.isNorthUp()) {
       screenMatrix.postRotate(orientation);
     }
-    screenMatrix.postTranslate(locationPoint.x, locationPoint.y);
+    screenMatrix.postTranslate(anchorPoint.x, anchorPoint.y);
     screenPoints[0] = screenPoint.x;
     screenPoints[1] = screenPoint.y;
     screenMatrix.mapPoints(screenPoints);
@@ -879,22 +914,24 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   /**
    * Saves map-specific state info to {@code outState}.
    */
-  public void saveInstanceState(Bundle outState) {
+  void saveInstanceState(Bundle outState) {
     outState.putFloat(ZOOM_LEVEL, getZoom());
   }
 
   /**
    * Restores map-specific state info from {@code savedInstanceState}
    */
-  public void restoreInstanceState(Bundle savedInstanceState) {
+  void restoreInstanceState(Bundle savedInstanceState) {
     if (null == savedInstanceState || !savedInstanceState.containsKey(ZOOM_LEVEL)) {
       return;
     }
     setZoom(savedInstanceState.getFloat(ZOOM_LEVEL));
   }
 
-
-  public synchronized void onDestroy() {
+  /**
+   * Helper method for the activity's onDestroy().
+   */
+  synchronized void destroy() {
     if (getAirportsTask != null && getAirportsTask.isQueryInProgress()) {
       cancelQueryInProgress();
     }
@@ -924,7 +961,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     Log.i(TAG, "Cancel query in progress. " + getAirportsTask);
     boolean cancelled = getAirportsTask.cancel(true);
     if (!cancelled) {
-      Log.w(TAG, "updateAirportsOnScreen: FAILED to cancel query.");
+      Log.w(TAG, "FAILED to cancel query.");
     }
   }
 
@@ -951,9 +988,27 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   }
 
   /**
+   * Sets the map anchor point. Pass null to reset the anchor to the current
+   * location.
+   */
+  private synchronized void setMapAnchorLatLng(LatLng mapAnchorLatLng) {
+    this.mapAnchorLatLng = mapAnchorLatLng;
+  }
+
+  private synchronized LatLng getMapAnchorLatLng() {
+    return mapAnchorLatLng;
+  }
+
+  /**
    * Listens for scale gesture events.
    */
-  private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
+  private class ScaleListener implements ScaleGestureDetector.OnScaleGestureListener {
+    @Override
+    public boolean onScaleBegin(ScaleGestureDetector detector) {
+      panToScreenPoint(detector.getFocusX(), detector.getFocusY());
+      return true;
+    }
+
     @Override
     public boolean onScale(ScaleGestureDetector detector) {
       float scaleFactor = detector.getScaleFactor();
@@ -961,6 +1016,10 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       setZoom((float) (getZoom() + zoomDelta));
       setRedrawNeeded(true);
       return true;
+    }
+
+    @Override
+    public void onScaleEnd(ScaleGestureDetector detector) {
     }
   }
 }
