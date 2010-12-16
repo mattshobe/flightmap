@@ -18,8 +18,10 @@ package com.google.flightmap.common.io;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.OutputStream;
@@ -85,6 +87,18 @@ public class StreamUtils {
   }
 
   /**
+   * Gets all bytes from {@code file}.
+   */
+  public static byte[] getBytes(final File file) throws IOException {
+    final int length = (int)file.length();
+    final InputStream in = new FileInputStream(file);
+    final ByteArrayOutputStream out = new ByteArrayOutputStream(length);
+    final byte[] buf = new byte[DEFAULT_BUFFER_SIZE];
+    pipe(in, out, buf);
+    return out.toByteArray();
+  }
+
+  /**
    * Reads contents of {@code file} as a string.
    */
   public static String read(final File file) throws IOException {
@@ -129,11 +143,15 @@ public class StreamUtils {
     try {
       pipe(in, out, buf, contentLength, listener);
     } finally {
-      try {
-        out.close();
-      } catch (IOException ioEx) {
-        ioEx.printStackTrace();
-      }
+      tryClose(out);
+    }
+  }
+
+  private final static void tryClose(final OutputStream out) {
+    try {
+      out.close();
+    } catch (IOException ioEx) {
+      ioEx.printStackTrace();
     }
   }
 }
