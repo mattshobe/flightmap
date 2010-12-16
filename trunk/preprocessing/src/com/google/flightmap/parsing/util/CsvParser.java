@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.flightmap.tools;
+package com.google.flightmap.parsing.util;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -32,13 +32,13 @@ public class CsvParser<T> {
   private final Map<String, String> columnMap;
   private final Class<T> tClass;
 
-  CsvParser(final File file, final Map<String, String> columnMap, final Class<T> tClass) {
+  public CsvParser(final File file, final Map<String, String> columnMap, final Class<T> tClass) {
     this.file = file;
     this.columnMap = columnMap;
     this.tClass = tClass;
   }
 
-  List<T> getAll() throws IOException {
+  public List<T> getAll() throws IOException {
     final HeaderColumnNameTranslateMappingStrategy<T> strat = 
         new HeaderColumnNameTranslateMappingStrategy<T>();
     strat.setType(tClass);
