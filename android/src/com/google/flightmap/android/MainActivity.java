@@ -84,11 +84,14 @@ public class MainActivity extends Activity {
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
-    System.out.println("MainActivity.onCreate()");
     super.onCreate(savedInstanceState);
     flightMap = (FlightMap) getApplication();
-    flightMap.setLocationHandler(new LocationHandler(
-        (LocationManager) getSystemService(Context.LOCATION_SERVICE)));
+    if (flightMap.getLocationHandler() == null) {
+      flightMap.setLocationHandler(new LocationHandler(
+          (LocationManager) getSystemService(Context.LOCATION_SERVICE)));
+    } else {
+      Log.i(TAG, "location handler already exists");
+    }
 
     userPrefs = new UserPrefs(flightMap);
     setDatabaseDownloaded((null != savedInstanceState && savedInstanceState
@@ -164,7 +167,7 @@ public class MainActivity extends Activity {
     // Didn't need the back key to stop panning, so pass it along.
     super.onBackPressed();
   }
-  
+
   private void showDisclaimerView() {
     setContentView(R.layout.disclaimer);
 
@@ -306,7 +309,7 @@ public class MainActivity extends Activity {
   @Override
   protected void onDestroy() {
     super.onDestroy();
-    mapView.onDestroy();
+    mapView.destroy();
     if (airportDirectory != null) {
       airportDirectory.close();
     }

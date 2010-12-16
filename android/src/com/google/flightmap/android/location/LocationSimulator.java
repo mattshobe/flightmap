@@ -77,14 +77,12 @@ class LocationSimulator {
    * locationHandler} by calling {@link LocationHandler#onLocationChanged}
    */
   synchronized void start(LocationHandler locationHandler) {
-    Log.d(TAG, "Started simualator");
     this.locationHandler = locationHandler;
     setRunning(true);
     updater.scheduleUpdate(UPDATE_RATE);
   }
 
   void stop() {
-    Log.d(TAG, "Stopped simualator");
     setRunning(false);
   }
 
