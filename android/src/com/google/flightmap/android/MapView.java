@@ -228,7 +228,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     Resources res = mainActivity.getResources();
     // Set up paints from resource colors.
     toweredPaint.setColor(res.getColor(R.color.ToweredAirport));
+    toweredPaint.setAntiAlias(true);
     nonToweredPaint.setColor(res.getColor(R.color.NonToweredAirport));
+    nonToweredPaint.setAntiAlias(true);
     // Set up airplane image.
     airplaneImage = centerImage(res.getDrawable(R.drawable.aircraft));
     // Set up scale gesture detector.
