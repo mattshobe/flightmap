@@ -149,7 +149,9 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
     setNavigationInfo(airport, res);
 
     // Communication info
-    addCommInfo(aviationDbAdapter.getAirportComms(airport.id), res);
+    final List<Comm> comms = aviationDbAdapter.getAirportComms(airport.id);
+    final CommDisplayManager commDisplayManager = new CommDisplayManager(comms);
+    addCommInfo(commDisplayManager.getSortedComms(), res);
 
     // Runway details
     addRunways(airport.runways, res);

@@ -50,6 +50,7 @@ public class CommParser {
   private final static String HELP_OPTION = "help";
   private final static String TWR_OPTION = "twr";
   private final static String IATA_TO_ICAO_OPTION = "iata_to_icao";
+  private final static String FREQ_USES_NORMALIZATION_OPTION = "freq_uses_normalization";
   private final static String AVIATION_DB_OPTION = "aviation_db";
 
   private final static Pattern freqPattern = Pattern.compile("^(\\d+\\.\\d+\\S?)((?: |\\().*)?$");
@@ -68,6 +69,12 @@ public class CommParser {
                                    .isRequired()
                                    .withArgName("iata_to_icao.txt")
                                    .create());
+    OPTIONS.addOption(OptionBuilder.withLongOpt(FREQ_USES_NORMALIZATION_OPTION)
+                                   .withDescription("Normalized frequency uses csv file.")
+                                   .hasArg()
+                                   .isRequired()
+                                   .withArgName("distinct_freq_uses.csv")
+                                   .create());
     OPTIONS.addOption(OptionBuilder.withLongOpt(AVIATION_DB_OPTION)
                                    .withDescription("FlightMap aviation database")
                                    .hasArg()
@@ -79,6 +86,7 @@ public class CommParser {
   private final AviationDbWriter dbWriter;
   private final AviationDbReader dbReader;
   private final Map<String, String> iataToIcao;
+  private final Map<String, NormalizedFrequencyUseBean> normalizedFreqUses;
   private final String data;
 
   /**
@@ -86,13 +94,15 @@ public class CommParser {
    * @param iataToIcaoFile IATA to ICAO codes file
    * @param dbFile Aviation database file
    */
-  public CommParser(final String twrFile, final String iataToIcaoFile, final String dbFile)
-      throws  ClassNotFoundException, IOException, SQLException {
+  public CommParser(final String twrFile, final String iataToIcaoFile,
+      final String freqUsesNormalizationFile, final String dbFile) throws ClassNotFoundException,
+      IOException, SQLException {
     dbWriter = new JdbcAviationDbWriter(new File(dbFile));
     dbWriter.open();
     dbReader = new JdbcAviationDbAdapter(dbWriter.getConnection());
     data = StreamUtils.read(new File(twrFile));
     iataToIcao = IcaoUtils.parseIataToIcao(iataToIcaoFile);
+    normalizedFreqUses = NormalizedFrequencyUseUtils.parse(freqUsesNormalizationFile);
   }
 
   private void execute() throws Exception {
@@ -194,20 +204,46 @@ public class CommParser {
     return dbReader.getAirportIdByIcao(icao == null ? iata : icao);
   }
 
-  private void addAirportCommToDb(final AirportComm comm) throws SQLException {
+  private void addAirportCommToDb(AirportComm comm) throws SQLException {
     if (comm == null) {
       return;
     }
     try {
       final int frequency = Integer.parseInt(comm.frequency.split("\\.")[0]);
-      if (frequency < 108 || frequency > 137) {
-        System.out.println("Skipping (military?) frequency: " + comm.frequency);
+      if (frequency < 108 || frequency > 137) { // Skip (military?) frequency
         return;
       }
+      // Normalize frequency use ("APP/P DEP/P" -> "APP/DEP")
+      comm = getNormalizedAirportComm(comm);
       dbWriter.insertAirportComm(comm.airportId, comm.identifier, comm.frequency, comm.remarks);
     } catch (NumberFormatException nfe) {
       System.err.println("Could not parse frequency: " + comm.frequency);
     }
+  }
+
+  private AirportComm getNormalizedAirportComm(final AirportComm comm) {
+    final NormalizedFrequencyUseBean normalizedFreq = normalizedFreqUses.get(comm.identifier);
+    if (normalizedFreq == null) {
+      return comm;
+    }
+    final String identifier = normalizedFreq.getNormalizedUse();
+    final String originalRemarks = comm.remarks;
+    final String normalizedRemarks = normalizedFreq.getRemarks();
+    String remarks = "";
+    if (originalRemarks != null && !originalRemarks.isEmpty()) {
+      remarks = originalRemarks;
+    }
+    if (normalizedRemarks != null && !normalizedRemarks.isEmpty()) {
+      if (remarks.isEmpty()) {
+        remarks = normalizedRemarks;
+      } else {
+        remarks += " " + normalizedRemarks;
+      }
+    }
+
+    final AirportComm normalizedComm = 
+      new AirportComm(comm.airportId, identifier, comm.frequency, remarks);
+    return normalizedComm;
   }
 
   private static void printHelp(final CommandLine line) {
@@ -234,10 +270,11 @@ public class CommParser {
 
     final String twrFile =  line.getOptionValue(TWR_OPTION);
     final String iataToIcaoFile = line.getOptionValue(IATA_TO_ICAO_OPTION);
+    final String freqUsesNormalizationFile = line.getOptionValue(FREQ_USES_NORMALIZATION_OPTION);
     final String dbFile = line.getOptionValue(AVIATION_DB_OPTION);
 
     try {
-      (new CommParser(twrFile, iataToIcaoFile, dbFile)).execute();
+      (new CommParser(twrFile, iataToIcaoFile, freqUsesNormalizationFile, dbFile)).execute();
     } catch (Exception ex) {
       ex.printStackTrace();
       System.exit(1);
