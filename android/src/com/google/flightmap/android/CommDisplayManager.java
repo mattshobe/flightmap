@@ -25,6 +25,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 class CommDisplayManager {
   private final static String ATIS = "ATIS";
@@ -47,7 +49,7 @@ class CommDisplayManager {
     COMM_CATEGORIES_ORDER.add(OTHER);
   }
 
-  private final Map<String, Collection<Comm>> commsPerCategory;
+  private final Map<String, SortedSet<Comm>> commsPerCategory;
   private final List<Comm> sortedComms;
 
   CommDisplayManager(final Collection<Comm> comms) {
@@ -65,15 +67,15 @@ class CommDisplayManager {
   /**
    * Returns comm frequencies sorted by category.
    */
-  private static Map<String, Collection<Comm>> getCommsPerCategory(final Collection<Comm> comms) {
-    final Map<String, Collection<Comm>> commsPerCategory = new HashMap<String, Collection<Comm>>();
+  private static Map<String, SortedSet<Comm>> getCommsPerCategory(final Collection<Comm> comms) {
+    final Map<String, SortedSet<Comm>> commsPerCategory = new HashMap<String, SortedSet<Comm>>();
     for (Comm comm: comms) {
       final String category = COMM_CATEGORIES_ORDER.contains(comm.identifier) ? 
           comm.identifier : 
           OTHER;
-      Collection<Comm> commsInSameCategory = commsPerCategory.get(category);
+      SortedSet<Comm> commsInSameCategory = commsPerCategory.get(category);
       if (commsInSameCategory == null) {
-        commsInSameCategory = new LinkedList<Comm>();
+        commsInSameCategory = new TreeSet<Comm>();
         commsPerCategory.put(category, commsInSameCategory);
       }
       commsInSameCategory.add(comm);
@@ -84,10 +86,10 @@ class CommDisplayManager {
   /**
    * Sorts comm frequencies according to the category order.
    */
-  private List<Comm> sortComms(final Map<String, Collection<Comm>> commsPerCategory) {
+  private List<Comm> sortComms(final Map<String, SortedSet<Comm>> commsPerCategory) {
     final List<Comm> sortedComms = new LinkedList<Comm>();
     for (String category: COMM_CATEGORIES_ORDER) {
-      final Collection<Comm> commsInCategory = commsPerCategory.get(category);
+      final SortedSet<Comm> commsInCategory = commsPerCategory.get(category);
       if (commsInCategory != null) {
         sortedComms.addAll(commsInCategory);
       }
