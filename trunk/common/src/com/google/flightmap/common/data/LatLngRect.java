@@ -50,7 +50,7 @@ public class LatLngRect {
    */
   public static LatLngRect getBoundingBox(final LatLng center, final int radius) {
     final LatLng swBoundingBoxCorner = new LatLng(center.lat - radius, center.lng - radius);
-    final LatLng neBoundingBoxCorner = new LatLng(center.lat + radius, center.lat + radius);
+    final LatLng neBoundingBoxCorner = new LatLng(center.lat + radius, center.lng + radius);
     return new LatLngRect(swBoundingBoxCorner, neBoundingBoxCorner);
   }
 
