@@ -21,10 +21,13 @@ public class Comm implements Comparable<Comm> {
   public final String frequency;
   public final String remarks;
 
+  /**
+   * Creates a comm instance. Any null params will be set to "".
+   */
   public Comm(final String identifier, final String frequency, final String remarks) {
-    this.identifier = identifier;
-    this.frequency = frequency;
-    this.remarks = remarks;
+    this.identifier = (identifier == null) ? "" : identifier;
+    this.frequency = (frequency == null) ? "" : frequency;
+    this.remarks = (remarks == null) ? "" : remarks;
   }
 
   @Override
