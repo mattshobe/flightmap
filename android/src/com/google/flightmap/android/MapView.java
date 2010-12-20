@@ -83,6 +83,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   private static final Paint NON_TOWERED_PAINT = new Paint();
   private static final Paint PAN_SOLID_PAINT = new Paint();
   private static final Paint PAN_DASH_PAINT = new Paint();
+  private static final Paint PAN_RESET_PAINT = new Paint();
   private static boolean textSizesSet;
 
   // Zoom items.
@@ -132,6 +133,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    * events until panning is cancelled.
    */
   private volatile boolean isPanning;
+  private final PanResetButton panResetButton;
 
   /** Panning changes the map anchor. May be null when not panning. */
   private LatLng mapAnchorLatLng;
@@ -207,6 +209,10 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     PANEL_UNITS_PAINT.setAntiAlias(true);
     PANEL_UNITS_PAINT.setARGB(0xff, 0x99, 0x99, 0x99);
     PANEL_UNITS_PAINT.setTypeface(Typeface.SANS_SERIF);
+    PAN_RESET_PAINT.setAntiAlias(true);
+    PAN_RESET_PAINT.setColor(Color.BLACK);
+    PANEL_UNITS_PAINT.setTypeface(Typeface.DEFAULT_BOLD);
+    PAN_RESET_PAINT.setTextAlign(Paint.Align.CENTER);
   }
 
   public MapView(MainActivity mainActivity) {
@@ -239,6 +245,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     PAN_DASH_PAINT.setStrokeWidth(2);
     float[] intervals = {30, 10};
     PAN_DASH_PAINT.setPathEffect(new DashPathEffect(intervals, 0));
+    panResetButton = new PanResetButton();
 
     // Set up airplane image.
     airplaneImage = centerImage(res.getDrawable(R.drawable.aircraft));
@@ -276,6 +283,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     AIRPORT_TEXT_PAINT.setTextSize(19 * density);
     PANEL_DIGITS_PAINT.setTextSize(26 * density);
     PANEL_UNITS_PAINT.setTextSize(18 * density);
+    PAN_RESET_PAINT.setTextSize(18 * density);
   }
 
   /**
@@ -306,24 +314,34 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
 
     final int action = event.getAction();
     switch (action & MotionEvent.ACTION_MASK) {
-      case MotionEvent.ACTION_DOWN:
+      case MotionEvent.ACTION_DOWN: {
         activePointerId = event.getPointerId(0);
         touchX = event.getX();
         touchY = event.getY();
         previousTouchWasMove = false;
         break;
+      }
 
-      case MotionEvent.ACTION_UP:
+      case MotionEvent.ACTION_UP: {
         if (previousTouchWasMove) {
           // Don't do tapcard action right after a move.
           previousTouchWasMove = false;
           break;
         }
+        final int x = Math.round(event.getX());
+        final int y = Math.round(event.getY());
+        // See if the Pan Reset button was hit.
+        if (isPanning) {
+          if (panResetButton.isInsideButton(x, y)) {
+            stopPanning();
+            break;
+          }
+        }
 
         // See if an airport was tapped.
         Collection<Airport> airportsNearTap;
         airportsNearTap =
-            getAirportsNearScreenPoint(new Point(Math.round(event.getX()), Math.round(event.getY())));
+            getAirportsNearScreenPoint(new Point(x, y));
         if (!airportsNearTap.isEmpty()) {
           Airport airport = chooseSingleAirport(airportsNearTap);
           if (airport != null) {
@@ -335,8 +353,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         // Only get here if the user tapped in a blank area of the map.
         showZoomController();
         break;
+      }
 
-      case MotionEvent.ACTION_MOVE:
+      case MotionEvent.ACTION_MOVE: {
         // Don't process as a swipe gesture if the ScaleGestureDetector is
         // processing a scale gesture.
         if (scaleDetector.isInProgress()) {
@@ -363,19 +382,21 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         touchY = y;
         panByPixelAmount(deltaX, deltaY);
         break;
+      }
 
-      case MotionEvent.ACTION_CANCEL:
+      case MotionEvent.ACTION_CANCEL: {
         activePointerId = INVALID_POINTER_ID;
         previousTouchWasMove = false;
         break;
-
+      }
+      
       // There were multiple pointers down, and one of them went up.
-      case MotionEvent.ACTION_POINTER_UP:
+      case MotionEvent.ACTION_POINTER_UP: {
         final int pointerId = (event.getAction() & MotionEvent.ACTION_POINTER_ID_MASK) //
             >> MotionEvent.ACTION_POINTER_ID_SHIFT;
         if (pointerId == activePointerId) {
           // The pointer we were tracking went up. Pick a new one.
-          pointerIndex = event.findPointerIndex(pointerId);
+          int pointerIndex = event.findPointerIndex(pointerId);
           final int newIndex = pointerIndex == 0 ? 1 : 0;
           touchX = event.getX(newIndex);
           touchY = event.getY(newIndex);
@@ -383,6 +404,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
           previousTouchWasMove = false;
         }
         break;
+      }
     }
     return true;
   }
@@ -519,6 +541,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   @Override
   public synchronized void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
     resetAircraftPosition(width, height);
+    panResetButton.canvasSizeChanged(width, height);
 
     // Update pixel coordinates of screen corners.
     // 
@@ -774,6 +797,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     // point before rotations, then set origin to top-left screen corner.
     c.restoreToCount(restoreToBeforeRotation);
     c.translate(-aircraftX, -aircraftY);
+
+    // Draw reset panning button.
+    panResetButton.draw(c);
 
     zoomScale.drawScale(c, location, zoomCopy);
 
@@ -1099,6 +1125,54 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
 
   private synchronized LatLng getMapAnchorLatLng() {
     return mapAnchorLatLng;
+  }
+
+  /**
+   * Custom button to reset from panning.
+   */
+  private class PanResetButton {
+    private static final String RESET_LABEL = "Reset";
+    private static final int BOTTOM_MARGIN = 10;
+    private static final float TEXT_MARGIN = 10;
+    private int top;
+    private int bottom;
+    private int left;
+    private int right;
+    private int center;
+    private Rect rect = new Rect();
+
+    /**
+     * Draws the button on the given canvas. Does nothing if not panning.
+     */
+    private synchronized void draw(Canvas c) {
+      if (!isPanning) {
+        return;
+      }
+      c.drawRect(rect, PAN_SOLID_PAINT);
+      c.drawText(RESET_LABEL, center, bottom - TEXT_MARGIN * density, PAN_RESET_PAINT);
+    }
+
+    /**
+     * Returns true if the given screen coordinates intersect the button.
+     * {@link MapView#TOUCH_PIXEL_RADIUS} is applied.
+     */
+    private synchronized boolean isInsideButton(int x, int y) {
+      return rect.intersects(x - TOUCH_PIXEL_RADIUS, y - TOUCH_PIXEL_RADIUS,
+          x + TOUCH_PIXEL_RADIUS, y + TOUCH_PIXEL_RADIUS);
+    }
+
+    private synchronized void canvasSizeChanged(int width, int height) {
+      Rect textBounds = new Rect();
+      PAN_RESET_PAINT.getTextBounds(RESET_LABEL, 0, RESET_LABEL.length(), textBounds);
+
+      bottom = (int) (height - (BOTTOM_MARGIN * density) + 0.5);
+      top = (int) (bottom - (textBounds.height() + TEXT_MARGIN) * density - 0.5);
+      center = (int) ((width / 2.0f) + 0.5);
+      float halfWidth = textBounds.width() / 2.0f + TEXT_MARGIN * density;
+      left = (int) ((center - halfWidth) - 0.5);
+      right = (int) ((center + halfWidth) + 0.5);
+      rect.set(left, top, right, bottom);
+    }
   }
 
   /**
