@@ -24,6 +24,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,6 +32,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;  // TODO: Remove (See doSearch())
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -42,6 +44,13 @@ import java.util.TreeSet;
  * aviation database.
  */
 public class JdbcAviationDbAdapter implements AviationDbAdapter, AviationDbReader {
+  public final static String AIRSPACE_ALPHA = "ALPHA";
+  public final static String AIRSPACE_BRAVO = "BRAVO";
+  public final static String AIRSPACE_CHARLIE = "CHARLIE";
+  public final static String AIRSPACE_DELTA = "DELTA";
+  public final static String AIRSPACE_ECHO = "ECHO";
+  public final static String AIRSPACE_OTHER = "OTHER";
+
   /**
    * Approximate number of airports in db.  The accuracy of this value is not critical: it is only
    * Used for optimization reasons (for instance, to initialize collections such as ArrayLists).
@@ -53,10 +62,13 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter, AviationDbReade
   private PreparedStatement getAirportCommsStmt;
   private PreparedStatement getAirportDataFromIdStmt;
   private PreparedStatement getAirportIdFromIcaoStmt;
+  private PreparedStatement getAirportIdsInCellsStmt;
   private PreparedStatement getAirportIdsWithCityLikeStmt;
   private PreparedStatement getAirportIdsWithNameLikeStmt;
-  private PreparedStatement getAirportIdsInCellsStmt;
   private PreparedStatement getAirportPropertiesStmt;
+  private PreparedStatement getAirspaceIdsInRect;
+  private PreparedStatement getAirspacePointsStmt;
+  private PreparedStatement getAirspaceStmt;
   private PreparedStatement getConstantStmt;
   private PreparedStatement getRunwayEndIdStatement;
   private PreparedStatement getRunwayIdStatement;
@@ -204,6 +216,84 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter, AviationDbReade
     }
   }
 
+  /**
+   * Returns airspace with given {@code id}.
+   */
+  private Airspace getAirspace(final int id) {
+    try {
+      if (getAirspaceStmt == null) {
+        getAirspaceStmt = dbConn.prepareStatement(
+            "SELECT name, class, low_alt, high_alt FROM airspaces WHERE _id = ?");
+      }
+      getAirspaceStmt.setInt(1, id);
+      final ResultSet rs = getAirspaceStmt.executeQuery();
+      if (!rs.next()) {
+        rs.close();
+        return null;
+      }
+      final String name = rs.getString("name");
+      final int classConstantId = rs.getInt("class");
+      final int lowAlt = rs.getInt("low_alt");
+      final int highAlt = rs.getInt("high_alt");
+      rs.close();
+      final String classString = getConstant(classConstantId);
+      final Airspace.Class airspaceClass = Airspace.Class.valueOf(classString);
+      final List<LatLng> points = getAirspacePoints(id);
+      return new Airspace(id, name, airspaceClass, lowAlt, highAlt, points);
+    } catch (SQLException sqlEx) {
+      throw new RuntimeException(sqlEx);
+    }
+  }
+
+  /**
+   * Returns polygon points for a given airspace.
+   */
+  private List<LatLng> getAirspacePoints(final int airspaceId) {
+    try {
+      if (getAirspacePointsStmt == null) {
+        getAirspacePointsStmt = dbConn.prepareStatement(
+            "SELECT lat, lng FROM airspace_points WHERE airspace_id = ? ORDER BY num");
+      }
+      getAirspacePointsStmt.setInt(1, airspaceId);
+      final ResultSet rs = getAirspacePointsStmt.executeQuery();
+      final List<LatLng> points = new LinkedList<LatLng>();
+      while (rs.next()) {
+        final int lat = rs.getInt("lat");
+        final int lng = rs.getInt("lng");
+        points.add(new LatLng(lat, lng));
+      }
+      rs.close();
+      return points;
+    } catch (SQLException sqlEx) {
+      throw new RuntimeException(sqlEx);
+    }
+  }
+
+  @Override
+  public Collection<Airspace> getAirspacesInRectangle(final LatLngRect rect) {
+    try {
+      if (getAirspaceIdsInRect == null) {
+        getAirspaceIdsInRect = dbConn.prepareStatement(
+          "SELECT _id FROM airspaces WHERE " + 
+          "(MAX(min_lat, ?) < MIN(max_lat, ?)) AND (MAX(min_lng, ?) < MIN(max_lng, ?))");
+      }
+      getAirspaceIdsInRect.setInt(1, rect.getSouth());
+      getAirspaceIdsInRect.setInt(2, rect.getNorth());
+      getAirspaceIdsInRect.setInt(3, rect.getWest());
+      getAirspaceIdsInRect.setInt(4, rect.getEast());
+      final ResultSet rs = getAirspaceIdsInRect.executeQuery();
+      final Collection<Airspace> airspaces = new LinkedList<Airspace>();
+      while (rs.next()) {
+        final int id = rs.getInt(1);
+        airspaces.add(getAirspace(id));
+      }
+      rs.close();
+      return airspaces;
+    } catch (SQLException sqlEx) {
+      throw new RuntimeException(sqlEx);
+    }
+  }
+  
   @Override
   public String getConstant(final int constantId) {
     try {

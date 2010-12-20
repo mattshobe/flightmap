@@ -5,12 +5,16 @@ import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 import com.google.flightmap.common.AviationDbAdapter;
+import com.google.flightmap.common.ThreadUtils;
 import com.google.flightmap.common.data.Airport;
+import com.google.flightmap.common.data.Airspace;
 import com.google.flightmap.common.data.Comm;
 import com.google.flightmap.common.data.LatLng;
+import com.google.flightmap.common.data.LatLngRect;
 import com.google.flightmap.common.data.Runway;
 import com.google.flightmap.common.data.RunwayEnd;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -60,7 +64,7 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   // airports - return columns
   private static final String[] ID_COLUMNS = new String[] {ID_COLUMN};
   private static final String[] LOCATION_COLUMNS = new String[] {ID_COLUMN, LAT_COLUMN, LNG_COLUMN,
-      CELL_ID_COLUMN, RANK_COLUMN};
+       CELL_ID_COLUMN, RANK_COLUMN};
   private static final String[] AIRPORT_COLUMNS = new String[] {ID_COLUMN, ICAO_COLUMN,
       NAME_COLUMN, TYPE_COLUMN, CITY_COLUMN, RANK_COLUMN, IS_OPEN_COLUMN, IS_PUBLIC_COLUMN,
       IS_TOWERED_COLUMN, IS_MILITARY_COLUMN};
@@ -104,6 +108,32 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   private static final String RUNWAY_END_ID_COLUMN = "runway_end_id";
   private static final HashSet<String> INTEGER_RUNWAY_END_PROPERTIES;
   private static final String RUNWAY_END_ID_WHERE = RUNWAY_END_ID_COLUMN + " = ? ";
+  // airspaces
+  private static final String AIRSPACES_TABLE = "airspaces";
+  private static final String CLASS_COLUMN = "class";
+  private static final String LOW_ALT_COLUMN = "low_alt";
+  private static final String HIGH_ALT_COLUMN = "high_alt";
+  private static final String[] AIRSPACE_COLUMNS = new String[] {
+      NAME_COLUMN, CLASS_COLUMN, LOW_ALT_COLUMN, HIGH_ALT_COLUMN};
+  // TODO(aristidis): Check why getAirspacesInRectangle can't use the following.
+  /*
+  private static final String MIN_LAT_COLUMN = "min_lat";
+  private static final String MAX_LAT_COLUMN = "max_lat";
+  private static final String MIN_LNG_COLUMN = "min_lng";
+  private static final String MAX_LNG_COLUMN = "max_lng";
+  private static final String LAT_LNG_IN_RANGE_WHERE = String.format(
+      "(MAX(%s, ?) < MIN(%s, ?)) AND (MAX(%s, ?) < MIN(%s, ?))", 
+      MIN_LAT_COLUMN, MAX_LAT_COLUMN, MIN_LNG_COLUMN, MAX_LNG_COLUMN);
+  */
+  private static final String AIRSPACE_ID_RECT_QUERY = "SELECT _id FROM airspaces WHERE " +
+     "(MAX(min_lat, %d) < MIN(max_lat, %d)) AND (MAX(min_lng, %d) < MIN(max_lng, %d))";
+
+  // airspace_points
+  private static final String AIRSPACE_POINTS_TABLE = "airspace_points";
+  private static final String AIRSPACE_ID_COLUMN = "airspace_id";
+  private static final String NUM_COLUMN = "num";
+  private static final String[] LAT_LNG_COLUMNS = new String[] {LAT_COLUMN, LNG_COLUMN};
+  private static final String AIRSPACE_ID_WHERE = AIRSPACE_ID_COLUMN + " = ?";
 
   static {
     INTEGER_AIRPORT_PROPERTIES = new HashSet<String>();
@@ -221,6 +251,76 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   @Override
   public List<Integer> getAirportIdsWithNameLike(final String pattern) {
     return getAirportIdsWithPattern(NAME_LIKE, pattern);
+  }
+
+  /**
+   * Returns airspace with given {@code id}.
+   *
+   * @return Airspace with corresponding id, {@code null} if none.
+   */
+  private Airspace getAirspace(final int id) {
+    final Cursor result = database.query(AIRSPACES_TABLE, AIRSPACE_COLUMNS, ID_WHERE,
+        new String[] {Integer.toString(id)}, null, null, null);
+    try {
+      if (!result.moveToNext()) {
+        return null;
+      }
+      final String name = result.getString(result.getColumnIndexOrThrow(NAME_COLUMN));
+      final String classString =
+          getConstant(result.getInt(result.getColumnIndexOrThrow(CLASS_COLUMN)));
+      final Airspace.Class airspaceClass = Airspace.Class.valueOf(classString);
+      final int lowAlt = result.getInt(result.getColumnIndexOrThrow(LOW_ALT_COLUMN));
+      final int highAlt = result.getInt(result.getColumnIndexOrThrow(HIGH_ALT_COLUMN));
+      final List<LatLng> points = getAirspacePoints(id);
+      return new Airspace(id, name, airspaceClass, lowAlt, highAlt, points);
+    } finally {
+      result.close();
+    }
+  }
+
+  /**
+   * Returns polygon points for airspace with given {@code id}.
+   */
+  private List<LatLng> getAirspacePoints(final int id) {
+    final Cursor result = database.query(AIRSPACE_POINTS_TABLE, LAT_LNG_COLUMNS, AIRSPACE_ID_WHERE,
+        new String[] {Integer.toString(id)}, null, null, NUM_COLUMN);
+    final List<LatLng> points = new LinkedList<LatLng>();
+    try {
+      final int latColumn = result.getColumnIndexOrThrow(LAT_COLUMN);
+      final int lngColumn = result.getColumnIndexOrThrow(LNG_COLUMN);
+      while (result.moveToNext()) {
+        final int lat = result.getInt(latColumn);
+        final int lng = result.getInt(lngColumn);
+        points.add(new LatLng(lat, lng));
+      }
+      return points;
+    } finally {
+      result.close();
+    }
+  }
+
+  @Override
+  public Collection<Airspace> getAirspacesInRectangle(final LatLngRect rect)
+      throws InterruptedException {
+    final int minLat = rect.getSouth();
+    final int maxLat = rect.getNorth();
+    final int minLng = rect.getWest();
+    final int maxLng = rect.getEast();
+    final String query = String.format(AIRSPACE_ID_RECT_QUERY, minLat, maxLat, minLng, maxLng);
+    final Cursor result = database.rawQuery(query, null);
+    Log.d(TAG, "Airspaces found in rect: " + result.getCount());
+    Collection<Airspace> airspaces = new LinkedList<Airspace>();
+    try {
+      final int idColumn = result.getColumnIndexOrThrow(ID_COLUMN);
+      while (result.moveToNext()) {
+        ThreadUtils.checkIfInterrupted();
+        final int id = result.getInt(idColumn);
+        airspaces.add(getAirspace(id));
+      }
+      return airspaces;
+    } finally {
+      result.close();
+    }
   }
 
   /**

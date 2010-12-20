@@ -37,6 +37,7 @@ import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
@@ -47,6 +48,8 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ZoomButtonsController;
 
+import com.google.flightmap.android.graphics.AirportPalette;
+import com.google.flightmap.android.graphics.AirspacePalette;
 import com.google.flightmap.android.location.LocationHandler;
 import com.google.flightmap.android.location.LocationHandler.Source;
 import com.google.flightmap.common.CachedMagneticVariation;
@@ -54,6 +57,7 @@ import com.google.flightmap.common.NavigationUtil;
 import com.google.flightmap.common.ProgressListener;
 import com.google.flightmap.common.NavigationUtil.DistanceUnits;
 import com.google.flightmap.common.data.Airport;
+import com.google.flightmap.common.data.Airspace;
 import com.google.flightmap.common.data.LatLng;
 import com.google.flightmap.common.data.LatLngRect;
 
@@ -64,7 +68,7 @@ import com.google.flightmap.common.data.LatLngRect;
  * displaying the numeric track value on the top panel.
  */
 public class MapView extends SurfaceView implements SurfaceHolder.Callback,
-    OnSharedPreferenceChangeListener, ProgressListener {
+    OnSharedPreferenceChangeListener {
   private static final String TAG = MapView.class.getSimpleName();
   public static final String DEGREES_SYMBOL = "\u00b0";
 
@@ -80,13 +84,13 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   private static final Paint PANEL_BACKGROUND_PAINT = new Paint();
   private static final Paint PANEL_DIGITS_PAINT = new Paint();
   private static final Paint PANEL_UNITS_PAINT = new Paint();
-  private static final Paint TOWERED_PAINT = new Paint();
-  private static final Paint NON_TOWERED_PAINT = new Paint();
   private static final Paint PAN_SOLID_PAINT = new Paint();
   private static final Paint PAN_DASH_PAINT = new Paint();
   private static final Paint PAN_INFO_PAINT = new Paint();
   private static final Paint PAN_RESET_PAINT = new Paint();
   private static boolean textSizesSet;
+  private final AirportPalette airportPalette;
+  private final AirspacePalette airspacePalette = new AirspacePalette();
 
   // Zoom items.
   private static final int MIN_ZOOM = 4;
@@ -196,6 +200,14 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   // Populates airportsOnScreen in a background thread.
   private GetAirportsInRectangleTask getAirportsTask;
 
+  private ProgressListener getAirportsListener;
+
+  private Collection<Airspace> airspacesOnScreen;
+
+  private GetAirspacesInRectangleTask getAirspacesTask;
+
+  private ProgressListener getAirspacesListener;
+
   // Static initialization.
   static {
     // Do not put any calls to setTextSize here. Put them in #setTextSizes().
@@ -241,11 +253,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     simulatorMessage = (LinearLayout) mainActivity.findViewById(R.id.simulator_message);
 
     Resources res = mainActivity.getResources();
+    airportPalette = new AirportPalette(res);
     // Set up paints from resource colors.
-    TOWERED_PAINT.setColor(res.getColor(R.color.ToweredAirport));
-    TOWERED_PAINT.setAntiAlias(true);
-    NON_TOWERED_PAINT.setColor(res.getColor(R.color.NonToweredAirport));
-    NON_TOWERED_PAINT.setAntiAlias(true);
     PAN_SOLID_PAINT.setColor(res.getColor(R.color.PanItems));
     PAN_SOLID_PAINT.setAntiAlias(true);
     PAN_SOLID_PAINT.setStrokeWidth(5);
@@ -719,41 +728,19 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     Point mapAnchorPoint = AndroidMercatorProjection.toPoint(zoomCopy, mapAnchorLatLng);
     c.translate(-mapAnchorPoint.x, -mapAnchorPoint.y);
 
+    //
+    // Initialize transform to draw airports.
+    //
+
     // Set orientation to North or last known bearing
     final float orientation = isTrackUp ? lastBearing : 0;
 
     final LatLngRect screenArea = getScreenRectangle(zoomCopy, orientation, mapAnchorPoint);
     final int minAirportRank = getMinimumAirportRank(zoomCopy);
     updateAirportsOnScreen(screenArea, minAirportRank);
-
-    // airportsOnScreen could be null if the background task hasn't finished
-    // yet.
-    if (airportsOnScreen != null) {
-      final Iterator<Airport> i = airportsOnScreen.iterator();
-
-      while (i.hasNext()) {
-        final Airport airport = i.next();
-        if (!mainActivity.userPrefs.shouldInclude(airport) || airport.rank < minAirportRank) {
-          i.remove();
-          continue;
-        }
-
-        final Paint airportPaint = getAirportPaint(airport);
-        Point airportPoint = AndroidMercatorProjection.toPoint(zoomCopy, airport.location);
-        c.drawCircle(airportPoint.x, airportPoint.y, 24, airportPaint);
-
-        // Undo, then redo the track-up rotation so the labels are always at the
-        // top for track up.
-        if (isTrackUp) {
-          c.save();
-          c.rotate(lastBearing, airportPoint.x, airportPoint.y);
-        }
-        c.drawText(airport.icao, airportPoint.x, airportPoint.y - 31, AIRPORT_TEXT_PAINT);
-        if (isTrackUp) {
-          c.restore();
-        }
-      }
-    }
+    updateAirspacesOnScreen(screenArea);
+    drawAirspacesOnMap(c, zoomCopy);
+    drawAirportsOnMap(c, minAirportRank, zoomCopy, isTrackUp);
 
     //
     // Draw airplane.
@@ -860,6 +847,38 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     }
   }
 
+  private synchronized void drawAirportsOnMap(Canvas c, int minRank, float zoom,
+      boolean isTrackUp) {
+    // airportsOnScreen could be null if the background task hasn't finished
+    // yet.
+    if (airportsOnScreen == null) {
+      return;
+    }
+    final Iterator<Airport> i = airportsOnScreen.iterator();
+    while (i.hasNext()) {
+      final Airport airport = i.next();
+      if (!mainActivity.userPrefs.shouldInclude(airport) || airport.rank < minRank) {
+        i.remove();
+        continue;
+      }
+
+      final Paint airportPaint = airportPalette.getPaint(airport);
+      Point airportPoint = AndroidMercatorProjection.toPoint(zoom, airport.location);
+      c.drawCircle(airportPoint.x, airportPoint.y, 24, airportPaint);
+
+      // Undo, then redo the track-up rotation so the labels are always at the
+      // top for track up.
+      if (isTrackUp) {
+        c.save();
+        c.rotate(lastBearing, airportPoint.x, airportPoint.y);
+      }
+      c.drawText(airport.icao, airportPoint.x, airportPoint.y - 31, AIRPORT_TEXT_PAINT);
+      if (isTrackUp) {
+        c.restore();
+      }
+    }
+  }
+
   /**
    * Draws the pan crosshair and information on the bearing and distance to the
    * map anchor point.
@@ -888,6 +907,34 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         String.format("%.1f%s - BRG %03.0f%s", distanceUnits.getDistance(distanceMeters),
             distanceUnits.distanceAbbreviation, bearingTo, DEGREES_SYMBOL);
     c.drawText(navigationText, 0, PAN_INFO_MARGIN * density, PAN_INFO_PAINT);
+  }
+
+  private synchronized void drawAirspacesOnMap(final Canvas c, final float zoom) {
+    // Draw airspaces
+    if (airspacesOnScreen == null) {
+      return;
+    }
+    for (Airspace airspace: airspacesOnScreen) {
+      final Path path = new Path();
+      boolean first = true;
+      //DEBUG(aristidis)
+      int skip = 0;
+      for (LatLng latLng: airspace.points) {
+        final Point point = AndroidMercatorProjection.toPoint(zoom, latLng);
+        if (first) {
+          path.moveTo(point.x, point.y);
+          first = false;
+        } else {
+          if (skip-- == 0) {
+            skip = 1;
+            continue;
+          }
+          path.lineTo(point.x, point.y);
+        }
+      }
+      final Paint airspacePaint = airspacePalette.getPaint(airspace);
+      c.drawPath(path, airspacePaint);
+    }
   }
 
   /**
@@ -923,14 +970,6 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       return 1;
     }
     return 0;
-  }
-
-  /**
-   * Return the appropriate paint based on whether the airport is towered or
-   * not.
-   */
-  private Paint getAirportPaint(Airport airport) {
-    return airport.isTowered ? TOWERED_PAINT : NON_TOWERED_PAINT;
   }
 
   /**
@@ -1097,8 +1136,18 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    * Helper method for the activity's onDestroy().
    */
   synchronized void destroy() {
+    cancelQueriesInProgress();
+  }
+
+  /**
+   * Cancels all pending queries (airports, airspaces).
+   */
+  private synchronized void cancelQueriesInProgress() {
     if (getAirportsTask != null && getAirportsTask.isQueryInProgress()) {
-      cancelQueryInProgress();
+      cancelTask(getAirportsTask);
+    }
+    if (getAirspacesTask != null && getAirspacesTask.isQueryInProgress()) {
+      cancelTask(getAirspacesTask);
     }
   }
 
@@ -1111,45 +1160,47 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         Log.i(TAG, "updateAirportsOnScreen: Still waiting on query");
         return;
       }
-      cancelQueryInProgress();
+      cancelTask(getAirportsTask);
+    }
+    // Create listener only once
+    if (getAirportsListener == null) {
+      getAirportsListener = new AirportsQueryListener();
     }
     // Have to make a new task here. Can't call execute again on an active task.
-    getAirportsTask = new GetAirportsInRectangleTask(mainActivity.airportDirectory, this);
-    getAirportsTask.execute(new GetAirportsInRectangleTask.QueryParams(screenArea,
-        minimumAirportRank));
+    getAirportsTask =
+      new GetAirportsInRectangleTask(mainActivity.airportDirectory, getAirportsListener);
+    getAirportsTask.execute(
+        new GetAirportsInRectangleTask.QueryParams(screenArea, minimumAirportRank));
+  }
+
+  private synchronized void updateAirspacesOnScreen(LatLngRect screenArea) {
+    // Is there a query in progress?
+    if (getAirspacesTask != null && getAirspacesTask.isQueryInProgress()) {
+      // TODO(aristidis): see if queries are equivalent.  
+      Log.i(TAG, "updateAirspacesOnScreen: Still waiting on query");
+      return;
+    }
+    // Create listener only once
+    if (getAirspacesListener == null) {
+      getAirspacesListener = new AirspacesQueryListener();
+    }
+    //DEBUG(aristidis)
+    if (getAirspacesTask != null) return;
+    // Have to make a new task here. Can't call execute again on an active task.
+    getAirspacesTask = 
+        new GetAirspacesInRectangleTask(mainActivity.aviationDbAdapter, getAirspacesListener);
+    getAirspacesTask.execute(screenArea);
   }
 
   /**
-   * Cancel the in progress task. It's working on an answer we no longer need.
+   * Cancels task.  Logs a warning message on failure.
    */
-  private synchronized void cancelQueryInProgress() {
-    Log.i(TAG, "Cancel query in progress. " + getAirportsTask);
-    boolean cancelled = getAirportsTask.cancel(true);
+  private static void cancelTask(AsyncTask task) {
+    Log.d(TAG, "Cancelling task: " + task);
+    boolean cancelled = task.cancel(true);
     if (!cancelled) {
-      Log.w(TAG, "FAILED to cancel query.");
+      Log.w(TAG, "FAILED to cancel task: " + task);
     }
-  }
-
-  /**
-   * {@inheritDoc} Called when {@link GetAirportsInRectangleTask} completes.
-   */
-  @Override
-  public synchronized void hasCompleted(boolean success) {
-    if (success && getAirportsTask != null) {
-      try {
-        airportsOnScreen = getAirportsTask.get();
-        setRedrawNeeded(true);
-      } catch (InterruptedException e) {
-        Log.i(TAG, "Interrupted while getting airports on screen", e);
-      } catch (ExecutionException e) {
-        Log.w(TAG, "Execution failed getting airports on screen", e);
-      }
-    }
-  }
-
-  @Override
-  public void hasProgressed(int unused) {
-    // GetAirportsInRectangleTask does not give intermediate progress.
   }
 
   /**
@@ -1223,6 +1274,58 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       setZoom((float) (getZoom() + zoomDelta));
       setRedrawNeeded(true);
       return true;
+    }
+  }
+
+  private class AirportsQueryListener implements ProgressListener {
+    /**
+     * {@inheritDoc} Called when {@link GetAirportsInRectangleTask} completes.
+     */
+    @Override
+    public void hasCompleted(boolean success) {
+      synchronized (MapView.this) {
+        if (success && getAirportsTask != null) {
+          try {
+            airportsOnScreen = getAirportsTask.get();
+            setRedrawNeeded(true);
+          } catch (InterruptedException e) {
+            Log.i(TAG, "Interrupted while getting airports on screen", e);
+          } catch (ExecutionException e) {
+            Log.w(TAG, "Execution failed getting airports on screen", e);
+          }
+        }
+      }
+    }
+
+    @Override
+    public void hasProgressed(int unused) {
+      // GetAirportsInRectangleTask does not give intermediate progress.
+    }
+  }
+
+  private class AirspacesQueryListener implements ProgressListener {
+    /**
+     * {@inheritDoc} Called when {@link GetAirspacesInRectangleTask} completes.
+     */
+    @Override
+    public void hasCompleted(boolean success) {
+      synchronized (MapView.this) {
+        if (success && getAirspacesTask != null) {
+          try {
+            airspacesOnScreen = getAirspacesTask.get();
+            setRedrawNeeded(true);
+          } catch (InterruptedException e) {
+            Log.i(TAG, "Interrupted while getting airspaces on screen", e);
+          } catch (ExecutionException e) {
+            Log.w(TAG, "Execution failed getting airspacess on screen", e);
+          }
+        }
+      }
+    }
+
+    @Override
+    public void hasProgressed(int unused) {
+      // GetAirspacesInRectangleTask does not give intermediate progress.
     }
   }
 }
