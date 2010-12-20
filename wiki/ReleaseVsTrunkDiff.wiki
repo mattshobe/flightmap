@@ -8,6 +8,12 @@ Significant differences are changes that are not reflected in trunk, such as qui
 Notation:
   * *Release x (rY -> rZ)*: Revision Y was tagged as release x in revision Z.
 
+== Release 0.11.0 (trunk r461 -> branch r463 -> r464) ==
+  * No changes from trunk.
+
+== Release 0.9.0 (trunk r416 -> branch r419 -> r420) ==
+  * No changes from trunk.
+
 == Release 0.7.2 (trunk r377 -> branch r393 -> r394) ==
   * Disabled simulator menu (see r367, r393)
 
