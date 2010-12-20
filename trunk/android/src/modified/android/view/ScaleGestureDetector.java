@@ -14,11 +14,17 @@
  * limitations under the License.
  */
 
-package android.view;
+package modified.android.view;
 
 import android.content.Context;
 import android.util.DisplayMetrics;
 import android.util.FloatMath;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.ViewConfiguration;
+
+// Note: This class was back-ported from Android SDK 8 to work for SDK 7 in
+// FlightMap.
 
 /**
  * Detects transformation gestures involving more than one pointer ("multitouch")
