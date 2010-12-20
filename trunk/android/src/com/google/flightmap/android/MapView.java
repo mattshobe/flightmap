@@ -26,6 +26,7 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.DashPathEffect;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
@@ -72,25 +73,23 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   /** Position is considered "old" after this many milliseconds. */
   private static final long MAX_LOCATION_AGE = 300000; // 5 minutes.
 
-  /** Radius in screen pixels to search around touch location. */
-  private static final int TOUCH_PIXEL_RADIUS = 30;
-
   // Paints.
   private static final Paint ERROR_TEXT_PAINT = new Paint();
   private static final Paint AIRPORT_TEXT_PAINT = new Paint();
   private static final Paint PANEL_BACKGROUND_PAINT = new Paint();
   private static final Paint PANEL_DIGITS_PAINT = new Paint();
   private static final Paint PANEL_UNITS_PAINT = new Paint();
+  private static final Paint TOWERED_PAINT = new Paint();
+  private static final Paint NON_TOWERED_PAINT = new Paint();
+  private static final Paint PAN_SOLID_PAINT = new Paint();
+  private static final Paint PAN_DASH_PAINT = new Paint();
   private static boolean textSizesSet;
-  private Paint toweredPaint = new Paint();
-  private Paint nonToweredPaint = new Paint();
 
   // Zoom items.
   private static final int MIN_ZOOM = 4;
   private static final int MAX_ZOOM = 12;
   private static final float ZOOM_STEP = 0.5f;
   private static final double LOG_OF_2 = Math.log(2);
-
   private ZoomButtonsController zoomController;
   private float zoom = 10;
 
@@ -115,26 +114,27 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   private int aircraftX;
   private int aircraftY;
 
-  // Fields relating to touch events.
+  // Fields relating to touch events and panning.
+  private static final int PAN_CROSSHAIR_SIZE = 12;
+  /** Minimum number of screen pixels to drag to indicate panning. */
+  private static final int PAN_TOUCH_THRESHOLD = 15;
+  /** Radius in screen pixels to search around touch location. */
+  private static final int TOUCH_PIXEL_RADIUS = 30;
   private float touchX;
   private float touchY;
+  /** True if the last touch event was a move. */
+  private volatile boolean previousTouchWasMove;
   private static final int INVALID_POINTER_ID = -1;
   private int activePointerId = INVALID_POINTER_ID;
   private final ScaleGestureDetector scaleDetector;
-
-  // Panning changes the map anchor.
-  private LatLng mapAnchorLatLng;
-
-  /**
-   * True if the last touch event was a move.
-   */
-  private volatile boolean previousTouchWasMove;
-
   /**
    * True when the user has panned at all. Stays true across multiple touch
    * events until panning is cancelled.
    */
   private volatile boolean isPanning;
+
+  /** Panning changes the map anchor. May be null when not panning. */
+  private LatLng mapAnchorLatLng;
 
   // Underlying surface for this view.
   private volatile SurfaceHolder holder;
@@ -162,7 +162,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   // Performance optimization. Create these objects only once since they are
   // used in rendering.
   private final Matrix screenMatrix = new Matrix();
-  /** Used by {@link #getLocationForPoint} */
+  /** Used by {@link #getLocationForPoint} and {@link #getPointForLocation} */
   private float[] screenPoints = new float[2];
   /**
    * Coordinates of the 4 corners of the screen in screen pixel space. Numbered
@@ -227,10 +227,19 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
 
     Resources res = mainActivity.getResources();
     // Set up paints from resource colors.
-    toweredPaint.setColor(res.getColor(R.color.ToweredAirport));
-    toweredPaint.setAntiAlias(true);
-    nonToweredPaint.setColor(res.getColor(R.color.NonToweredAirport));
-    nonToweredPaint.setAntiAlias(true);
+    TOWERED_PAINT.setColor(res.getColor(R.color.ToweredAirport));
+    TOWERED_PAINT.setAntiAlias(true);
+    NON_TOWERED_PAINT.setColor(res.getColor(R.color.NonToweredAirport));
+    NON_TOWERED_PAINT.setAntiAlias(true);
+    PAN_SOLID_PAINT.setColor(res.getColor(R.color.PanItems));
+    PAN_SOLID_PAINT.setAntiAlias(true);
+    PAN_SOLID_PAINT.setStrokeWidth(5);
+    PAN_DASH_PAINT.setColor(res.getColor(R.color.PanItems));
+    PAN_DASH_PAINT.setAntiAlias(true);
+    PAN_DASH_PAINT.setStrokeWidth(2);
+    float[] intervals = {30, 10};
+    PAN_DASH_PAINT.setPathEffect(new DashPathEffect(intervals, 0));
+
     // Set up airplane image.
     airplaneImage = centerImage(res.getDrawable(R.drawable.aircraft));
     // Set up scale gesture detector.
@@ -342,13 +351,16 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         // Round to int to match what Point uses.
         int deltaX = Math.round(touchX - x);
         int deltaY = Math.round(touchY - y);
-        if (Math.max(Math.abs(deltaX), Math.abs(deltaY)) < 10) {
+
+        if (!previousTouchWasMove
+            && Math.max(Math.abs(deltaX), Math.abs(deltaY)) < PAN_TOUCH_THRESHOLD * density) {
           break;
         }
+        setRedrawNeeded(true);
         previousTouchWasMove = true;
+        isPanning = true;
         touchX = x;
         touchY = y;
-        setRedrawNeeded(true);
         panByPixelAmount(deltaX, deltaY);
         break;
 
@@ -375,27 +387,28 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     return true;
   }
 
-  private synchronized void panByPixelAmount(final int deltaX, final int deltaY) {
-    isPanning = true;
-    Point mapAnchorPoint = AndroidMercatorProjection.toPoint(getZoom(), mapAnchorLatLng);
-    mapAnchorPoint.x += deltaX;
-    mapAnchorPoint.y += deltaY;
-    setMapAnchorLatLng(AndroidMercatorProjection.fromPoint(getZoom(), mapAnchorPoint));
+  /**
+   * Moves the mapAnchorLatLng by panning by the given x and y delta amounts.
+   * 
+   * @param deltaX x change in screen pixels.
+   * @param deltaY y change in screen pixels.
+   */
+  private void panByPixelAmount(final int deltaX, final int deltaY) {
+    // Move the map anchor location by the given delta values. First get
+    // mapAnchorLatLng in screen pixel space, then apply the deltas, then
+    // pan to the resulting screen location.
+    Point mapAnchorPoint = getPointForLocation(getMapAnchorLatLng());
+    panToScreenPoint(mapAnchorPoint.x + deltaX, mapAnchorPoint.y + deltaY);
   }
 
+  /**
+   * Sets the mapAnchorLatLng to correspond to the given screen pixel
+   * coordinates.
+   */
   private synchronized void panToScreenPoint(final float x, final float y) {
-    isPanning = true;
-    touchX = x;
-    touchY = y;
     touchPoint.x = (int) (x + 0.5);
     touchPoint.y = (int) (y + 0.5);
     setMapAnchorLatLng(getLocationForPoint(touchPoint));
-
-
-    Log.i(TAG, "DEBUG: touch=" + touchX + "," + touchY + "  lat,lng=" + mapAnchorLatLng.latDeg()
-        + ", " + mapAnchorLatLng.lngDeg());
-
-
   }
 
   /**
@@ -641,13 +654,22 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     // Copy for thread safety.
     final boolean isTrackUp = !mainActivity.userPrefs.isNorthUp();
 
-    // Update bearing (if possible). Do not change bearing while panning.
-    if (location.hasBearing() && !isPanning) {
-      lastBearing = location.getBearing();
+    // Update bearing (if possible). Do not change bearing while panning when
+    // track-up.
+    if (location.hasBearing()) {
+      if (!isTrackUp || !isPanning) {
+        lastBearing = location.getBearing();
+      }
     }
 
-    // Draw everything relative to the aircraft.
+    //
+    // Initialize transform to draw airports.
+    //
+
+    // Rotate everything relative to the aircraft.
     c.translate(aircraftX, aircraftY);
+    // Restore point: origin at aircraft draw spot, no rotations.
+    final int restoreToBeforeRotation = c.save();
     if (isTrackUp) {
       // Rotate to make track up (no rotation = north up).
       c.rotate(360 - lastBearing);
@@ -657,15 +679,13 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     // drawn relative to the map anchor. When not panning, the map anchor is
     // the aircraft location. When panning, it's the panned to location.
     final float zoomCopy = getZoom(); // copy for thread safety.
-    if (mapAnchorLatLng == null) {
-      mapAnchorLatLng = LatLng.fromDouble(location.getLatitude(), location.getLongitude());
+    final LatLng locationLatLng =
+        LatLng.fromDouble(location.getLatitude(), location.getLongitude());
+    if (mapAnchorLatLng == null || !isPanning) {
+      setMapAnchorLatLng(locationLatLng);
     }
     Point mapAnchorPoint = AndroidMercatorProjection.toPoint(zoomCopy, mapAnchorLatLng);
     c.translate(-mapAnchorPoint.x, -mapAnchorPoint.y);
-
-    //
-    // Initialize transform to draw airports.
-    //
 
     // Set orientation to North or last known bearing
     final float orientation = isTrackUp ? lastBearing : 0;
@@ -693,33 +713,66 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         // Undo, then redo the track-up rotation so the labels are always at the
         // top for track up.
         if (isTrackUp) {
+          c.save();
           c.rotate(lastBearing, airportPoint.x, airportPoint.y);
         }
         c.drawText(airport.icao, airportPoint.x, airportPoint.y - 31, AIRPORT_TEXT_PAINT);
         if (isTrackUp) {
-          c.rotate(360 - lastBearing, airportPoint.x, airportPoint.y);
+          c.restore();
         }
       }
     }
-    // Draw airplane.
-    c.translate(mapAnchorPoint.x, mapAnchorPoint.y);
-    // TODO - need to draw airplane at locationPoint. Another translate is
-    // needed here, then undo it
-    // before the c.translate(-aircraftX, -aircraftY) call below.
 
+    //
+    // Draw airplane.
+    //
+    c.translate(mapAnchorPoint.x, mapAnchorPoint.y);
+    final Point locationPoint = AndroidMercatorProjection.toPoint(zoomCopy, locationLatLng);
+    if (isPanning) {
+      //
+      // Draw a crosshair at the map anchor point.
+      //
+
+      // Rotate if in track-up mode to have the crosshair aligned with the
+      // track.
+      if (isTrackUp) {
+        c.save();
+        c.rotate(lastBearing);
+      }
+      final float crosshairSize = PAN_CROSSHAIR_SIZE * density;
+      c.drawLine(0, -crosshairSize, 0, crosshairSize, PAN_SOLID_PAINT);
+      c.drawLine(-crosshairSize, 0, crosshairSize, 0, PAN_SOLID_PAINT);
+      if (isTrackUp) {
+        c.restore();
+      }
+
+      // Dotted line from anchor point to aircraft location.
+      c.drawLine(0, 0, locationPoint.x - mapAnchorPoint.x, locationPoint.y - mapAnchorPoint.y,
+          PAN_DASH_PAINT);
+
+      // Translate to the spot where the airplane should be drawn.
+      c.translate(locationPoint.x - mapAnchorPoint.x, locationPoint.y - mapAnchorPoint.y);
+    }
 
     // Rotate no matter what. If track up, this will make the airplane point to
     // the top of the screen. If north up, this will point the airplane at the
     // current track.
-    c.rotate(lastBearing);
+    //
+    // Special case if track-up and panning. lastBearing is frozen in that case,
+    // but we should draw the airplane rotated to the most recent bearing.
+    if (!isPanning || !isTrackUp) {
+      c.rotate(lastBearing);
+    } else if (isTrackUp) {
+      // In panning mode while track-up.
+      if (location.hasBearing()) {
+        c.rotate(location.getBearing());
+      }
+    }
     airplaneImage.draw(c);
 
-    // Undo to-track rotation for north up.
-    if (!isTrackUp) {
-      c.rotate(360 - lastBearing);
-    }
-
-    // Draw items that are in fixed locations. Set origin to top-left corner.
+    // Draw items that are in fixed locations. Restore canvas transform to the
+    // point before rotations, then set origin to top-left screen corner.
+    c.restoreToCount(restoreToBeforeRotation);
     c.translate(-aircraftX, -aircraftY);
 
     zoomScale.drawScale(c, location, zoomCopy);
@@ -814,7 +867,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    * not.
    */
   private Paint getAirportPaint(Airport airport) {
-    return airport.isTowered ? toweredPaint : nonToweredPaint;
+    return airport.isTowered ? TOWERED_PAINT : NON_TOWERED_PAINT;
   }
 
   /**
@@ -845,35 +898,34 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    * @param orientation bearing in degrees from {@code locationPoint} to the top
    *        center of the screen. Will be 0 when north-up, and the current track
    *        when track-up.
-   * @param locationPoint pixel coordinates of current location (as returned by
-   *        {@link AndroidMercatorProjection#toPoint}
+   * @param anchorPoint pixel coordinates of current anchor point (as returned
+   *        by {@link AndroidMercatorProjection#toPoint}
    */
   private synchronized LatLngRect getScreenRectangle(final float zoom, final float orientation,
-      final Point locationPoint) {
+      final Point anchorPoint) {
     // Make rectangle that encloses the 4 screen corners.
     LatLngRect result = new LatLngRect();
     for (int i = 0; i < 4; i++) {
-      result.add(getLocationForPoint(zoom, orientation, locationPoint, screenCorners[i]));
+      result.add(getLocationForPoint(zoom, orientation, anchorPoint, screenCorners[i]));
     }
     return result;
   }
 
   /**
    * Returns ground position corresponding to {@code screenPoint}. Uses {@code
-   * previousLocation} to set location and orientation and calls
-   * {@link #getLocationForPoint(float, float, Point, Point)}.
+   * mapAnchorLatLng} for location and {@code lastBearing} for orientation and
+   * calls {@link #getLocationForPoint(float, float, Point, Point)}.
    * 
    * @param screenPoint coordinates in screen pixel space (such as from a touch
    *        event).
-   * @return ground position, or null if {@code previousLocation} is null.
+   * @return ground position, or null if {@code mapAnchorLatLng} is null.
    */
   private synchronized LatLng getLocationForPoint(Point screenPoint) {
     if (null == mapAnchorLatLng) {
       return null;
     }
     final Point anchorPoint = AndroidMercatorProjection.toPoint(getZoom(), mapAnchorLatLng);
-    final float orientation =
-        mainActivity.userPrefs.isNorthUp() ? 0 : previousLocation.getBearing();
+    final float orientation = mainActivity.userPrefs.isNorthUp() ? 0 : lastBearing;
     return getLocationForPoint(getZoom(), orientation, anchorPoint, screenPoint);
   }
 
@@ -909,7 +961,55 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     screenMatrix.mapPoints(screenPoints);
     mercatorPoint.x = Math.round(screenPoints[0]);
     mercatorPoint.y = Math.round(screenPoints[1]);
+
     LatLng result = AndroidMercatorProjection.fromPoint(zoom, mercatorPoint);
+    return result;
+  }
+
+  /**
+   * Returns screen pixel coordinates corresponding to {@code location}. Uses
+   * {@code lastBearing} for orientation.
+   * 
+   * @param location ground location to map to screen pixel coordinates.
+   * @return screen pixel coordinates, or null if {@code mapAnchorLatLng} is
+   *         null.
+   */
+  private synchronized Point getPointForLocation(LatLng location) {
+    if (null == mapAnchorLatLng) {
+      return null;
+    }
+    final Point anchorPoint = AndroidMercatorProjection.toPoint(zoom, mapAnchorLatLng);
+    return getPointForLocation(zoom, anchorPoint, location);
+  }
+
+  /**
+   * Returns screen pixel coordinates corresponding to {@code location}.
+   * 
+   * @param zoom zoom level.
+   * @param anchorPoint pixel coordinates of anchor location (in Mercator pixel
+   *        space as returned by {@link AndroidMercatorProjection#toPoint}
+   * @param location location to convert to a screen point.
+   */
+  private synchronized Point getPointForLocation(final float zoom, final Point anchorPoint,
+      LatLng location) {
+    // The operations on screenMatrix are the same as the ones applied to
+    // the canvas in drawMapOnCanvas(), EXCEPT for the rotate operation.
+    //
+    // TODO - figure out why including screenMatrix.rotate in this method
+    // does not work, and excluding it gives correct results.
+    //
+    // drawMapOnCanvas() does the following:
+    // c.translate(aircraftX, aircraftY);
+    // if (isTrackUp) c.rotate(360 - bearing);
+    // c.translate(-mapAnchorPoint.x, -mapAnchorPoint.y);
+    screenMatrix.reset();
+    screenMatrix.postTranslate(aircraftX, aircraftY);
+    screenMatrix.postTranslate(-anchorPoint.x, -anchorPoint.y);
+    Point mercator = AndroidMercatorProjection.toPoint(zoom, location);
+    screenPoints[0] = mercator.x;
+    screenPoints[1] = mercator.y;
+    screenMatrix.mapPoints(screenPoints);
+    Point result = new Point(Math.round(screenPoints[0]), Math.round(screenPoints[1]));
     return result;
   }
 
@@ -1007,6 +1107,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   private class ScaleListener implements ScaleGestureDetector.OnScaleGestureListener {
     @Override
     public boolean onScaleBegin(ScaleGestureDetector detector) {
+      isPanning = true;
       panToScreenPoint(detector.getFocusX(), detector.getFocusY());
       return true;
     }

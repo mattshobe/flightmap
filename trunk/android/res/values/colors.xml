@@ -3,6 +3,7 @@
   <color name="AircraftPaint">#0f0</color>
   <color name="DropShadow">#8333</color>
   <color name="MapBackground">#000</color>
+  <color name="PanItems">#0f0</color>
   <color name="SimulatorWarningForeground">#f11</color>
   <color name="SimulatorWarningBackground">#333</color>
   <color name="SimulatorDialogText">#fff</color>
