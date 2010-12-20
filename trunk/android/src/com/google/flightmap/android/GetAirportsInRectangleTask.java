@@ -30,10 +30,8 @@ import com.google.flightmap.common.data.LatLngRect;
  * background task.
  */
 public class GetAirportsInRectangleTask extends
-    AsyncTask<GetAirportsInRectangleTask.QueryParams, Void, Collection<Airport>> {
+    QueryTask<GetAirportsInRectangleTask.QueryParams, Collection<Airport>> {
   private final AirportDirectory airportDirectory;
-  private final ProgressListener listener;
-  private QueryParams queryParams;
 
   /**
    * Initializes task to get airports in a {@link LatLngRect}.
@@ -41,17 +39,12 @@ public class GetAirportsInRectangleTask extends
    * @param airportDirectory directory to call on background thread.
    * @param listener listener to notify of completion. May be null.
    */
-  public GetAirportsInRectangleTask(AirportDirectory airportDirectory, ProgressListener listener) {
+  public GetAirportsInRectangleTask(final AirportDirectory airportDirectory,
+      final ProgressListener listener) {
+    super(listener);
     this.airportDirectory = airportDirectory;
-    this.listener = listener;
   }
 
-  /**
-   * Returns true if there is a query in progress.
-   */
-  public synchronized boolean isQueryInProgress() {
-    return queryParams != null;
-  }
 
   /**
    * {@inheritDoc}
@@ -60,31 +53,10 @@ public class GetAirportsInRectangleTask extends
    * thread.
    */
   @Override
-  protected Collection<Airport> doInBackground(QueryParams... queryData) {
-    // AsyncTask specifies a Varargs parameter, but only the first element is
-    // processed in this implementation.
-    LatLngRect rectangle;
-    int minRank;
-    synchronized (this) {
-      queryParams = queryData[0];
-      rectangle = queryParams.rectangle;
-      minRank = queryParams.minRank;
-    }
-    try {
-      return airportDirectory.getAirportsInRectangle(rectangle, minRank);
-    } catch (InterruptedException iEx) {
-      return null;
-    }
-  }
-
-  @Override
-  protected void onPostExecute(Collection<Airport> result) {
-    synchronized (this) {
-      queryParams = null;
-    }
-    if (listener != null) {
-      listener.hasCompleted(true);
-    }
+  protected Collection<Airport> doQuery(final QueryParams params) throws InterruptedException {
+    final LatLngRect rectangle = params.rectangle;
+    final int minRank = params.minRank;
+    return airportDirectory.getAirportsInRectangle(rectangle, minRank);
   }
 
   /**

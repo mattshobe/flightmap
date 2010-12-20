@@ -17,12 +17,15 @@
 package com.google.flightmap.common;
 
 import com.google.flightmap.common.data.Airport;
+import com.google.flightmap.common.data.Airspace;
 import com.google.flightmap.common.data.Comm;
+import com.google.flightmap.common.data.LatLngRect;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Low level interface to database entities.
@@ -70,7 +73,6 @@ public class CachedAviationDbAdapter implements AviationDbAdapter {
   }
 
 
-
   @Override
   public Map<String, String> getAirportProperties(final int airportId) {
     return cachedDbAdapter.getAirportProperties(airportId);
@@ -79,6 +81,12 @@ public class CachedAviationDbAdapter implements AviationDbAdapter {
   @Override
   public List<Comm> getAirportComms(final int airportId) {
     return cachedDbAdapter.getAirportComms(airportId);
+  }
+
+  @Override
+  public Collection<Airspace> getAirspacesInRectangle(final LatLngRect rect)
+      throws InterruptedException {
+    return cachedDbAdapter.getAirspacesInRectangle(rect);
   }
 
   @Override
