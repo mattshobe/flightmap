@@ -253,7 +253,7 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
       commTable.addView(commRow);
 
 
-      if (comm.remarks != null) {
+      if (comm.remarks != null && comm.remarks.length() > 0) {
         commRow = new TableRow(this);
         commRow.setLayoutParams(rowLayout);
         TextView remarks = new TextView(this);
