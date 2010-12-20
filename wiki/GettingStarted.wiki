@@ -12,7 +12,7 @@ If you use Eclipse, the see the EclipseSetup instructions.
 Flight Map developers will need the following things installed:
   * [http://developer.android.com/sdk/ Android SDK] 2.1 or higher
     * Recommended install location on Linux/Mac is `/usr/local/android`
-  * [http://ant.apache.org/ Apache Ant] 1.7.1 or higher
+  * [http://ant.apache.org/ Apache Ant] 1.8 or higher
   * [http://java.sun.com/javase/downloads/ Java SDK] 1.6 or higher
   * An SD card in your Android emulator or actual device.
 
