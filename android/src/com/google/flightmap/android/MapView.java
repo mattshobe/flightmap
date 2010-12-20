@@ -20,6 +20,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.ExecutionException;
 
+import modified.android.view.ScaleGestureDetector;
+
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
@@ -39,7 +41,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
-import android.view.ScaleGestureDetector;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.FrameLayout;
@@ -1214,14 +1215,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   /**
    * Listens for scale gesture events.
    */
-  private class ScaleListener implements ScaleGestureDetector.OnScaleGestureListener {
-    @Override
-    public boolean onScaleBegin(ScaleGestureDetector detector) {
-      isPanning = true;
-      panToScreenPoint(detector.getFocusX(), detector.getFocusY());
-      return true;
-    }
-
+  private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
     @Override
     public boolean onScale(ScaleGestureDetector detector) {
       float scaleFactor = detector.getScaleFactor();
@@ -1229,10 +1223,6 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       setZoom((float) (getZoom() + zoomDelta));
       setRedrawNeeded(true);
       return true;
-    }
-
-    @Override
-    public void onScaleEnd(ScaleGestureDetector detector) {
     }
   }
 }
