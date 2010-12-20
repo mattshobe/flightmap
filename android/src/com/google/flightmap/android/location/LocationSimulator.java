@@ -113,14 +113,7 @@ class LocationSimulator {
    * Updates location and posts to {@link LocationHandler#onLocationChanged}.
    */
   private synchronized void updateLocation() {
-    if (location == null) {
-      // Initialize location from last known location
-      location = locationHandler.getLocation();
-      // If it's still null, use the default location.
-      if (location == null) {
-        location = getDefaultLocation();
-      }
-    }
+    initializeLocation();
 
     location.setProvider(TAG);
     location.setTime(System.currentTimeMillis());
@@ -141,10 +134,25 @@ class LocationSimulator {
   }
 
   /**
+   * Initializes {@code location} to a valid value if it's null.
+   */
+  private void initializeLocation() {
+    if (location == null) {
+      // Initialize location from last known location
+      location = locationHandler.getLocation();
+      // If it's still null, use the default location.
+      if (location == null) {
+        location = getDefaultLocation();
+      }
+    }
+  }
+
+  /**
    * Updates the latitude and longitude of {@code location} based on the current
    * location, speed and track.
    */
   private synchronized void changeLatLng() {
+    initializeLocation();
     final float track = location.getBearing();
     final float speed = location.getSpeed();
     // Use Mercator projection and trig to compute new location.
@@ -218,11 +226,9 @@ class LocationSimulator {
     }
   }
 
-
   private synchronized void setRunning(boolean isRunning) {
     this.isRunning = isRunning;
   }
-
 
   private synchronized boolean isRunning() {
     return isRunning;
@@ -238,6 +244,7 @@ class LocationSimulator {
   }
 
   synchronized void stopMoving() {
+    initializeLocation();
     setDesiredTrack(location.getBearing());
     setDesiredAltitude((float) location.getAltitude());
     setDesiredSpeed(0);
