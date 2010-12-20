@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright (C) 2009 Google Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<project name="FlightMap" default="help">
+    <!-- The local.properties file is created and updated by the 'android' tool.
+         It contains the path to the SDK. It should *NOT* be checked in in Version
+         Control Systems. -->
+    <property file="local.properties" />
+
+    <!-- Create build-local.properties if you want to override any properties
+         on your local machine. Project-wide properties should go into 
+         build.properties.
+    -->
+    <property file="build-local.properties" />
+
+    <!-- Project-wide build properties. -->
+    <property file="build.properties" />
+
+    <!-- The default.properties file is created and updated by the 'android' tool, as well
+         as ADT.
+         This file is an integral part of the build system for your application and
+         should be checked in in Version Control Systems. -->
+    <property file="default.properties" />
+
+    <!-- Custom Android task to deal with the project target, and import the proper rules.
+         This requires ant 1.6.0 or above. -->
+    <path id="android.antlibs">
+        <pathelement path="${sdk.dir}/tools/lib/anttasks.jar" />
+        <pathelement path="${sdk.dir}/tools/lib/sdklib.jar" />
+        <pathelement path="${sdk.dir}/tools/lib/androidprefs.jar" />
+        <pathelement path="${sdk.dir}/tools/lib/apkbuilder.jar" />
+        <pathelement path="${sdk.dir}/tools/lib/jarutils.jar" />
+    </path>
+
+    <taskdef name="setup"
+        classname="com.android.ant.SetupTask"
+        classpathref="android.antlibs" />
+
+    <!-- Execute the Android Setup task that will setup some properties specific to the target,
+         and import the build rules files.
+
+         The rules file is imported from
+            <SDK>/platforms/<target_platform>/templates/android_rules.xml
+
+         To customize some build steps for your project:
+         - copy the content of the main node <project> from android_rules.xml
+         - paste it in this build.xml below the <setup /> task.
+         - disable the import by changing the setup task below to <setup import="false" />
+
+         This will ensure that the properties are setup correctly but that your customized
+         build steps are used.
+    -->
+    <!-- Run 'ant help' to see the main build targets defined by
+         <SDK>/platforms/<target_platform>/templates/android_rules.xml
+
+         Targets: help, clean, compile, debug, release, install, uninstall
+         See http://developer.android.com/guide/developing/other-ide.html
+    -->
+    <setup />
+
+
+  <target name="javadoc"
+      description="Generate Javadocs.">
+    <delete dir="javadoc"/>
+    <mkdir dir="javadoc"/>
+    <javadoc
+        packagenames="com.google.flightmap.*"
+        destdir="javadoc"
+        use="true"
+        author="true"
+        protected="true"
+        windowtitle="Flight Map ${version}">
+      <sourcepath>
+        <pathelement location="${source.dir}"/>
+      </sourcepath>
+      <classpath>
+        <pathelement location="libs/flightmap-common.jar" />
+        <pathelement location="${sdk.dir}/tools/lib/sdklib.jar" />
+        <pathelement location="${sdk.dir}/platforms/android-7/android.jar" />
+        <pathelement location="${sdk.dir}/platforms/android-7/android.jar" />
+      </classpath>
+      <link href="http://java.sun.com/javase/6/docs/api"/>
+    </javadoc>
+  </target>
+</project>
