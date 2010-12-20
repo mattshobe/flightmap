@@ -83,6 +83,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   private static final Paint NON_TOWERED_PAINT = new Paint();
   private static final Paint PAN_SOLID_PAINT = new Paint();
   private static final Paint PAN_DASH_PAINT = new Paint();
+  private static final Paint PAN_INFO_PAINT = new Paint();
   private static final Paint PAN_RESET_PAINT = new Paint();
   private static boolean textSizesSet;
 
@@ -117,6 +118,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
 
   // Fields relating to touch events and panning.
   private static final int PAN_CROSSHAIR_SIZE = 12;
+  private static final int PAN_INFO_MARGIN = 30;
   /** Minimum number of screen pixels to drag to indicate panning. */
   private static final int PAN_TOUCH_THRESHOLD = 15;
   /** Radius in screen pixels to search around touch location. */
@@ -180,6 +182,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    * Reused Point object in Screen pixel space.
    */
   private final Point touchPoint = new Point();
+  /** Used for calls to Location.distanceBetween */
+  private float[] distanceBearingResult = new float[2];
 
   // Magnetic variation w/ caching.
   private final CachedMagneticVariation magneticVariation = new CachedMagneticVariation();
@@ -211,8 +215,12 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     PANEL_UNITS_PAINT.setTypeface(Typeface.SANS_SERIF);
     PAN_RESET_PAINT.setAntiAlias(true);
     PAN_RESET_PAINT.setColor(Color.BLACK);
-    PANEL_UNITS_PAINT.setTypeface(Typeface.DEFAULT_BOLD);
+    PAN_RESET_PAINT.setTypeface(Typeface.DEFAULT_BOLD);
     PAN_RESET_PAINT.setTextAlign(Paint.Align.CENTER);
+    PAN_INFO_PAINT.setAntiAlias(true);
+    PAN_INFO_PAINT.setColor(Color.GREEN);
+    PAN_INFO_PAINT.setTypeface(Typeface.SANS_SERIF);
+    PAN_INFO_PAINT.setTextAlign(Paint.Align.CENTER);
   }
 
   public MapView(MainActivity mainActivity) {
@@ -284,6 +292,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     PANEL_DIGITS_PAINT.setTextSize(26 * density);
     PANEL_UNITS_PAINT.setTextSize(18 * density);
     PAN_RESET_PAINT.setTextSize(18 * density);
+    PAN_INFO_PAINT.setTextSize(18 * density);
   }
 
   /**
@@ -340,8 +349,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
 
         // See if an airport was tapped.
         Collection<Airport> airportsNearTap;
-        airportsNearTap =
-            getAirportsNearScreenPoint(new Point(x, y));
+        airportsNearTap = getAirportsNearScreenPoint(new Point(x, y));
         if (!airportsNearTap.isEmpty()) {
           Airport airport = chooseSingleAirport(airportsNearTap);
           if (airport != null) {
@@ -389,9 +397,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         previousTouchWasMove = false;
         break;
       }
-      
-      // There were multiple pointers down, and one of them went up.
+
       case MotionEvent.ACTION_POINTER_UP: {
+        // There were multiple pointers down, and one of them went up.
         final int pointerId = (event.getAction() & MotionEvent.ACTION_POINTER_ID_MASK) //
             >> MotionEvent.ACTION_POINTER_ID_SHIFT;
         if (pointerId == activePointerId) {
@@ -762,9 +770,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         c.save();
         c.rotate(lastBearing);
       }
-      final float crosshairSize = PAN_CROSSHAIR_SIZE * density;
-      c.drawLine(0, -crosshairSize, 0, crosshairSize, PAN_SOLID_PAINT);
-      c.drawLine(-crosshairSize, 0, crosshairSize, 0, PAN_SOLID_PAINT);
+      drawPanCrosshairAndInfo(c, location);
       if (isTrackUp) {
         c.restore();
       }
@@ -851,6 +857,36 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       c.drawText(altitude, width - textWidth - PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE,
           PANEL_DIGITS_PAINT);
     }
+  }
+
+  /**
+   * Draws the pan crosshair and information on the bearing and distance to the
+   * map anchor point.
+   * 
+   * Before calling this method, the canvas transform should be set so the
+   * origin is at the point to draw the crosshair.
+   * 
+   * @param c canvas to draw on.
+   * @param location current location.
+   */
+  private synchronized void drawPanCrosshairAndInfo(Canvas c, Location location) {
+    final float crosshairSize = PAN_CROSSHAIR_SIZE * density;
+    c.drawLine(0, -crosshairSize, 0, crosshairSize, PAN_SOLID_PAINT);
+    c.drawLine(-crosshairSize, 0, crosshairSize, 0, PAN_SOLID_PAINT);
+    if (mapAnchorLatLng == null) {
+      return;
+    }
+    Location.distanceBetween(location.getLatitude(), location.getLongitude(), //
+        mapAnchorLatLng.latDeg(), mapAnchorLatLng.lngDeg(), distanceBearingResult);
+    float distanceMeters = distanceBearingResult[0];
+    float bearingTo =
+        (float) NavigationUtil.normalizeBearing(distanceBearingResult[1]
+            + magneticVariation.getMagneticVariation(mapAnchorLatLng, 0));
+    DistanceUnits distanceUnits = mainActivity.userPrefs.getDistanceUnits();
+    String navigationText =
+        String.format("%.1f%s - BRG %03.0f%s", distanceUnits.getDistance(distanceMeters),
+            distanceUnits.distanceAbbreviation, bearingTo, DEGREES_SYMBOL);
+    c.drawText(navigationText, 0, PAN_INFO_MARGIN * density, PAN_INFO_PAINT);
   }
 
   /**
