@@ -26,8 +26,17 @@ Please file a bug using our official [http://code.google.com/p/flightmap/issues/
 Also, you should consider joining the Flight Map [http://g/flightmap mailing list]. The development team will monitor this list for discussion and provide updates on development plans and launch timetables through it.
 
 =Coming Soon=
-  * Panning the map.
-  * Pinch-to-zoom.
+  * Airspace, State Boundaries.
+  * Better organization of airport communication data.
+
+=Release: v0.11.0 "Mooney" - 12/20/10=
+  * New features:
+    * Can install to SD card (requires Android 2.2).
+    * Pan the map by dragging.
+    * Pinch to zoom in or out.
+    * *Much* improved airport communication frequency information.
+    * Better organization of search results.
+    * Local search history.
 
 =Release: v0.9.0 "Citabria" - 10/15/10=
   * New features:
