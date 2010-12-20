@@ -159,15 +159,6 @@ public class MainActivity extends Activity {
     mapView.restoreInstanceState(savedInstanceState);
   }
 
-  @Override
-  public void onBackPressed() {
-    if (mapView.stopPanning()) {
-      return;
-    }
-    // Didn't need the back key to stop panning, so pass it along.
-    super.onBackPressed();
-  }
-
   private void showDisclaimerView() {
     setContentView(R.layout.disclaimer);
 
