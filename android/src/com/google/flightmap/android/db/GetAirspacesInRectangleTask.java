@@ -13,16 +13,17 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.flightmap.android;
+
+package com.google.flightmap.android.db;
 
 import java.util.Collection;
 
 import android.os.AsyncTask;
 
-import com.google.flightmap.common.AviationDbAdapter;
 import com.google.flightmap.common.ProgressListener;
 import com.google.flightmap.common.data.Airspace;
 import com.google.flightmap.common.data.LatLngRect;
+import com.google.flightmap.common.db.AviationDbAdapter;
 
 /**
  * Background task to get airspaces in a rectangle (which is a fairly slow

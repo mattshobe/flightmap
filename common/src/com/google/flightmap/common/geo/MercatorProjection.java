@@ -13,9 +13,8 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.flightmap.common;
+package com.google.flightmap.common.geo;
 
-import com.google.flightmap.common.NavigationUtil;
 import com.google.flightmap.common.data.LatLng;
 
 /**

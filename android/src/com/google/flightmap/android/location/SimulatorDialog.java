@@ -29,10 +29,10 @@ import android.widget.TextView;
 
 import com.google.flightmap.android.MapView;
 import com.google.flightmap.android.R;
-import com.google.flightmap.common.CachedMagneticVariation;
-import com.google.flightmap.common.NavigationUtil;
-import com.google.flightmap.common.NavigationUtil.DistanceUnits;
 import com.google.flightmap.common.data.LatLng;
+import com.google.flightmap.common.geo.CachedMagneticVariation;
+import com.google.flightmap.common.geo.NavigationUtil;
+import com.google.flightmap.common.geo.NavigationUtil.DistanceUnits;
 
 /**
  * Handles the UI for controlling the {@link LocationSimulator}.

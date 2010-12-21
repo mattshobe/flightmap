@@ -14,7 +14,7 @@
  * the License.
  */
 
-package com.google.flightmap.android;
+package com.google.flightmap.android.net;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,14 +22,14 @@ import java.net.URL;
 
 import android.os.AsyncTask;
 import com.google.flightmap.common.ProgressListener;
-import com.google.flightmap.common.net.FileUpdater;
+import com.google.flightmap.common.db.DbAdapter;
+import com.google.flightmap.common.net.DbUpdater;
 
-// FileUpdaterTask is an android specific asynchronous task, and is hence package scoped. 
-class FileUpdaterTask extends AsyncTask<FileUpdaterTask.Params, Integer, Boolean> implements
+public class DbUpdaterTask extends AsyncTask<DbUpdaterTask.Params, Integer, Boolean> implements
     ProgressListener {
   final ProgressListener listener;
 
-  FileUpdaterTask(final ProgressListener listener) {
+  public DbUpdaterTask(final ProgressListener listener) {
     this.listener = listener;
   }
 
@@ -37,7 +37,8 @@ class FileUpdaterTask extends AsyncTask<FileUpdaterTask.Params, Integer, Boolean
   protected Boolean doInBackground(Params... params) {
     try {
       final Params param = params[0];
-      final FileUpdater updater = new FileUpdater(param.file, param.url, param.workingDir);
+      final DbUpdater updater = new DbUpdater(param.file, param.url, param.workingDir,
+          param.dbAdapter, param.requiredSchemaVersion);
       if (!updater.isUpdateNeeded()) {
         return Boolean.TRUE;
       }
@@ -74,23 +75,30 @@ class FileUpdaterTask extends AsyncTask<FileUpdaterTask.Params, Integer, Boolean
     }
   }
 
-  // Params class is specific to enclosing FileUpdaterTask, and is hence package scoped too.
-  static class Params {
+  public static class Params {
     final File file;
     final URL url;
     final File workingDir;
+    final DbAdapter dbAdapter;
+    final int requiredSchemaVersion;
 
     /**
-     * Initializes {@link FileUpdaterTask} parameters.
+     * Initializes {@link DbUpdaterTask} parameters.
      *
      * @param file  Local destination file
      * @param url  URL to download
      * @param workingDir Temporary local directory.  Will be created if needed.
+     * @param dbAdapter Low level interface to database
+     * @param requiredSchemaVersion Required database schema version
+     * 
      */
-    Params(final File file, final URL url, final File workingDir) {
+    public Params(final File file, final URL url, final File workingDir, final DbAdapter dbAdapter,
+         final int requiredSchemaVersion) {
       this.file = file;
       this.url = url;
       this.workingDir = workingDir;
+      this.dbAdapter = dbAdapter;
+      this.requiredSchemaVersion = requiredSchemaVersion;
     }
   }
 }

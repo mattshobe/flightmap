@@ -19,8 +19,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 
-import com.google.flightmap.common.NavigationUtil.DistanceUnits;
 import com.google.flightmap.common.data.Airport;
+import com.google.flightmap.common.geo.NavigationUtil.DistanceUnits;
 
 /**
  * Provides read-only access to shared user preferences.

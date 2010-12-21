@@ -20,7 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 
-import com.google.flightmap.common.DbAdapter;
+import com.google.flightmap.common.db.DbAdapter;
 
 /**
  * Extends {@code FileUpdater} with functionality related to database files.

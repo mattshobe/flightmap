@@ -13,16 +13,17 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.flightmap.android;
+
+package com.google.flightmap.android.db;
 
 import java.util.Collection;
 
 import android.os.AsyncTask;
 
-import com.google.flightmap.common.AirportDirectory;
 import com.google.flightmap.common.ProgressListener;
 import com.google.flightmap.common.data.Airport;
 import com.google.flightmap.common.data.LatLngRect;
+import com.google.flightmap.common.db.AirportDirectory;
 
 /**
  * Background task to get airports in a rectangle (which is a fairly slow
@@ -67,7 +68,7 @@ public class GetAirportsInRectangleTask extends
     public final LatLngRect rectangle;
     public final int minRank;
 
-    QueryParams(LatLngRect rectangle, int minRank) {
+    public QueryParams(LatLngRect rectangle, int minRank) {
       this.rectangle = rectangle;
       this.minRank = minRank;
     }
