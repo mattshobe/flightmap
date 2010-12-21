@@ -23,8 +23,9 @@ import android.graphics.Paint.Style;
 import android.location.Location;
 import android.util.Log;
 
-import com.google.flightmap.common.NavigationUtil.DistanceUnits;
+import com.google.flightmap.android.geo.AndroidMercatorProjection;
 import com.google.flightmap.common.data.LatLng;
+import com.google.flightmap.common.geo.NavigationUtil.DistanceUnits;
 
 /**
  * Draws the graphical zoom scale. The size of the scale bar changes slightly to

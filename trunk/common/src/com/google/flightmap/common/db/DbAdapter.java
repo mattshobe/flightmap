@@ -14,7 +14,7 @@
  * the License.
  */
 
-package com.google.flightmap.common;
+package com.google.flightmap.common.db;
 
 /**
  * Low level interface to database entities.

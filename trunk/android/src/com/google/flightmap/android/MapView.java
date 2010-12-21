@@ -48,18 +48,21 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ZoomButtonsController;
 
+import com.google.flightmap.android.db.GetAirportsInRectangleTask;
+import com.google.flightmap.android.db.GetAirspacesInRectangleTask;
+import com.google.flightmap.android.geo.AndroidMercatorProjection;
 import com.google.flightmap.android.graphics.AirportPalette;
 import com.google.flightmap.android.graphics.AirspacePalette;
 import com.google.flightmap.android.location.LocationHandler;
 import com.google.flightmap.android.location.LocationHandler.Source;
-import com.google.flightmap.common.CachedMagneticVariation;
-import com.google.flightmap.common.NavigationUtil;
 import com.google.flightmap.common.ProgressListener;
-import com.google.flightmap.common.NavigationUtil.DistanceUnits;
 import com.google.flightmap.common.data.Airport;
 import com.google.flightmap.common.data.Airspace;
 import com.google.flightmap.common.data.LatLng;
 import com.google.flightmap.common.data.LatLngRect;
+import com.google.flightmap.common.geo.CachedMagneticVariation;
+import com.google.flightmap.common.geo.NavigationUtil;
+import com.google.flightmap.common.geo.NavigationUtil.DistanceUnits;
 
 /**
  * View for the moving map.

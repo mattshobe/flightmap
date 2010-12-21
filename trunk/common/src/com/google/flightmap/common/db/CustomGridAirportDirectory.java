@@ -14,13 +14,14 @@
  * the License.
  */
 
-package com.google.flightmap.common;
+package com.google.flightmap.common.db;
+
+import com.google.flightmap.common.ThreadUtils;
+import com.google.flightmap.common.data.Airport;
+import com.google.flightmap.common.data.LatLngRect;
 
 import java.util.Collection;
 import java.util.LinkedList;
-
-import com.google.flightmap.common.data.Airport;
-import com.google.flightmap.common.data.LatLngRect;
 
 /**
  * High level interface to the aviation database based on the spatial indexing methods in

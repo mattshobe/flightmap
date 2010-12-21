@@ -16,10 +16,10 @@
 
 package com.google.flightmap.parsing.faa.nasr;
 
-import com.google.flightmap.common.CustomGridUtil;
 import com.google.flightmap.common.data.Airspace;
 import com.google.flightmap.common.data.LatLng;
 import com.google.flightmap.common.data.LatLngRect;
+import com.google.flightmap.common.db.CustomGridUtil;
 import com.google.flightmap.db.JdbcAviationDbWriter;
 import com.google.flightmap.parsing.db.AviationDbWriter;
 import com.google.flightmap.parsing.esri.ShapefileReader;

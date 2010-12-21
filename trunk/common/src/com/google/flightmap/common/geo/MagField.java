@@ -56,7 +56,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.flightmap.common;
+package com.google.flightmap.common.geo;
 
 import java.lang.Math;
 import java.util.Calendar;

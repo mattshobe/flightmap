@@ -16,8 +16,8 @@
 
 package com.google.flightmap.db;
 
-import com.google.flightmap.common.AviationDbAdapter;
 import com.google.flightmap.common.data.*;
+import com.google.flightmap.common.db.AviationDbAdapter;
 import com.google.flightmap.parsing.db.AviationDbReader;
 
 import java.sql.Connection;

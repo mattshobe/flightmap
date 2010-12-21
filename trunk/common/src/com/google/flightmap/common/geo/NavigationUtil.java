@@ -14,7 +14,7 @@
  * the License.
  */
 
-package com.google.flightmap.common;
+package com.google.flightmap.common.geo;
 
 import com.google.flightmap.common.data.LatLng;
 

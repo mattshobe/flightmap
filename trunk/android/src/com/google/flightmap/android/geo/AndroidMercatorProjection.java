@@ -13,11 +13,12 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.flightmap.android;
+
+package com.google.flightmap.android.geo;
 
 import android.graphics.Point;
 
-import com.google.flightmap.common.MercatorProjection;
+import com.google.flightmap.common.geo.MercatorProjection;
 import com.google.flightmap.common.data.LatLng;
 
 /**
