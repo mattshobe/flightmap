@@ -53,6 +53,7 @@ import com.google.flightmap.android.db.GetAirspacesInRectangleTask;
 import com.google.flightmap.android.geo.AndroidMercatorProjection;
 import com.google.flightmap.android.graphics.AirportPalette;
 import com.google.flightmap.android.graphics.AirspacePalette;
+import com.google.flightmap.android.graphics.ZoomScale;
 import com.google.flightmap.android.location.LocationHandler;
 import com.google.flightmap.android.location.LocationHandler.Source;
 import com.google.flightmap.common.ProgressListener;
