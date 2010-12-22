@@ -16,12 +16,11 @@
 
 package com.google.flightmap.db;
 
-import java.io.*;
 import java.sql.*;
 import java.util.*;
 
-import com.google.flightmap.common.*;
 import com.google.flightmap.common.data.*;
+import com.google.flightmap.common.db.AviationDbAdapter;
 
 public class JdbcAviationDbAdapterAirspaceQueriesTest {
   private final AviationDbAdapter dbAdapter;
@@ -36,7 +35,7 @@ public class JdbcAviationDbAdapterAirspaceQueriesTest {
 
   private void runTest() throws Exception {
 
-    final Collection<Airspace> airspaces = dbAdapter.getAirspacesInRect(rect);
+    final Collection<Airspace> airspaces = dbAdapter.getAirspacesInRectangle(rect);
     System.out.println("Airspace count: " + airspaces.size());
     for (Airspace airspace: airspaces) {
       System.out.println(airspace);
