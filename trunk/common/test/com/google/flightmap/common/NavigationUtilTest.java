@@ -16,6 +16,8 @@
 
 package com.google.flightmap.common;
 
+import com.google.flightmap.common.geo.NavigationUtil;
+
 import junit.framework.TestCase;
 
 public class NavigationUtilTest extends TestCase {
