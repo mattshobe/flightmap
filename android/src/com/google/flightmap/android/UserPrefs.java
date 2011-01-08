@@ -30,23 +30,23 @@ import com.google.flightmap.common.geo.NavigationUtil.DistanceUnits;
  */
 public class UserPrefs {
   // Preference keys. These match keys in preferences.xml
-  private static final String NORTH_UP = "North_Up";
-  private static final String DISTANCE_UNITS = "Distance_Units";
-  private static final String ENABLE_SIMULATOR = "Enable_Simulator";
-  private static final String SHOW_SEAPLANE = "Show_Seaplane";
-  private static final String SHOW_MILITARY = "Show_Military";
-  private static final String SHOW_SOFT = "Show_Soft";
-  private static final String SHOW_PRIVATE = "Show_Private";
-  private static final String SHOW_HELIPORT = "Show_Heliports";
-  private static final String RUNWAY_LENGTH = "Runway_Length";
+  public static final String NORTH_UP = "North_Up";
+  public static final String DISTANCE_UNITS = "Distance_Units";
+  public static final String ENABLE_SIMULATOR = "Enable_Simulator";
+  public static final String SHOW_SEAPLANE = "Show_Seaplane";
+  public static final String SHOW_MILITARY = "Show_Military";
+  public static final String SHOW_SOFT = "Show_Soft";
+  public static final String SHOW_PRIVATE = "Show_Private";
+  public static final String SHOW_HELIPORT = "Show_Heliports";
+  public static final String RUNWAY_LENGTH = "Runway_Length";
 
   // Preference values. These match values in arrays.xml
-  private static final String DISTANCE_UNITS_MILES = "1";
-  private static final String DISTANCE_UNITS_KILOMETERS = "2";
-  private static final String DISTANCE_UNITS_NAUTICAL_MILES = "3";
-  private static final String RUNWAY_LENGTH_NONE = "1";
-  private static final String RUNWAY_LENGTH_2000 = "2";
-  private static final String RUNWAY_LENGTH_4000 = "3";
+  public static final String DISTANCE_UNITS_MILES = "1";
+  public static final String DISTANCE_UNITS_KILOMETERS = "2";
+  public static final String DISTANCE_UNITS_NAUTICAL_MILES = "3";
+  public static final String RUNWAY_LENGTH_NONE = "1";
+  public static final String RUNWAY_LENGTH_2000 = "2";
+  public static final String RUNWAY_LENGTH_4000 = "3";
 
   /** Filename to store preferences. */
   public static final String PREFERENCES_FILE = "com.google.flightmap.android_preferences";
