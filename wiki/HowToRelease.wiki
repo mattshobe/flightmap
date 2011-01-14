@@ -43,7 +43,9 @@ If tests pass, go to step 6.  Else return to step 3.
 Create a tag for this release. See BranchesAndTags for details.
 
 == 7: Release Notes ==
-Update the DogfoodReleaseNotes for this release. Update the "what's new in version x.x.x" section in the market.
+  * Update the ReleaseVsTrunkDiff, even if there are no diffs from trunk.
+  * Update the DogfoodReleaseNotes for this release.
+  * Update the "what's new in version x.x.x" section in the market.
 
 == 8: Publish ==
 Put the release on the market. Announce to appropriate mailing list.
