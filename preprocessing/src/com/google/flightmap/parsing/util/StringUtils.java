@@ -21,7 +21,7 @@ import org.apache.commons.lang.WordUtils;
 public class StringUtils {
 
   /**
-   *  Utility class: default and only constructor is private.
+   * Pipe data from {@code in} to {@code out} using {@code buf} as a data buffer.
    */
   private StringUtils() { }
 

@@ -14,14 +14,13 @@
  * the License.
  */
 
-package com.google.flightmap.common.db;
+package com.google.flightmap.common;
 
 
 import com.google.flightmap.common.data.Airport;
 import com.google.flightmap.common.data.AirportDistance;
 import com.google.flightmap.common.data.LatLng;
 import com.google.flightmap.common.data.LatLngRect;
-import com.google.flightmap.common.geo.NavigationUtil;
 
 import java.util.Collection;
 import java.util.TreeSet;

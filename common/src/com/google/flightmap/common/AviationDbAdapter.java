@@ -14,18 +14,14 @@
  * the License.
  */
 
-package com.google.flightmap.common.db;
+package com.google.flightmap.common;
 
 import com.google.flightmap.common.data.Airport;
-import com.google.flightmap.common.data.Airspace;
 import com.google.flightmap.common.data.Comm;
-import com.google.flightmap.common.data.LatLng;
-import com.google.flightmap.common.data.LatLngRect;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Low level interface to aviation database entities.
@@ -60,11 +56,6 @@ public interface AviationDbAdapter extends DbAdapter {
    * @see #getAirportIdsWithCityLike
    */
   public List<Integer> getAirportIdsWithNameLike(String pattern);
-
-  /**
-   * Returns airspaces overlapping the given area.
-   */
-  public Collection<Airspace> getAirspacesInRectangle(LatLngRect rect) throws InterruptedException;
 
   /**
    * Returns a Map of {@link Airport}s and Rank to put in search results. An

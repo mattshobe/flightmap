@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.flightmap.common.geo;
+package com.google.flightmap.common;
 
 import com.google.flightmap.common.data.LatLng;
 

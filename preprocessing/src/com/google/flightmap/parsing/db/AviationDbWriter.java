@@ -62,7 +62,7 @@ public interface AviationDbWriter {
   public void rollback() throws SQLException;
 
   /**
-   * Creates database tables that will hold airport data.  Deletes existing tables.
+   * Creates database tables that will hold airport data.  Deletes existing airport tables.
    */
   public void initAirportTables() throws SQLException;
 
@@ -70,11 +70,6 @@ public interface AviationDbWriter {
    * Creates database table that will hold airport comm data.  Deletes existing table.
    */
   public void initAirportCommTable() throws SQLException;
-
-  /**
-   * Creates airspace tables.  Does NOT delete existing tables.
-   */
-  public void initAirspaceTables() throws SQLException;
 
   /**
    * Create metadata db table, needed by android.
@@ -127,24 +122,6 @@ public interface AviationDbWriter {
    */
   public void insertAirportComm(int id, String identifier, String frequency, String remarks)
       throws SQLException;
-
-  /**
-   * Inserts new airspace in database.
-   *
-   * @return Database id of newly inserted airspace.
-   */
-  public int insertAirspace(String name, String classString, int minLat, int maxLat, int minLng,
-      int maxLng, int lowAlt, int highAlt) throws SQLException;
-
-  /**
-   * Adds a point to an airspace polygon.
-   *
-   * @param id Airspace id.
-   * @param num Number of point in polygon sequence.
-   * @param lat Latitude, in E6 format.
-   * @param lng Longitude, in E6 format.
-   */
-  public void insertAirspacePoint(int id, int num, int lat, int lng) throws SQLException;
 
   /**
    * Updates rank of airport.

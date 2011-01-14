@@ -34,8 +34,8 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
   private final static String SQL_LITE_DRIVER = "org.sqlite.JDBC";
 
   // Database metadata
-  private final static int DB_SCHEMA_VERSION = 3;
-  private final static long DB_EXPIRATION_TIMESTAMP = 1299747660000L; // 10 Mar 2011 09:01:00 GMT
+  private final static int DB_SCHEMA_VERSION = 2;
+  private final static long DB_EXPIRATION_TIMESTAMP = 1294909260000L; // 13 Jan 2011 09:01:00 GMT
 
   private final File file;
   private Connection dbConn;
@@ -45,9 +45,6 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
   private PreparedStatement insertAirportCommStatement;
   private PreparedStatement insertAirportPropertyStatement;
   private PreparedStatement insertAirportStatement;
-  private PreparedStatement insertAirspaceStatement;
-  private PreparedStatement insertAirspaceCellRangeStatement;
-  private PreparedStatement insertAirspacePointStatement;
   private PreparedStatement insertConstantStatement;
   private PreparedStatement insertRunwayEndStatement;
   private PreparedStatement insertRunwayEndPropertyStatement;
@@ -74,7 +71,7 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
   /**
    * Resets (cached) prepared SQL statements.
    */
-  private synchronized void resetPreparedStatements() {
+  private  void resetPreparedStatements() {
     tryClose(getConstantIdStatement);
     getConstantIdStatement = null;
     tryClose(insertAirportCommStatement);
@@ -83,12 +80,6 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
     insertAirportPropertyStatement = null;
     tryClose(insertAirportStatement);
     insertAirportStatement = null;
-    tryClose(insertAirspaceStatement);
-    insertAirspaceStatement = null;
-    tryClose(insertAirspaceCellRangeStatement);
-    insertAirspaceCellRangeStatement = null;
-    tryClose(insertAirspacePointStatement);
-    insertAirspacePointStatement = null;
     tryClose(insertConstantStatement);
     insertConstantStatement = null;
     tryClose(insertRunwayEndStatement);
@@ -205,37 +196,6 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
                          "remarks TEXT);");
       stat.executeUpdate("CREATE INDEX airport_comm_airport_id_index ON " +
                          "airport_comm (airport_id)");
-    } finally {
-      if (stat != null) {
-        stat.close();
-      }
-    }
-  }
-
-  @Override
-  public synchronized void initAirspaceTables() throws SQLException {
-    Statement stat = null;
-    try {
-      stat = dbConn.createStatement();
-      stat.executeUpdate("CREATE TABLE IF NOT EXISTS airspaces (" + 
-                         "_id INTEGER PRIMARY KEY ASC, " +
-                         "name TEXT NOT NULL, " + 
-                         "class INTEGER NOT NULL, " +
-                         "min_lat INTEGER NOT NULL, " +
-                         "max_lat INTEGER NOT NULL, " +
-                         "min_lng INTEGER NOT NULL, " +
-                         "max_lng INTEGER NOT NULL, " +
-                         "low_alt INTEGER, " + 
-                         "high_alt INTEGER NOT NULL);");
-      stat.executeUpdate("CREATE TABLE IF NOT EXISTS airspace_points (" +
-                         "airspace_id INTEGER NOT NULL, " +
-                         "num INTEGER NOT NULL, " +
-                         "lat INTEGER NOT NULL, " + 
-                         "lng INTEGER NOT NULL);");
-      stat.executeUpdate("CREATE INDEX IF NOT EXISTS airspace_points_airspace_id_index ON " +
-                         "airspace_points (airspace_id)");
-      stat.executeUpdate("CREATE INDEX IF NOT EXISTS airspace_points_num_index ON " +
-                         "airspace_points (num)");
     } finally {
       if (stat != null) {
         stat.close();
@@ -436,41 +396,6 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
   }
 
   @Override
-  public synchronized int insertAirspace(final String name, final String classString,
-      final int minLat, final int maxLat, final int minLng, final int maxLng,
-      final int lowAlt, final int highAlt) throws SQLException {
-    if (insertAirspaceStatement == null) {
-      insertAirspaceStatement = dbConn.prepareStatement("INSERT INTO airspaces " + 
-        "(name, class, min_lat, max_lat, min_lng, max_lng, low_alt, high_alt) " + 
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-    }
-    insertAirspaceStatement.setString(1, name);
-    insertAirspaceStatement.setInt(2, getConstantId(classString));
-    insertAirspaceStatement.setInt(3, minLat);
-    insertAirspaceStatement.setInt(4, maxLat);
-    insertAirspaceStatement.setInt(5, minLng);
-    insertAirspaceStatement.setInt(6, maxLng);
-    insertAirspaceStatement.setInt(7, lowAlt);
-    insertAirspaceStatement.setInt(8, highAlt);
-    insertAirspaceStatement.executeUpdate();
-    return getGeneratedKey(insertAirspaceStatement);
-  }
-
-  @Override
-  public synchronized void insertAirspacePoint(final int id, final int num, final int lat,
-      final int lng) throws SQLException {
-    if (insertAirspacePointStatement == null) {
-      insertAirspacePointStatement = dbConn.prepareStatement(
-          "INSERT INTO airspace_points (airspace_id, num, lat, lng) VALUES (?, ?, ?, ?)");
-    }
-    insertAirspacePointStatement.setInt(1, id);
-    insertAirspacePointStatement.setInt(2, num);
-    insertAirspacePointStatement.setInt(3, lat);
-    insertAirspacePointStatement.setInt(4, lng);
-    insertAirspacePointStatement.executeUpdate();
-  }
-
-  @Override
   public synchronized void updateAirportRank(final int id, final int rank) throws SQLException {
     if (updateAirportRankStatement == null) {
       updateAirportRankStatement = 
@@ -522,18 +447,6 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
     }
     insertRunwayEndPropertyStatement.setInt(3, runwayEndId);
     return insertProperty(insertRunwayEndPropertyStatement, key, value);
-  }
-
-  private static int getGeneratedKey(final PreparedStatement stmt) throws SQLException {
-    final ResultSet rs = stmt.getGeneratedKeys();
-    if (!rs.next()) {
-      throw new RuntimeException("Cannot get key: statement did not generate any.");
-    }
-    final int key = rs.getInt(1);
-    if (rs.next()) {
-      throw new RuntimeException("Unexpected: statement generated more than one key.");
-    }
-    return key;
   }
 
   /**

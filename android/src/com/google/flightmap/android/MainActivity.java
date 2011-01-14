@@ -39,16 +39,14 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
 
-import com.google.flightmap.android.db.AndroidAviationDbAdapter;
 import com.google.flightmap.android.location.LocationHandler;
 import com.google.flightmap.android.location.SimulatorDialog;
-import com.google.flightmap.android.net.DbUpdaterTask;
+import com.google.flightmap.common.AviationDbAdapter;
+import com.google.flightmap.common.CachedAirportDirectory;
+import com.google.flightmap.common.CachedAviationDbAdapter;
+import com.google.flightmap.common.CustomGridAirportDirectory;
+import com.google.flightmap.common.DbAdapter;
 import com.google.flightmap.common.ProgressListener;
-import com.google.flightmap.common.db.AviationDbAdapter;
-import com.google.flightmap.common.db.CachedAirportDirectory;
-import com.google.flightmap.common.db.CachedAviationDbAdapter;
-import com.google.flightmap.common.db.CustomGridAirportDirectory;
-import com.google.flightmap.common.db.DbAdapter;
 
 public class MainActivity extends Activity {
   private static final String TAG = MainActivity.class.getSimpleName();
@@ -68,7 +66,7 @@ public class MainActivity extends Activity {
 
   private static final String AVIATION_DATABASE_URL =
       "http://sites.google.com/site/flightmapdata/aviation-db/aviation.db";
-  private static final int AVIATION_DATABASE_REQUIRED_SCHEMA_VERSION = 3;
+  private static final int AVIATION_DATABASE_REQUIRED_SCHEMA_VERSION = 2;
 
   private boolean disclaimerAccepted;
   private boolean isRunning;

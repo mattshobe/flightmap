@@ -13,7 +13,6 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package com.google.flightmap.android.location;
 
 import android.location.Location;
@@ -21,9 +20,9 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
+import com.google.flightmap.common.MercatorProjection;
+import com.google.flightmap.common.NavigationUtil;
 import com.google.flightmap.common.data.LatLng;
-import com.google.flightmap.common.geo.MercatorProjection;
-import com.google.flightmap.common.geo.NavigationUtil;
 
 /**
  * Provides a simulated {@link Location}. This class does not extend
