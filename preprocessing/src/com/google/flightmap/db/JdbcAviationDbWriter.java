@@ -35,7 +35,7 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
 
   // Database metadata
   private final static int DB_SCHEMA_VERSION = 3;
-  private final static long DB_EXPIRATION_TIMESTAMP = 1294909260000L; // 13 Jan 2011 09:01:00 GMT
+  private final static long DB_EXPIRATION_TIMESTAMP = 1299747660000L; // 10 Mar 2011 09:01:00 GMT
 
   private final File file;
   private Connection dbConn;

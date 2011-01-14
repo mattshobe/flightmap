@@ -10,5 +10,5 @@ java -cp build/classes:lib/sqlitejdbc.jar:lib/guava.jar:lib/commons-lang.jar:lib
 
 java -cp build/classes:lib/sqlitejdbc.jar:lib/guava.jar:lib/commons-lang.jar:lib/commons-cli.jar:lib/flightmap-common.jar:lib/opencsv.jar com.google.flightmap.parsing.faa.nasr.CommParser --twr ~/nasr/TWR.txt --iata_to_icao ../data/iata2icao.txt --freq_uses_normalization ../data/nasr/distinct_freq_uses.csv --aviation_db "$AVIATION_DB"
 
-java -cp build/classes/:lib/flightmap-common.jar:lib/sqlitejdbc.jar:lib/commons-cli.jar:lib/opencsv.jar com.google.flightmap.parsing.faa.nasr.AirspaceParser --aviation_db "$AVIATION_DB" --shapefiles ~/nasr/Additional_Data/Shape_Files/class_*.shp
+#java -cp build/classes/:lib/flightmap-common.jar:lib/sqlitejdbc.jar:lib/commons-cli.jar:lib/opencsv.jar com.google.flightmap.parsing.faa.nasr.AirspaceParser --aviation_db "$AVIATION_DB" --shapefiles ~/nasr/Additional_Data/Shape_Files/class_*.shp
 
