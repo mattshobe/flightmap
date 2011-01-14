@@ -19,7 +19,7 @@ ORIGINAL CODE:
 
 
 THIRD-PARTY COMPONENTS:
-  * MagField.java (common/src/com/google/flightmap/common/geo/MagField.java)
+  * MagField.java (common/src/com/google/flightmap/common/MagField.java)
 
     Copyright (C) 2000  Edward A Williams <Ed_Williams@compuserve.com>
 

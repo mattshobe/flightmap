@@ -6,7 +6,7 @@ import java.io.*;
 import java.sql.*;
 import java.util.*;
 
-import com.google.flightmap.common.db.AviationDbAdapter;
+import com.google.flightmap.common.*;
 
 public class JdbcAviationDbAdapterPatternQueriesTest {
   private final AviationDbAdapter dbAdapter;

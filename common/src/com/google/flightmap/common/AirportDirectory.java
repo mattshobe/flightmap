@@ -14,7 +14,7 @@
  * the License.
  */
 
-package com.google.flightmap.common.db;
+package com.google.flightmap.common;
 
 import com.google.flightmap.common.data.Airport;
 import com.google.flightmap.common.data.AirportDistance;

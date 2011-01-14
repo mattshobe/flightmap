@@ -26,9 +26,8 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 
 public class IcaoUtils {
-
   /**
-   *  Utility class: default and only constructor is private.
+   * Pipe data from {@code in} to {@code out} using {@code buf} as a data buffer.
    */
   private IcaoUtils() { }
 

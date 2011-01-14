@@ -13,7 +13,6 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package com.google.flightmap.android.location;
 
 import android.location.Criteria;
@@ -23,7 +22,7 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
 
-import com.google.flightmap.common.geo.NavigationUtil;
+import com.google.flightmap.common.NavigationUtil;
 
 /**
  * Provides location information to the application. The source of location

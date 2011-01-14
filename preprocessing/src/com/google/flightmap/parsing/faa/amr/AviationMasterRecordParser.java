@@ -16,11 +16,11 @@
 
 package com.google.flightmap.parsing.faa.amr;
 
+import com.google.flightmap.common.AviationDbAdapter;
+import com.google.flightmap.common.CustomGridUtil;
 import com.google.flightmap.common.data.Airport;
 import com.google.flightmap.common.data.LatLng;
 import com.google.flightmap.common.data.Runway;
-import com.google.flightmap.common.db.AviationDbAdapter;
-import com.google.flightmap.common.db.CustomGridUtil;
 import com.google.flightmap.db.JdbcAviationDbAdapter;
 import com.google.flightmap.db.JdbcAviationDbWriter;
 import com.google.flightmap.parsing.db.AviationDbWriter;

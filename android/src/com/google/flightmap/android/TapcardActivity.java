@@ -44,17 +44,16 @@ import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 
-import com.google.flightmap.android.db.AndroidAviationDbAdapter;
 import com.google.flightmap.android.location.LocationHandler;
+import com.google.flightmap.common.AviationDbAdapter;
+import com.google.flightmap.common.CachedAviationDbAdapter;
+import com.google.flightmap.common.CachedMagneticVariation;
+import com.google.flightmap.common.NavigationUtil;
+import com.google.flightmap.common.NavigationUtil.DistanceUnits;
 import com.google.flightmap.common.data.Airport;
 import com.google.flightmap.common.data.Comm;
 import com.google.flightmap.common.data.LatLng;
 import com.google.flightmap.common.data.Runway;
-import com.google.flightmap.common.db.AviationDbAdapter;
-import com.google.flightmap.common.db.CachedAviationDbAdapter;
-import com.google.flightmap.common.geo.CachedMagneticVariation;
-import com.google.flightmap.common.geo.NavigationUtil;
-import com.google.flightmap.common.geo.NavigationUtil.DistanceUnits;
 
 /**
  * Shows details about an airport.
