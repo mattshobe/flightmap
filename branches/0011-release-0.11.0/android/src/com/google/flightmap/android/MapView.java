@@ -70,6 +70,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
 
   // Saved instance state constants.
   private static final String ZOOM_LEVEL = "zoom-level";
+  private static final String MAP_ANCHOR_LAT = "map-anchor-lat";
+  private static final String MAP_ANCHOR_LNG = "map-anchor-lng";
+  private static final String IS_PANNING = "is-panning";
 
   /** Position is considered "old" after this many milliseconds. */
   private static final long MAX_LOCATION_AGE = 300000; // 5 minutes.
@@ -113,9 +116,15 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   // Last known bearing.
   private float lastBearing;
 
-  // Coordinates to draw the aircraft on the map.
-  private int aircraftX;
-  private int aircraftY;
+  // Origin of the map. All scaling centers on this point. This is typically
+  // the location where the aircraft icon is drawn, however it may move if
+  // the user uses the scale gesture (pinch-to-zoom).
+  private int mapOriginX;
+  private int mapOriginY;
+
+  // Size of the canvas in pixels
+  private int canvasWidth;
+  private int canvasHeight;
 
   // Fields relating to touch events and panning.
   private static final int PAN_CROSSHAIR_SIZE = 12;
@@ -124,6 +133,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   private static final int PAN_TOUCH_THRESHOLD = 15;
   /** Radius in screen pixels to search around touch location. */
   private static final int TOUCH_PIXEL_RADIUS = 30;
+  // Screen coordinates where the user touched.
   private float touchX;
   private float touchY;
   /** True if the last touch event was a move. */
@@ -311,7 +321,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     setRedrawNeeded(true);
     Canvas c = holder.lockCanvas(null);
     synchronized (holder) {
-      resetAircraftPosition(c.getWidth(), c.getHeight());
+      resetMapOrigin(c.getWidth(), c.getHeight());
     }
     holder.unlockCanvasAndPost(c);
     return true;
@@ -365,25 +375,35 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       }
 
       case MotionEvent.ACTION_MOVE: {
-        // Don't process as a swipe gesture if the ScaleGestureDetector is
-        // processing a scale gesture.
+        float x;
+        float y;
         if (scaleDetector.isInProgress()) {
-          break;
-        }
+          // Use the center of the scale gesture as the touch point.
+          x = scaleDetector.getFocusX();
+          y = scaleDetector.getFocusY();
+          touchPoint.x = (int) (x + 0.5);
+          touchPoint.y = (int) (y + 0.5);
 
-        int pointerIndex = event.findPointerIndex(activePointerId);
-        final float x = event.getX(pointerIndex);
-        final float y = event.getY(pointerIndex);
+          // Also move the map anchor to that same location.
+          mapAnchorLatLng = getLocationForPoint(touchPoint);
+          // Change the map pixel origin to the touch point.
+          mapOriginX = touchPoint.x;
+          mapOriginY = touchPoint.y;
+        } else {
+          int pointerIndex = event.findPointerIndex(activePointerId);
+          x = event.getX(pointerIndex);
+          y = event.getY(pointerIndex);
+        }
 
         // Ignore very small moves, since they may actually be taps.
         // Round to int to match what Point uses.
         int deltaX = Math.round(touchX - x);
         int deltaY = Math.round(touchY - y);
-
         if (!previousTouchWasMove
             && Math.max(Math.abs(deltaX), Math.abs(deltaY)) < PAN_TOUCH_THRESHOLD * density) {
           break;
         }
+
         setRedrawNeeded(true);
         previousTouchWasMove = true;
         isPanning = true;
@@ -429,6 +449,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     // mapAnchorLatLng in screen pixel space, then apply the deltas, then
     // pan to the resulting screen location.
     Point mapAnchorPoint = getPointForLocation(getMapAnchorLatLng());
+    if (mapAnchorPoint == null) {
+      return;
+    }
     panToScreenPoint(mapAnchorPoint.x + deltaX, mapAnchorPoint.y + deltaY);
   }
 
@@ -519,8 +542,11 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   }
 
   @Override
-  public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+  public synchronized void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
     setRedrawNeeded(true);
+    if (UserPrefs.NORTH_UP.equals(key)) {
+      resetMapOrigin(canvasWidth, canvasHeight);
+    }
   }
 
   private synchronized boolean isRedrawNeeded() {
@@ -549,7 +575,12 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
    */
   @Override
   public synchronized void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-    resetAircraftPosition(width, height);
+    if (width == canvasWidth && height == canvasHeight) {
+      return;
+    }
+    canvasWidth = width;
+    canvasHeight = height;
+    resetMapOrigin(width, height);
     panResetButton.canvasSizeChanged(width, height);
 
     // Update pixel coordinates of screen corners.
@@ -565,18 +596,17 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   }
 
   /**
-   * Resets aircraft screen position (typically used when snapping back after
-   * panning).
+   * Resets map screen origin (typically used when snapping back after panning).
    */
-  private synchronized void resetAircraftPosition(int width, int height) {
+  private synchronized void resetMapOrigin(int canvasWidth, int canvasHeight) {
     if (mainActivity.userPrefs.isNorthUp()) {
-      // Center the aircraft on the screen.
-      aircraftX = width / 2;
-      aircraftY = height / 2;
+      // Center the origin on the screen.
+      mapOriginX = canvasWidth / 2;
+      mapOriginY = canvasHeight / 2;
     } else {
-      // Center the aircraft horizontally, and 3/4 of the way down vertically.
-      aircraftX = width / 2;
-      aircraftY = height - (height / 4);
+      // Center the origin horizontally, and 3/4 of the way down vertically.
+      mapOriginX = canvasWidth / 2;
+      mapOriginY = canvasHeight - (canvasHeight / 4);
     }
   }
 
@@ -584,14 +614,11 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   public synchronized void surfaceCreated(SurfaceHolder holder) {
     this.holder = holder;
     setRedrawNeeded(true);
-    // Set up listener to changes to SharedPreferences.
-    mainActivity.userPrefs.registerOnSharedPreferenceChangeListener(this);
   }
 
   @Override
   public void surfaceDestroyed(SurfaceHolder holder) {
     this.holder = null;
-    mainActivity.userPrefs.unregisterOnSharedPreferenceChangeListener(this);
   }
 
   private void createZoomController() {
@@ -664,6 +691,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       return;
     }
 
+    // Restore point: Canvas origin set to top-left corner.
+    final int restoreToCanvasOrigin = c.save();
+
     // Clear the map.
     c.drawColor(Color.BLACK);
 
@@ -698,10 +728,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     // Initialize transform to draw airports.
     //
 
-    // Rotate everything relative to the aircraft.
-    c.translate(aircraftX, aircraftY);
-    // Restore point: origin at aircraft draw spot, no rotations.
-    final int restoreToBeforeRotation = c.save();
+    // Rotate everything relative to the origin.
+    c.translate(mapOriginX, mapOriginY);
     if (isTrackUp) {
       // Rotate to make track up (no rotation = north up).
       c.rotate(360 - lastBearing);
@@ -801,9 +829,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     airplaneImage.draw(c);
 
     // Draw items that are in fixed locations. Restore canvas transform to the
-    // point before rotations, then set origin to top-left screen corner.
-    c.restoreToCount(restoreToBeforeRotation);
-    c.translate(-aircraftX, -aircraftY);
+    // original canvas (no rotations, orgin at top-left corner).
+    c.restoreToCount(restoreToCanvasOrigin);
 
     // Draw reset panning button.
     panResetButton.draw(c);
@@ -1010,11 +1037,11 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     // the canvas in drawMapOnCanvas().
     //
     // drawMapOnCanvas() does the following:
-    // c.translate(aircraftX, aircraftY);
+    // c.translate(mapOriginX, mapOriginY);
     // if (isTrackUp) c.rotate(360 - bearing);
     // c.translate(-mapAnchorPoint.x, -mapAnchorPoint.y);
     screenMatrix.reset();
-    screenMatrix.postTranslate(-aircraftX, -aircraftY);
+    screenMatrix.postTranslate(-mapOriginX, -mapOriginY);
     if (!mainActivity.userPrefs.isNorthUp()) {
       screenMatrix.postRotate(orientation);
     }
@@ -1062,11 +1089,11 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     // does not work, and excluding it gives correct results.
     //
     // drawMapOnCanvas() does the following:
-    // c.translate(aircraftX, aircraftY);
+    // c.translate(mapOriginX, mapOriginY);
     // if (isTrackUp) c.rotate(360 - bearing);
     // c.translate(-mapAnchorPoint.x, -mapAnchorPoint.y);
     screenMatrix.reset();
-    screenMatrix.postTranslate(aircraftX, aircraftY);
+    screenMatrix.postTranslate(mapOriginX, mapOriginY);
     screenMatrix.postTranslate(-anchorPoint.x, -anchorPoint.y);
     Point mercator = AndroidMercatorProjection.toPoint(zoom, location);
     screenPoints[0] = mercator.x;
@@ -1079,18 +1106,32 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   /**
    * Saves map-specific state info to {@code outState}.
    */
-  void saveInstanceState(Bundle outState) {
+  synchronized void saveInstanceState(Bundle outState) {
     outState.putFloat(ZOOM_LEVEL, getZoom());
+    if (mapAnchorLatLng != null) {
+      outState.putInt(MAP_ANCHOR_LAT, mapAnchorLatLng.lat);
+      outState.putInt(MAP_ANCHOR_LNG, mapAnchorLatLng.lng);
+    }
+    outState.putBoolean(IS_PANNING, isPanning);
   }
 
   /**
    * Restores map-specific state info from {@code savedInstanceState}
    */
-  void restoreInstanceState(Bundle savedInstanceState) {
-    if (null == savedInstanceState || !savedInstanceState.containsKey(ZOOM_LEVEL)) {
+  synchronized void restoreInstanceState(Bundle savedInstanceState) {
+    if (null == savedInstanceState) {
       return;
     }
-    setZoom(savedInstanceState.getFloat(ZOOM_LEVEL));
+    if (savedInstanceState.containsKey(ZOOM_LEVEL)) {
+      setZoom(savedInstanceState.getFloat(ZOOM_LEVEL));
+    }
+    if (savedInstanceState.containsKey(MAP_ANCHOR_LAT)
+        && savedInstanceState.containsKey(MAP_ANCHOR_LNG)) {
+      int lat = savedInstanceState.getInt(MAP_ANCHOR_LAT);
+      int lng = savedInstanceState.getInt(MAP_ANCHOR_LNG);
+      mapAnchorLatLng = new LatLng(lat, lng);
+    }
+    isPanning = savedInstanceState.getBoolean(IS_PANNING);
   }
 
   /**
@@ -1222,6 +1263,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       double zoomDelta = Math.log(scaleFactor) / LOG_OF_2;
       setZoom((float) (getZoom() + zoomDelta));
       setRedrawNeeded(true);
+      previousTouchWasMove = true;
       return true;
     }
   }

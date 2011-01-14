@@ -101,6 +101,8 @@ public class MainActivity extends Activity {
     setContentView(R.layout.mapview);
     mapFrame = (FrameLayout) findViewById(R.id.map_frame);
     mapView = new MapView(this);
+    userPrefs.registerOnSharedPreferenceChangeListener(mapView);
+
     // The MapView must be the first child.
     mapFrame.addView(mapView, 0);
 
@@ -300,6 +302,7 @@ public class MainActivity extends Activity {
   @Override
   protected void onDestroy() {
     super.onDestroy();
+    userPrefs.unregisterOnSharedPreferenceChangeListener(mapView);
     mapView.destroy();
     if (airportDirectory != null) {
       airportDirectory.close();
