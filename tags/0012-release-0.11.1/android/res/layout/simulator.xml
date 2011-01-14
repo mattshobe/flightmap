@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  style="@style/FillWidth" android:stretchColumns="*">
+  <TableRow>
+    <CheckBox android:text="@string/enable_simulator"
+      android:layout_span="6" android:id="@+id/enable_simulator" style="@style/SimulatorText" />
+  </TableRow>
+  <TableRow>
+    <Button android:text=" + " android:id="@+id/sim_speed_increment"
+      android:layout_column="0" android:layout_span="2" style="@style/WrapContent" />
+    <Button android:text=" + " android:id="@+id/sim_track_increment"
+      android:layout_column="2" android:layout_span="2" style="@style/WrapContent" />
+    <Button android:text=" + " android:id="@+id/sim_altitude_increment"
+      android:layout_column="4" android:layout_span="2" style="@style/WrapContent" />
+  </TableRow>
+  <TableRow>
+    <TextView android:text="120" android:id="@+id/sim_speed_value" android:gravity="right"
+      style="@style/SimulatorText" />
+    <TextView android:text=" kts" android:id="@+id/sim_speed_units"
+      style="@style/SimulatorText" />
+    <TextView android:text="190" android:id="@+id/sim_track_value" android:gravity="right"
+      style="@style/SimulatorText" />
+    <TextView android:text="*" android:id="@+id/sim_track_units"
+      style="@style/SimulatorText" />
+    <TextView android:text="5,500" android:id="@+id/sim_alt_value" android:gravity="right"
+      style="@style/SimulatorText" />
+    <TextView android:text=" ft" android:id="@+id/sim_alt_units"
+      style="@style/SimulatorText" />
+  </TableRow>
+  <TableRow>
+    <Button android:text=" - " android:id="@+id/sim_speed_decrement"
+      android:layout_column="0" android:layout_span="2" style="@style/WrapContent" />
+    <Button android:text=" - " android:id="@+id/sim_track_decrement"
+      android:layout_column="2" android:layout_span="2" style="@style/WrapContent" />
+    <Button android:text=" - " android:id="@+id/sim_altitude_decrement"
+      android:layout_column="4" android:layout_span="2" style="@style/WrapContent" />
+  </TableRow>
+  <TableRow>
+      <Button android:text="@string/simulator_stop" android:id="@+id/sim_stop"
+      android:layout_column="0" android:layout_span="2" style="@style/WrapContent" />
+  </TableRow>
+</TableLayout>
