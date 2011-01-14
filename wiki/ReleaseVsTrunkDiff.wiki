@@ -8,6 +8,10 @@ Significant differences are changes that are not reflected in trunk, such as qui
 Notation:
   * *Release x (rY -> rZ)*: Revision Y was tagged as release x in revision Z.
 
+== Release 0.11.1 (trunk r481 -> branch r486 -> r488) ==
+  * Cherry picked r481 to get improved panning.
+  * The above rev also fixed a NPE if you panned w/o a current location.
+
 == Release 0.11.0 (trunk r461 -> branch r463 -> r464) ==
   * No changes from trunk.
 
