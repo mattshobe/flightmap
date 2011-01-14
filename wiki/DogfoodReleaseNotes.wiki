@@ -28,6 +28,12 @@ Also, you should consider joining the Flight Map [http://g/flightmap mailing lis
   * Airspace, State Boundaries.
   * Better organization of airport communication data.
 
+=Release: v0.11.1 "Mooney" - 1/14/11=
+  * Improvements:
+    * Better pinch-to-zoom behavior. If you pan your fingers while pinching, the map pans.
+    * Preserve pan state and panned-to map location when app is restored (such as when changing orientation).
+  * Bug fixes:
+    * Fixed null pointer exception if the user panned the map when there was no current location.
 =Release: v0.11.0 "Mooney" - 12/20/10=
   * New features:
     * Can install to SD card (requires Android 2.2).
