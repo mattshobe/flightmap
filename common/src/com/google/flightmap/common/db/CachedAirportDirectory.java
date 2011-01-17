@@ -116,9 +116,12 @@ public class CachedAirportDirectory extends AbstractAirportDirectory {
 
     // This call may be slow.
     System.out.println("Fetching airports for " + area + "    rank=" + minRank);
+    final long start = System.currentTimeMillis();
     final Collection<Airport> newCachedAirports =
         airportDirectory.getAirportsInRectangle(inProgressArea, minRank);
-    System.out.println("Got airports in rectangle. Count=" + newCachedAirports.size());
+    final long stop = System.currentTimeMillis();
+    System.out.println("Got airports in rectangle. Count: " + newCachedAirports.size() + " in " +
+        (stop - start) + "ms.");
     synchronized (this) {
       cachedArea = inProgressArea;
       cachedMinRank = minRank;
