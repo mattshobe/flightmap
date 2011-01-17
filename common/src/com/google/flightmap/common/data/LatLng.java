@@ -44,11 +44,20 @@ public class LatLng implements Comparable<LatLng> {
   }
 
   /**
-   * Factory method to avoid confusion with primary constructor that takes E6
-   * format.
+   * Factory method for {@code lat}, {@code lng} in degrees.
+   * Avoids confusion with primary constructor that takes E6 format.
+   *
    */
   public static LatLng fromDouble(final double lat, final double lng) {
     return new LatLng((int) Math.round(lat * 1E6), (int) Math.round(lng * 1E6));
+  }
+
+  /**
+   * Factory method for {@code lat}, {@code lng} in radians.
+   *
+   */
+  public static LatLng fromRadians(final double lat, final double lng) {
+    return LatLng.fromDouble(Math.toDegrees(lat), Math.toDegrees(lng));
   }
 
   /**
