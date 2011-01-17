@@ -246,15 +246,14 @@ public class NavigationUtil {
    * @param lng2Radians Longitude of second point, in radians
    * 
    * @see <a href="http://en.wikipedia.org/wiki/Haversine_formula"
-   *      target="_parent"> Haversine formula</a>
+   *      target="_parent">Haversine formula</a>
    */
   public static double computeDistanceUsingRadians(double lat1Radians, double lng1Radians,
       double lat2Radians, double lng2Radians) {
     final double dLat = lat2Radians - lat1Radians;
     final double dLng = lng2Radians - lng1Radians;
     final double a =
-        Math.pow(Math.sin(dLat / 2), 2) + Math.cos(lat1Radians) * Math.cos(lat2Radians)
-            * Math.pow(Math.sin(dLng / 2), 2);
+        haversin(dLat) + Math.cos(lat1Radians) * Math.cos(lat2Radians) * haversin(dLng);
     return EARTH_RADIUS * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
@@ -278,4 +277,18 @@ public class NavigationUtil {
     final double varRad = MagField.GetMagVar(latRad, lngRad, heightKm, SESSION_TIME_MILLIS, null);
     return Math.toDegrees(varRad);
   }
+
+
+  /**
+   * Returns the trigonometric haversine of an angle.
+   * <p>
+   * @param x Angle, in radians
+   * @return <pre>haversin(x) = (1-cos(x))/2 = sin^2(x/2)</pre>
+   *
+   * @see <a href="http://en.wikipedia.org/wiki/Versine" target="_parent">Versine function</a>
+   */
+  private static double haversin(final double x) {
+    return Math.pow(Math.sin(x / 2), 2);
+  }
+
 }
