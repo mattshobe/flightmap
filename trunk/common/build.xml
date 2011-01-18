@@ -112,7 +112,7 @@ limitations under the License.
       packagenames="com.google.flightmap.*"
          destdir="${build.dir}/javadoc"
          use="true"
-         author="true"
+         author="false"
          access="private"
          windowtitle="Flight Map common">
       <sourcepath>

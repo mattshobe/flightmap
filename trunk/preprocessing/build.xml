@@ -165,12 +165,12 @@ limitations under the License.
       packagenames="com.google.flightmap.*"
          destdir="${build.dir}/javadoc"
          use="true"
-         author="true"
-         protected="true"
-         windowtitle="Flight Map ${version}">
+         author="false"
+         access="private"
+         windowtitle="Flight Map preprocessing">
       <sourcepath>
         <pathelement location="${src.dir}"/>
-        <!--        <pathelement location="${env.JAVA_HOME}/src"/> -->
+        <pathelement location="${env.JAVA_HOME}/src"/>
       </sourcepath>
       <link href="http://java.sun.com/javase/6/docs/api"/>
     </javadoc>
