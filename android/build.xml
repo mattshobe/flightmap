@@ -80,8 +80,8 @@ limitations under the License.
         packagenames="com.google.flightmap.*"
         destdir="javadoc"
         use="true"
-        author="true"
-        protected="true"
+        author="false"
+        access="private"
         windowtitle="Flight Map ${version}">
       <sourcepath>
         <pathelement location="${source.dir}"/>
