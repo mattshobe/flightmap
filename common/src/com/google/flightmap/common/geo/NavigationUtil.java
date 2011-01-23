@@ -291,4 +291,73 @@ public class NavigationUtil {
     return Math.pow(Math.sin(x / 2), 2);
   }
 
+  /**
+   * Returns initial course from {@code start} to {@code end} on a great circle.
+   *
+   * @param start Starting point
+   * @param end   End point
+   * @return      Initial course, in clockwise degrees from North.
+   */
+  public static double getInitialCourse(final LatLng start, final LatLng end) {
+    final double lat1 = start.latRad();
+    final double lng1 = start.lngRad();
+    final double lat2 = end.latRad();
+    final double lng2 = end.lngRad();
+    final double dLng = lng2 - lng1;
+    final double lat1Cos = Math.cos(lat1);
+    final double lat1Sin = Math.sin(lat1);
+    final double lat2Cos = Math.cos(lat2);
+    final double lat2Sin = Math.sin(lat2);
+    final double dLngCos = Math.cos(dLng);
+    final double dLngSin = Math.sin(dLng);
+
+    final double y = dLngSin * lat2Cos;
+    final double x = lat1Cos * lat2Sin - lat1Sin * lat2Cos * dLngCos;
+    final double C = Math.toDegrees(Math.atan2(y, x));
+    return euclideanMod(C, 360.0);
+  }
+
+  /**
+   * Returns Euclidean module of {@code x}, {@code y}.
+   *
+   * @see <a href="http://portal.acm.org/citation.cfm?id=128862" target="_parent">
+   * The Euclidean definition of the functions div and mod</a>
+   */
+  private static double euclideanMod(final double x, final double y) {
+    final double mod = x % y;
+    return (mod < 0) ? mod + y : mod;
+  }
+
+  /**
+   * Returns point along given radial and distance from {@code o}.
+   *
+   * @param o      Starting point
+   * @param course Inital course, in degrees clockwise from True North.
+   * @param d      Distance along radial, in meters.
+   * @return       Point on radial {@code course} and distance {@code d} from {@code o}.
+   *
+   * */
+  public static LatLng getPointAlongRadial(final LatLng o, final double course, final double d) {
+    final double crsRad = Math.toRadians(course);
+    final double crsRadCos = Math.cos(crsRad);
+    final double crsRadSin = Math.sin(crsRad);
+
+    final double dRad = d / EARTH_RADIUS;
+    final double dRadCos = Math.cos(dRad);
+    final double dRadSin = Math.sin(dRad);
+
+    final double lat1 = o.latRad();
+    final double lng1 = o.lngRad();
+    final double lat1Cos = Math.cos(lat1);
+    final double lat1Sin = Math.sin(lat1);
+
+    final double lat = Math.asin(lat1Sin * dRadCos + lat1Cos * dRadSin * crsRadCos);
+    final double latSin = Math.sin(lat);
+    final double dLngY = crsRadSin * dRadSin * lat1Cos;
+    final double dLngX = dRadCos - lat1Sin * latSin;
+    final double dLng = Math.atan2(dLngY, dLngX);
+    final double lng = euclideanMod(lng1 + dLng + Math.PI, 2 * Math.PI) - Math.PI;
+    final LatLng destination = LatLng.fromRadians(lat, lng);
+    return destination;
+  }
 }
