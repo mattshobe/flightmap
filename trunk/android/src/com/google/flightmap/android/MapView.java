@@ -1232,9 +1232,24 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     // DEBUG(aristidis)
     if (getAirspacesTask != null) return;
     // Have to make a new task here. Can't call execute again on an active task.
-    getAirspacesTask =
-        new GetAirspacesInRectangleTask(mainActivity.aviationDbAdapter, getAirspacesListener);
-    getAirspacesTask.execute(screenArea);
+
+    
+
+    /**************************************************************************
+     * Temporary workaround, since r484 removed the airspaces table. Re-eanble
+     * this code when the table comes back.
+     *************************************************************************/
+    final boolean DISABLE_AIRSPACE_WHILE_NOT_IN_DATABASE = true;
+    if (DISABLE_AIRSPACE_WHILE_NOT_IN_DATABASE != true) {
+      getAirspacesTask =
+          new GetAirspacesInRectangleTask(mainActivity.aviationDbAdapter, getAirspacesListener);
+      getAirspacesTask.execute(screenArea);
+    }
+    
+    
+    
+    
+    
   }
 
   /**
