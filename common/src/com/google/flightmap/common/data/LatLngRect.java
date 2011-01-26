@@ -150,6 +150,12 @@ public class LatLngRect {
     return neCorner;
   }
 
+  public synchronized LatLng getCenter() {
+    final int lat = (int) Math.round((swCorner.lat + neCorner.lat)/2.0);
+    final int lng = (int) Math.round((swCorner.lng + neCorner.lng)/2.0);
+    return new LatLng(lat, lng);
+  }
+
   /**
    * @return North latitude, in E6 format.
    */
