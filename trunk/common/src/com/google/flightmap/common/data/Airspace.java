@@ -32,6 +32,23 @@ public class Airspace implements Comparable<Airspace> {
   */
   public enum Class {
     ALPHA, BRAVO, CHARLIE, DELTA, ECHO, OTHER;
+
+    public static Class valueOf(final char abbr) {
+      switch (abbr) {
+        case 'A':
+          return ALPHA;
+        case 'B':
+          return BRAVO;
+        case 'C':
+          return CHARLIE;
+        case 'D':
+          return DELTA;
+        case 'E':
+          return ECHO;
+        default:
+          return OTHER;
+      }
+    }
   } 
 
   /**
@@ -51,7 +68,7 @@ public class Airspace implements Comparable<Airspace> {
   public final Class airspaceClass;
   
   /**
-   * Lowest altitude of airspace, in feet MSL.  If equal to {@link SFC}, the lowest altitude is the
+   * Lowest altitude of airspace, in feet MSL.  If equal to {@link #SFC}, the lowest altitude is the
    * surface (0 AGL).
    */
   public final int bottom;

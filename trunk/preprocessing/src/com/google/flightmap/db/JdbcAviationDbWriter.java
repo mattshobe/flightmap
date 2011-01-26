@@ -46,8 +46,8 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
   private PreparedStatement insertAirportPropertyStatement;
   private PreparedStatement insertAirportStatement;
   private PreparedStatement insertAirspaceStatement;
-  private PreparedStatement insertAirspaceCellRangeStatement;
   private PreparedStatement insertAirspacePointStatement;
+  private PreparedStatement insertAirspaceArcStatement;
   private PreparedStatement insertConstantStatement;
   private PreparedStatement insertRunwayEndStatement;
   private PreparedStatement insertRunwayEndPropertyStatement;
@@ -85,10 +85,10 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
     insertAirportStatement = null;
     tryClose(insertAirspaceStatement);
     insertAirspaceStatement = null;
-    tryClose(insertAirspaceCellRangeStatement);
-    insertAirspaceCellRangeStatement = null;
     tryClose(insertAirspacePointStatement);
     insertAirspacePointStatement = null;
+    tryClose(insertAirspaceArcStatement);
+    insertAirspaceArcStatement = null;
     tryClose(insertConstantStatement);
     insertConstantStatement = null;
     tryClose(insertRunwayEndStatement);
@@ -219,6 +219,7 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
       stat = dbConn.createStatement();
       stat.executeUpdate("CREATE TABLE IF NOT EXISTS airspaces (" + 
                          "_id INTEGER PRIMARY KEY ASC, " +
+                         "airport_id INTEGER NOT NULL, " +
                          "name TEXT NOT NULL, " + 
                          "class INTEGER NOT NULL, " +
                          "min_lat INTEGER NOT NULL, " +
@@ -227,6 +228,8 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
                          "max_lng INTEGER NOT NULL, " +
                          "low_alt INTEGER, " + 
                          "high_alt INTEGER NOT NULL);");
+      stat.executeUpdate("CREATE INDEX IF NOT EXISTS airspaces_airport_id_index ON " +
+                         "airspaces (airport_id)");
       stat.executeUpdate("CREATE TABLE IF NOT EXISTS airspace_points (" +
                          "airspace_id INTEGER NOT NULL, " +
                          "num INTEGER NOT NULL, " +
@@ -236,6 +239,19 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
                          "airspace_points (airspace_id)");
       stat.executeUpdate("CREATE INDEX IF NOT EXISTS airspace_points_num_index ON " +
                          "airspace_points (num)");
+      stat.executeUpdate("CREATE TABLE IF NOT EXISTS airspace_arcs (" +
+                         "airspace_id INTEGER NOT NULL, " +
+                         "num INTEGER NOT NULL, " +
+                         "min_lat INTEGER NOT NULL, " +
+                         "max_lat INTEGER NOT NULL, " +
+                         "min_lng INTEGER NOT NULL, " +
+                         "max_lng INTEGER NOT NULL, " +
+                         "start_angle INTEGER NOT NULL, " +
+                         "sweep_angle INTEGER NOT NULL);");
+      stat.executeUpdate("CREATE INDEX IF NOT EXISTS airspace_arcs_airspace_id_index ON " +
+                         "airspace_arcs (airspace_id)");
+      stat.executeUpdate("CREATE INDEX IF NOT EXISTS airspace_arcs_num_index ON " +
+                         "airspace_arcs (num)");
     } finally {
       if (stat != null) {
         stat.close();
@@ -424,34 +440,37 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
           "INSERT INTO airport_comm (airport_id, identifier, frequency, remarks) " +
           "VALUES (?, ?, ?, ?)");
     }
-    insertAirportCommStatement.setInt(1, id);
-    insertAirportCommStatement.setString(2, identifier);
-    insertAirportCommStatement.setString(3, frequency);
+    int field = 0;
+    insertAirportCommStatement.setInt(++field, id);
+    insertAirportCommStatement.setString(++field, identifier);
+    insertAirportCommStatement.setString(++field, frequency);
     if (remarks != null) {
-      insertAirportCommStatement.setString(4, remarks);
+      insertAirportCommStatement.setString(++field, remarks);
     } else {
-      insertAirportCommStatement.setNull(4, Types.VARCHAR);
+      insertAirportCommStatement.setNull(++field, Types.VARCHAR);
     }
     insertAirportCommStatement.executeUpdate();
   }
 
   @Override
-  public synchronized int insertAirspace(final String name, final String classString,
-      final int minLat, final int maxLat, final int minLng, final int maxLng,
-      final int lowAlt, final int highAlt) throws SQLException {
+  public synchronized int insertAirspace(final int airportId, final String name,
+      final String classString, final int minLat, final int maxLat, final int minLng,
+      final int maxLng, final int lowAlt, final int highAlt) throws SQLException {
     if (insertAirspaceStatement == null) {
       insertAirspaceStatement = dbConn.prepareStatement("INSERT INTO airspaces " + 
-        "(name, class, min_lat, max_lat, min_lng, max_lng, low_alt, high_alt) " + 
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        "(airport_id, name, class, min_lat, max_lat, min_lng, max_lng, low_alt, high_alt) " + 
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
     }
-    insertAirspaceStatement.setString(1, name);
-    insertAirspaceStatement.setInt(2, getConstantId(classString));
-    insertAirspaceStatement.setInt(3, minLat);
-    insertAirspaceStatement.setInt(4, maxLat);
-    insertAirspaceStatement.setInt(5, minLng);
-    insertAirspaceStatement.setInt(6, maxLng);
-    insertAirspaceStatement.setInt(7, lowAlt);
-    insertAirspaceStatement.setInt(8, highAlt);
+    int field = 0;
+    insertAirspaceStatement.setInt(++field, airportId);
+    insertAirspaceStatement.setString(++field, name);
+    insertAirspaceStatement.setInt(++field, getConstantId(classString));
+    insertAirspaceStatement.setInt(++field, minLat);
+    insertAirspaceStatement.setInt(++field, maxLat);
+    insertAirspaceStatement.setInt(++field, minLng);
+    insertAirspaceStatement.setInt(++field, maxLng);
+    insertAirspaceStatement.setInt(++field, lowAlt);
+    insertAirspaceStatement.setInt(++field, highAlt);
     insertAirspaceStatement.executeUpdate();
     return getGeneratedKey(insertAirspaceStatement);
   }
@@ -463,11 +482,33 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
       insertAirspacePointStatement = dbConn.prepareStatement(
           "INSERT INTO airspace_points (airspace_id, num, lat, lng) VALUES (?, ?, ?, ?)");
     }
-    insertAirspacePointStatement.setInt(1, id);
-    insertAirspacePointStatement.setInt(2, num);
-    insertAirspacePointStatement.setInt(3, lat);
-    insertAirspacePointStatement.setInt(4, lng);
+    int field = 0;
+    insertAirspacePointStatement.setInt(++field, id);
+    insertAirspacePointStatement.setInt(++field, num);
+    insertAirspacePointStatement.setInt(++field, lat);
+    insertAirspacePointStatement.setInt(++field, lng);
     insertAirspacePointStatement.executeUpdate();
+  }
+
+  @Override
+  public void insertAirspaceArc(final int id, final int num, final int minLat, final int maxLat, 
+      final int minLng, final int maxLng, final int startAngle, final int sweepAngle)
+      throws SQLException {
+    if (insertAirspaceArcStatement == null) {
+      insertAirspaceArcStatement = dbConn.prepareStatement("INSERT INTO airspace_arcs " + 
+        "(airspace_id, num, min_lat, max_lat, min_lng, max_lng, start_angle, sweep_angle) " + 
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    }
+    int field = 0;
+    insertAirspaceArcStatement.setInt(++field, id);
+    insertAirspaceArcStatement.setInt(++field, num);
+    insertAirspaceArcStatement.setInt(++field, minLat);
+    insertAirspaceArcStatement.setInt(++field, maxLat);
+    insertAirspaceArcStatement.setInt(++field, minLng);
+    insertAirspaceArcStatement.setInt(++field, maxLng);
+    insertAirspaceArcStatement.setInt(++field, startAngle);
+    insertAirspaceArcStatement.setInt(++field, sweepAngle);
+    insertAirspaceArcStatement.executeUpdate();
   }
 
   @Override
@@ -476,8 +517,9 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
       updateAirportRankStatement = 
           dbConn.prepareStatement("UPDATE airports SET rank = ? WHERE _id = ?");
     }
-    updateAirportRankStatement.setInt(1, rank);
-    updateAirportRankStatement.setInt(2, id);
+    int field = 0;
+    updateAirportRankStatement.setInt(++field, rank);
+    updateAirportRankStatement.setInt(++field, id);
     if (updateAirportRankStatement.executeUpdate() != 1) {
       throw new RuntimeException("Could not update rank for airport id: " + id);
     }
@@ -508,8 +550,9 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
             "INSERT INTO runway_ends (runway_id, letters) " +
             "VALUES (?, ?);");
       }
-      insertRunwayEndStatement.setInt(1, runwayId);
-      insertRunwayEndStatement.setString(2, letters);
+      int field = 0;
+      insertRunwayEndStatement.setInt(++field, runwayId);
+      insertRunwayEndStatement.setString(++field, letters);
       insertRunwayEndStatement.executeUpdate();
   }
 

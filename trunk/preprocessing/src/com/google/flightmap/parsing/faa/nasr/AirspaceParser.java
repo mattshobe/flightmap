@@ -104,20 +104,7 @@ public class AirspaceParser {
    * Returns airspace class string for database insertion based on single char abbreviation.
    */
   private static String getAirspaceClassFromAbbreviation(final char abbr) {
-    switch (abbr) {
-      case 'A':
-        return Airspace.Class.ALPHA.toString();
-      case 'B':
-        return Airspace.Class.BRAVO.toString();
-      case 'C':
-        return Airspace.Class.CHARLIE.toString();
-      case 'D':
-        return Airspace.Class.DELTA.toString();
-      case 'E':
-        return Airspace.Class.ECHO.toString();
-      default:
-        return Airspace.Class.OTHER.toString();
-    }
+    return Airspace.Class.valueOf(abbr).toString();
   }
 
   private void execute() throws Exception {
@@ -167,12 +154,13 @@ public class AirspaceParser {
   private void addAirspaceToDb(final String name, final int lowAlt, final int highAlt,
       final LatLngRect boundingBox, final List<LatLng> points) throws SQLException {
     // Create airspace entry
+    final int airportId = -1;  // Airspace center N/A in NASR.
     final int minLat = boundingBox.getSouth();
     final int maxLat = boundingBox.getNorth();
     final int minLng = boundingBox.getWest();
     final int maxLng = boundingBox.getEast();
     final int id = dbWriter.insertAirspace(
-        name, airspaceClass, minLat, maxLat, minLng, maxLng, lowAlt, highAlt);
+        airportId, name, airspaceClass, minLat, maxLat, minLng, maxLng, lowAlt, highAlt);
     // Insert polygon points
     int i = 0;
     for (LatLng point: points) {

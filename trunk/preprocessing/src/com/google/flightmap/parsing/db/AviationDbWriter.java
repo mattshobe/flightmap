@@ -133,18 +133,33 @@ public interface AviationDbWriter {
    *
    * @return Database id of newly inserted airspace.
    */
-  public int insertAirspace(String name, String classString, int minLat, int maxLat, int minLng,
-      int maxLng, int lowAlt, int highAlt) throws SQLException;
+  public int insertAirspace(int airportId, String name, String classString, int minLat, int maxLat,
+      int minLng, int maxLng, int lowAlt, int highAlt) throws SQLException;
 
   /**
-   * Adds a point to an airspace polygon.
+   * Adds a point to an airspace shape.
    *
    * @param id Airspace id.
-   * @param num Number of point in polygon sequence.
+   * @param num Sequence number of point.
    * @param lat Latitude, in E6 format.
    * @param lng Longitude, in E6 format.
    */
   public void insertAirspacePoint(int id, int num, int lat, int lng) throws SQLException;
+
+  /**
+   * Adds an arc to an airspace shape.
+   *
+   * @param id Airspace id.
+   * @param num Sequence number of arc.
+   * @param minLat Minimum latitude of the circle containing the arc, in E6 format
+   * @param maxLat Maximum latitude of the circle containing the arc, in E6 format
+   * @param minLng Minimum longitude of the circle containing the arc, in E6 format
+   * @param maxLng Maximum longitude of the circle containing the arc, in E6 format
+   * @param startAngle Starting angle (in degrees E6) clockwise from North
+   * @param sweepAngle Sweep angle (in degrees E6) measured clockwise.
+   */
+  public void insertAirspaceArc(int id, int num, int minLat, int maxLat, int minLng, int maxLng,
+      int startAngle, int sweepAngle) throws SQLException;
 
   /**
    * Updates rank of airport.
