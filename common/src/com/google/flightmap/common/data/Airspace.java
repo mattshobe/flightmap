@@ -16,7 +16,7 @@
 
 package com.google.flightmap.common.data;
 
-import java.util.List;
+import java.util.SortedMap;
 
 /**
  * Airspace data structure.
@@ -79,22 +79,29 @@ public class Airspace implements Comparable<Airspace> {
   public final int top;
   
   /**
-   * Points forming airspace polygon.
+   * Points forming airspace, sorted by sequence number.
    */
-  public final List<LatLng> points;
+  public final SortedMap<Integer, LatLng> points;
+
+  /**
+   * Arcs forming airspace, sorted by sequence number.
+   */
+  public final SortedMap<Integer, AirspaceArc> arcs;
 
   public Airspace(final int id,
                   final String name,
                   final Class airspaceClass,
                   final int bottom,
                   final int top,
-                  final List<LatLng> points) {
+                  final SortedMap<Integer, LatLng> points,
+                  final SortedMap<Integer, AirspaceArc> arcs) {
     this.id = id;
     this.name = name;
     this.airspaceClass = airspaceClass;
     this.bottom = bottom;
     this.top = top;
     this.points = points;
+    this.arcs = arcs;
   }
 
   @Override
@@ -118,6 +125,6 @@ public class Airspace implements Comparable<Airspace> {
 
   @Override
   public int hashCode() {
-    return this.name.hashCode();
+    return this.id;
   }
 }

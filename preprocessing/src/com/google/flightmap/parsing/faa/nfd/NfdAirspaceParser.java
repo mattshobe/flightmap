@@ -17,13 +17,13 @@
 package com.google.flightmap.parsing.faa.nfd;
 
 import com.google.flightmap.common.data.Airspace;
+import com.google.flightmap.common.data.AirspaceArc;
 import com.google.flightmap.common.data.LatLng;
 import com.google.flightmap.common.data.LatLngRect;
 import com.google.flightmap.common.geo.GreatCircleUtils;
 import com.google.flightmap.common.geo.NavigationUtil;
 import com.google.flightmap.db.JdbcAviationDbAdapter;
 import com.google.flightmap.db.JdbcAviationDbWriter;
-import com.google.flightmap.parsing.data.AirspaceArc;
 import com.google.flightmap.parsing.db.AviationDbReader;
 import com.google.flightmap.parsing.db.AviationDbWriter;
 import com.google.flightmap.parsing.faa.nfd.data.ControlledAirspaceRecord;
@@ -295,8 +295,8 @@ public class NfdAirspaceParser {
         }
       } else if (via == 'R' || via == 'L' || via == 'C') {
         final LatLng o = LatLngParsingUtils.parseLatLng(c.arcOriginLatitude, c.arcOriginLongitude);
-        double startAngle;
-        double sweepAngle;
+        float startAngle;
+        float sweepAngle;
         double radius;
 
         if (via == 'C') {
@@ -305,12 +305,12 @@ public class NfdAirspaceParser {
           radius = Integer.parseInt(c.arcDistance) / 10.0;
         } else {
           final boolean clockwise = via == 'R';
-          startAngle = NavigationUtil.getInitialCourse(o, start);
-          final double endAngle = NavigationUtil.getInitialCourse(o, dest);
-          final double diffAngle = endAngle - startAngle;
+          startAngle = (float) ((NavigationUtil.getInitialCourse(o, start) + 270) % 360);
+          final float endAngle = (float) ((NavigationUtil.getInitialCourse(o, dest) + 270) % 360);
+          final float diffAngle = endAngle - startAngle;
           sweepAngle = clockwise ?
-                       NavigationUtil.euclideanMod(diffAngle, 360.0) :
-                       -NavigationUtil.euclideanMod(-diffAngle, 360.0);
+                       NavigationUtil.euclideanMod(diffAngle, 360.0f) :
+                       -NavigationUtil.euclideanMod(-diffAngle, 360.0f);
           radius = NavigationUtil.computeDistance(o, start);
         }
         final LatLng north = NavigationUtil.getPointAlongRadial(o, 0, radius);
@@ -322,8 +322,8 @@ public class NfdAirspaceParser {
         box.add(east);
         box.add(south);
         box.add(west);
-        final AirspaceArc arc = new AirspaceArc(seqNr++, o, startAngle, sweepAngle, box);
-        arcs.put(arc.seqNr, arc);
+        final AirspaceArc arc = new AirspaceArc(box, startAngle, sweepAngle);
+        arcs.put(seqNr++, arc);
 
         if (via == 'C') {
           boundingBox.add(box);

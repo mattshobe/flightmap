@@ -79,7 +79,7 @@ public class MainActivity extends Activity {
   private boolean databaseDownloaded;
   private DbUpdaterTask dbUpdaterTask;
   FlightMap flightMap;
-  AviationDbAdapter aviationDbAdapter;
+  CachedAviationDbAdapter aviationDbAdapter;
   CachedAirportDirectory airportDirectory;
   UserPrefs userPrefs;
   private SimulatorDialog simulatorDialog;
