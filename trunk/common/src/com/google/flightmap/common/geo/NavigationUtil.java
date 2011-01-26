@@ -318,13 +318,23 @@ public class NavigationUtil {
   }
 
   /**
-   * Returns Euclidean module of {@code x}, {@code y}.
+   * Returns Euclidean modulo of {@code x}, {@code y}.
    *
    * @see <a href="http://portal.acm.org/citation.cfm?id=128862" target="_parent">
    * The Euclidean definition of the functions div and mod</a>
    */
   public static double euclideanMod(final double x, final double y) {
     final double mod = x % y;
+    return (mod < 0) ? mod + y : mod;
+  }
+
+  /**
+   * Returns Euclidean modulo of {@code x}, {@code y}.
+   *
+   * @see #euclideanMod(double, double)
+   */
+  public static float euclideanMod(final float x, final float y) {
+    final float mod = x % y;
     return (mod < 0) ? mod + y : mod;
   }
 
