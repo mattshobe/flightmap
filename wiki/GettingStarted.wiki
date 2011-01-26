@@ -2,7 +2,7 @@
 #labels Featured
 
 = Introduction =
-Flight Map is an Android application that provides a moving map for VFR situational awareness for pilots. Flight tracks are recorded and can be exported.
+Flight Map is an Android application that provides a moving map for VFR situational awareness for pilots.
 
 Ant build files are used so you can use any IDE you'd like. See the [http://developer.android.com/guide/developing/other-ide.html Developing in Other IDEs] page for more information.
 
