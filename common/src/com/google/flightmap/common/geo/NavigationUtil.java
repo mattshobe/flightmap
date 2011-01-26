@@ -323,7 +323,7 @@ public class NavigationUtil {
    * @see <a href="http://portal.acm.org/citation.cfm?id=128862" target="_parent">
    * The Euclidean definition of the functions div and mod</a>
    */
-  private static double euclideanMod(final double x, final double y) {
+  public static double euclideanMod(final double x, final double y) {
     final double mod = x % y;
     return (mod < 0) ? mod + y : mod;
   }
