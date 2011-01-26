@@ -33,7 +33,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;  // TODO: Remove (See doSearch())
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
@@ -67,6 +69,7 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter, AviationDbReade
   private PreparedStatement getAirportIdsWithNameLikeStmt;
   private PreparedStatement getAirportPropertiesStmt;
   private PreparedStatement getAirspaceIdsInRect;
+  private PreparedStatement getAirspaceArcsStmt;
   private PreparedStatement getAirspacePointsStmt;
   private PreparedStatement getAirspaceStmt;
   private PreparedStatement getConstantStmt;
@@ -238,8 +241,9 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter, AviationDbReade
       rs.close();
       final String classString = getConstant(classConstantId);
       final Airspace.Class airspaceClass = Airspace.Class.valueOf(classString);
-      final List<LatLng> points = getAirspacePoints(id);
-      return new Airspace(id, name, airspaceClass, lowAlt, highAlt, points);
+      final SortedMap<Integer, LatLng> points = getAirspacePoints(id);
+      final SortedMap<Integer, AirspaceArc> arcs = getAirspaceArcs(id);
+      return new Airspace(id, name, airspaceClass, lowAlt, highAlt, points, arcs);
     } catch (SQLException sqlEx) {
       throw new RuntimeException(sqlEx);
     }
@@ -248,22 +252,56 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter, AviationDbReade
   /**
    * Returns polygon points for a given airspace.
    */
-  private List<LatLng> getAirspacePoints(final int airspaceId) {
+  private SortedMap<Integer, LatLng> getAirspacePoints(final int airspaceId) {
     try {
       if (getAirspacePointsStmt == null) {
         getAirspacePointsStmt = dbConn.prepareStatement(
-            "SELECT lat, lng FROM airspace_points WHERE airspace_id = ? ORDER BY num");
+            "SELECT num, lat, lng FROM airspace_points WHERE airspace_id = ?");
       }
       getAirspacePointsStmt.setInt(1, airspaceId);
       final ResultSet rs = getAirspacePointsStmt.executeQuery();
-      final List<LatLng> points = new LinkedList<LatLng>();
+      final SortedMap<Integer, LatLng> points = new TreeMap<Integer, LatLng>();
       while (rs.next()) {
+        final int num = rs.getInt("num");
         final int lat = rs.getInt("lat");
         final int lng = rs.getInt("lng");
-        points.add(new LatLng(lat, lng));
+        points.put(num, new LatLng(lat, lng));
       }
       rs.close();
       return points;
+    } catch (SQLException sqlEx) {
+      throw new RuntimeException(sqlEx);
+    }
+  }
+
+  /**
+   * Returns arcs for a given airspace.
+   */
+  private SortedMap<Integer, AirspaceArc> getAirspaceArcs(final int airspaceId) {
+    try {
+      if (getAirspaceArcsStmt == null) {
+        getAirspaceArcsStmt = dbConn.prepareStatement(
+            "SELECT num, min_lat, max_lat, min_lng, max_lng, start_angle, sweep_angle " + 
+            "FROM airspace_arcs WHERE airspace_id = ?");
+      }
+      getAirspaceArcsStmt.setInt(1, airspaceId);
+      final ResultSet rs = getAirspaceArcsStmt.executeQuery();
+      final SortedMap<Integer, AirspaceArc> arcs = new TreeMap<Integer, AirspaceArc>();
+      while (rs.next()) {
+        final int num = rs.getInt("num");
+        final int minLat = rs.getInt("min_lat");
+        final int maxLat = rs.getInt("max_lat");
+        final int minLng = rs.getInt("min_lng");
+        final int maxLng = rs.getInt("max_lng");
+        final float startAngle = rs.getInt("start_angle") * 1E-6f;
+        final float sweepAngle = rs.getInt("sweep_angle") * 1E-6f;
+        final LatLng swCorner = new LatLng(minLat, minLng);
+        final LatLng neCorner = new LatLng(maxLat, maxLng);
+        final LatLngRect boundingBox = new LatLngRect(swCorner, neCorner);
+        arcs.put(num, new AirspaceArc(boundingBox, startAngle, sweepAngle));
+      }
+      rs.close();
+      return arcs;
     } catch (SQLException sqlEx) {
       throw new RuntimeException(sqlEx);
     }

@@ -18,6 +18,7 @@ package com.google.flightmap.android;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import modified.android.view.ScaleGestureDetector;
@@ -34,6 +35,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
@@ -59,6 +61,7 @@ import com.google.flightmap.android.location.LocationHandler.Source;
 import com.google.flightmap.common.ProgressListener;
 import com.google.flightmap.common.data.Airport;
 import com.google.flightmap.common.data.Airspace;
+import com.google.flightmap.common.data.AirspaceArc;
 import com.google.flightmap.common.data.LatLng;
 import com.google.flightmap.common.data.LatLngRect;
 import com.google.flightmap.common.geo.CachedMagneticVariation;
@@ -947,22 +950,35 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     }
     for (Airspace airspace : airspacesOnScreen) {
       final Path path = new Path();
-      boolean first = true;
-      // DEBUG(aristidis)
-      int skip = 0;
-      for (LatLng latLng : airspace.points) {
-        final Point point = AndroidMercatorProjection.toPoint(zoom, latLng);
-        if (first) {
-          path.moveTo(point.x, point.y);
-          first = false;
-        } else {
-          if (skip-- == 0) {
-            skip = 1;
-            continue;
+
+      final Iterator<Map.Entry<Integer, LatLng>> pointIter = airspace.points.entrySet().iterator();
+      final Iterator<Map.Entry<Integer, AirspaceArc>> arcIter = airspace.arcs.entrySet().iterator();
+
+      Map.Entry<Integer, LatLng> pointEntry = pointIter.hasNext() ? pointIter.next() : null;
+      Map.Entry<Integer, AirspaceArc> arcEntry = arcIter.hasNext() ? arcIter.next() : null;
+      while (pointEntry != null || arcEntry != null) {
+        final int pointSeqNr = pointEntry != null ? pointEntry.getKey() : Integer.MAX_VALUE;
+        final int arcSeqNr = arcEntry != null ? arcEntry.getKey() : Integer.MAX_VALUE;
+        assert pointSeqNr != arcSeqNr;
+        if (pointSeqNr < arcSeqNr) {
+          final LatLng latLng = pointEntry.getValue();
+          final Point point = AndroidMercatorProjection.toPoint(zoom, latLng);
+          if (path.isEmpty()) {
+            path.moveTo(point.x, point.y);
+          } else {
+            path.lineTo(point.x, point.y);
           }
-          path.lineTo(point.x, point.y);
+          pointEntry = pointIter.hasNext() ? pointIter.next() : null;
+        } else {
+          assert arcSeqNr < pointSeqNr;
+          final AirspaceArc arc = arcEntry.getValue();
+          final RectF boundingRect = AndroidMercatorProjection.toRectF(zoom, arc.boundingBox);
+          path.arcTo(boundingRect, arc.startAngle, arc.sweepAngle);
+          arcEntry = arcIter.hasNext() ? arcIter.next() : null;
         }
       }
+      path.close();
+
       final Paint airspacePaint = airspacePalette.getPaint(airspace);
       c.drawPath(path, airspacePaint);
     }
@@ -1221,35 +1237,20 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
   private synchronized void updateAirspacesOnScreen(LatLngRect screenArea) {
     // Is there a query in progress?
     if (getAirspacesTask != null && getAirspacesTask.isQueryInProgress()) {
-      // TODO(aristidis): see if queries are equivalent.
-      Log.i(TAG, "updateAirspacesOnScreen: Still waiting on query");
-      return;
+      if (mainActivity.aviationDbAdapter.isCacheMatch(screenArea)) {
+        Log.i(TAG, "updateAirspacesOnScreen: Still waiting on query");
+        return;
+      }
+      cancelTask(getAirspacesTask);
     }
     // Create listener only once
     if (getAirspacesListener == null) {
       getAirspacesListener = new AirspacesQueryListener();
     }
-    // DEBUG(aristidis)
-    if (getAirspacesTask != null) return;
     // Have to make a new task here. Can't call execute again on an active task.
-
-    
-
-    /**************************************************************************
-     * Temporary workaround, since r484 removed the airspaces table. Re-eanble
-     * this code when the table comes back.
-     *************************************************************************/
-    final boolean DISABLE_AIRSPACE_WHILE_NOT_IN_DATABASE = true;
-    if (DISABLE_AIRSPACE_WHILE_NOT_IN_DATABASE != true) {
-      getAirspacesTask =
-          new GetAirspacesInRectangleTask(mainActivity.aviationDbAdapter, getAirspacesListener);
-      getAirspacesTask.execute(screenArea);
-    }
-    
-    
-    
-    
-    
+    getAirspacesTask =
+        new GetAirspacesInRectangleTask(mainActivity.aviationDbAdapter, getAirspacesListener);
+    getAirspacesTask.execute(screenArea);
   }
 
   /**

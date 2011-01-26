@@ -19,6 +19,7 @@ package com.google.flightmap.common.db;
 import com.google.flightmap.common.data.Airport;
 import com.google.flightmap.common.data.Airspace;
 import com.google.flightmap.common.data.Comm;
+import com.google.flightmap.common.data.LatLng;
 import com.google.flightmap.common.data.LatLngRect;
 
 import java.util.Collection;
@@ -36,6 +37,18 @@ public class CachedAviationDbAdapter implements AviationDbAdapter {
 
   // Caching
   private final Map<Integer, String> constants;
+
+  /**
+   * Latest cached area.
+   */
+  private LatLngRect cachedArea;
+
+  /**
+   * Retrieved airspaces for latest cached area.
+   */
+  private Collection<Airspace> cachedAirspaces;
+
+  private LatLngRect inProgressArea;
 
   public CachedAviationDbAdapter(final AviationDbAdapter cachedDbAdapter) {
     this.cachedDbAdapter = cachedDbAdapter;
@@ -84,10 +97,51 @@ public class CachedAviationDbAdapter implements AviationDbAdapter {
   }
 
   @Override
-  public Collection<Airspace> getAirspacesInRectangle(final LatLngRect rect)
+  public Collection<Airspace> getAirspacesInRectangle(final LatLngRect area)
       throws InterruptedException {
-    return cachedDbAdapter.getAirspacesInRectangle(rect);
+    synchronized (this) {
+      if (cachedArea != null && cachedArea.contains(area)) {
+        return cachedAirspaces;
+      }
+    }
+
+    // Cache miss: get new results.
+    final LatLng areaNeCorner = area.getNeCorner();
+    final LatLng areaSwCorner = area.getSwCorner();
+    final int dLat = areaNeCorner.lat - areaSwCorner.lat;
+    final int dLng = areaNeCorner.lng - areaSwCorner.lng;
+    final LatLng cachedAreaNeCorner =
+        new LatLng(areaNeCorner.lat + dLat / 2, areaNeCorner.lng + dLng / 2);
+    final LatLng cachedAreaSwCorner =
+        new LatLng(areaSwCorner.lat - dLat / 2, areaSwCorner.lng - dLng / 2);
+    synchronized (this) {
+      inProgressArea = new LatLngRect(cachedAreaNeCorner, cachedAreaSwCorner);
+    }
+
+    System.out.println("Fetching airspaces for " + area);
+    final long start = System.currentTimeMillis();
+    // This call may be slow.
+    final Collection<Airspace> newCachedAirspaces =
+        cachedDbAdapter.getAirspacesInRectangle(inProgressArea);
+    final long stop = System.currentTimeMillis();
+    System.out.println("Got airspaces in rectangle. Count: " + newCachedAirspaces.size() + " in " +
+        (stop - start) + "ms.");
+    synchronized (this) {
+      cachedArea = inProgressArea;
+      cachedAirspaces = newCachedAirspaces;
+      return cachedAirspaces;
+    }
   }
+
+  /**
+   * Returns true if {@code area} will either 1) hit the
+   * cache, or 2) give the same results as the query that's in progress by
+   * {@link #getAirspacesInRectangle}.
+   */
+  public synchronized boolean isCacheMatch(final LatLngRect area) {
+    return inProgressArea != null && inProgressArea.contains(area);
+  }
+
 
   @Override
   public Map<String, String> getRunwayEndProperties(final int runwayEndId) {

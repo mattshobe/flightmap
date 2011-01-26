@@ -14,42 +14,44 @@
  * limitations under the License.
  */
 
-package com.google.flightmap.parsing.data;
+package com.google.flightmap.common.data;
 
-import com.google.flightmap.common.data.LatLng;
-import com.google.flightmap.common.data.LatLngRect;
 
+/**
+ * Defines an arc for a segment of airspace.
+ */
 public class AirspaceArc {
-  public final int seqNr;
-  public final LatLng origin;
-  public final double startAngle;
-  public final double sweepAngle;
+  /**
+   * Bounding box of circle from which this arc is drawn.
+   */
   public final LatLngRect boundingBox;
 
-  public AirspaceArc(final int seqNr, final LatLng origin, final double startAngle,
-      final double sweepAngle, final LatLngRect boundingBox) {
-    this.seqNr = seqNr;
-    this.origin = origin;
+  /**
+   * Start angle of arc, measured in degrees clockwise from East.
+   */
+  public final float startAngle;
+
+  /**
+   * Sweep angle, in degrees (positive for clockwise, negative for counterclockwise).
+   */
+  public final float sweepAngle;
+
+  public AirspaceArc(final LatLngRect boundingBox, final float startAngle, final float sweepAngle) {
+    this.boundingBox = boundingBox;
     this.startAngle = startAngle;
     this.sweepAngle = sweepAngle;
-    this.boundingBox = boundingBox;
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("\"");
-    sb.append(seqNr);
-    sb.append("\",\"");
-    sb.append(origin);
+    sb.append(boundingBox);
     sb.append("\",\"");
     sb.append(startAngle);
     sb.append("\",\"");
     sb.append(sweepAngle);
-    sb.append("\",\"");
-    sb.append(boundingBox);
     sb.append("\"");
     return sb.toString();
   }
-
 }

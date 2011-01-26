@@ -155,7 +155,7 @@ public interface AviationDbWriter {
    * @param maxLat Maximum latitude of the circle containing the arc, in E6 format
    * @param minLng Minimum longitude of the circle containing the arc, in E6 format
    * @param maxLng Maximum longitude of the circle containing the arc, in E6 format
-   * @param startAngle Starting angle (in degrees E6) clockwise from North
+   * @param startAngle Starting angle (in degrees E6) clockwise from East
    * @param sweepAngle Sweep angle (in degrees E6) measured clockwise.
    */
   public void insertAirspaceArc(int id, int num, int minLat, int maxLat, int minLng, int maxLng,

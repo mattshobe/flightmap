@@ -24,6 +24,7 @@ import com.google.flightmap.android.UserPrefs;
 import com.google.flightmap.common.ThreadUtils;
 import com.google.flightmap.common.data.Airport;
 import com.google.flightmap.common.data.Airspace;
+import com.google.flightmap.common.data.AirspaceArc;
 import com.google.flightmap.common.data.Comm;
 import com.google.flightmap.common.data.LatLng;
 import com.google.flightmap.common.data.LatLngRect;
@@ -39,7 +40,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 public class AndroidAviationDbAdapter implements AviationDbAdapter {
@@ -149,8 +152,19 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   private static final String AIRSPACE_POINTS_TABLE = "airspace_points";
   private static final String AIRSPACE_ID_COLUMN = "airspace_id";
   private static final String NUM_COLUMN = "num";
-  private static final String[] LAT_LNG_COLUMNS = new String[] {LAT_COLUMN, LNG_COLUMN};
+  private static final String[] POINT_COLUMNS = new String[] {NUM_COLUMN, LAT_COLUMN, LNG_COLUMN};
   private static final String AIRSPACE_ID_WHERE = AIRSPACE_ID_COLUMN + " = ?";
+
+  // airspace_arcs
+  private static final String AIRSPACE_ARCS_TABLE = "airspace_arcs";
+  private static final String MIN_LAT_COLUMN = "min_lat";
+  private static final String MAX_LAT_COLUMN = "max_lat";
+  private static final String MIN_LNG_COLUMN = "min_lng";
+  private static final String MAX_LNG_COLUMN = "max_lng";
+  private static final String START_ANGLE_COLUMN = "start_angle";
+  private static final String SWEEP_ANGLE_COLUMN = "sweep_angle";
+  private static final String[] ARC_COLUMNS = new String[] {NUM_COLUMN, MIN_LAT_COLUMN,
+      MAX_LAT_COLUMN, MIN_LNG_COLUMN, MAX_LNG_COLUMN, START_ANGLE_COLUMN, SWEEP_ANGLE_COLUMN};
 
   static {
     INTEGER_AIRPORT_PROPERTIES = new HashSet<String>();
@@ -288,8 +302,9 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
       final Airspace.Class airspaceClass = Airspace.Class.valueOf(classString);
       final int lowAlt = result.getInt(result.getColumnIndexOrThrow(LOW_ALT_COLUMN));
       final int highAlt = result.getInt(result.getColumnIndexOrThrow(HIGH_ALT_COLUMN));
-      final List<LatLng> points = getAirspacePoints(id);
-      return new Airspace(id, name, airspaceClass, lowAlt, highAlt, points);
+      final SortedMap<Integer, LatLng> points = getAirspacePoints(id);
+      final SortedMap<Integer, AirspaceArc> arcs = getAirspaceArcs(id);
+      return new Airspace(id, name, airspaceClass, lowAlt, highAlt, points, arcs);
     } finally {
       result.close();
     }
@@ -298,19 +313,52 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   /**
    * Returns polygon points for airspace with given {@code id}.
    */
-  private List<LatLng> getAirspacePoints(final int id) {
-    final Cursor result = database.query(AIRSPACE_POINTS_TABLE, LAT_LNG_COLUMNS, AIRSPACE_ID_WHERE,
-        new String[] {Integer.toString(id)}, null, null, NUM_COLUMN);
-    final List<LatLng> points = new LinkedList<LatLng>();
+  private SortedMap<Integer, LatLng> getAirspacePoints(final int id) {
+    final Cursor result = database.query(AIRSPACE_POINTS_TABLE, POINT_COLUMNS, AIRSPACE_ID_WHERE,
+        new String[] {Integer.toString(id)}, null, null, null);
+    final SortedMap<Integer, LatLng> points = new TreeMap<Integer, LatLng>();
     try {
+      final int numColumn = result.getColumnIndexOrThrow(NUM_COLUMN);
       final int latColumn = result.getColumnIndexOrThrow(LAT_COLUMN);
       final int lngColumn = result.getColumnIndexOrThrow(LNG_COLUMN);
       while (result.moveToNext()) {
+        final int num = result.getInt(numColumn);
         final int lat = result.getInt(latColumn);
         final int lng = result.getInt(lngColumn);
-        points.add(new LatLng(lat, lng));
+        points.put(num, new LatLng(lat, lng));
       }
       return points;
+    } finally {
+      result.close();
+    }
+  }
+
+  private SortedMap<Integer, AirspaceArc> getAirspaceArcs(final int id) {
+    final Cursor result = database.query(AIRSPACE_ARCS_TABLE, ARC_COLUMNS, AIRSPACE_ID_WHERE,
+        new String[] {Integer.toString(id)}, null, null, null);
+    final SortedMap<Integer, AirspaceArc> arcs = new TreeMap<Integer, AirspaceArc>();
+    try {
+      final int numColumn = result.getColumnIndexOrThrow(NUM_COLUMN);
+      final int minLatColumn = result.getColumnIndexOrThrow(MIN_LAT_COLUMN);
+      final int maxLatColumn = result.getColumnIndexOrThrow(MAX_LAT_COLUMN);
+      final int minLngColumn = result.getColumnIndexOrThrow(MIN_LNG_COLUMN);
+      final int maxLngColumn = result.getColumnIndexOrThrow(MAX_LNG_COLUMN);
+      final int startAngleColumn = result.getColumnIndexOrThrow(START_ANGLE_COLUMN);
+      final int sweepAngleColumn = result.getColumnIndexOrThrow(SWEEP_ANGLE_COLUMN);
+      while (result.moveToNext()) {
+        final int num = result.getInt(numColumn);
+        final int minLat = result.getInt(minLatColumn);
+        final int maxLat = result.getInt(maxLatColumn);
+        final int minLng = result.getInt(minLngColumn);
+        final int maxLng = result.getInt(maxLngColumn);
+        final float startAngle = result.getInt(startAngleColumn) * 1E-6f;
+        final float sweepAngle = result.getInt(sweepAngleColumn) * 1E-6f;
+        final LatLng swCorner = new LatLng(minLat, minLng);
+        final LatLng neCorner = new LatLng(maxLat, maxLng);
+        final LatLngRect boundingBox = new LatLngRect(swCorner, neCorner);
+        arcs.put(num, new AirspaceArc(boundingBox, startAngle, sweepAngle));
+      }
+      return arcs;
     } finally {
       result.close();
     }
