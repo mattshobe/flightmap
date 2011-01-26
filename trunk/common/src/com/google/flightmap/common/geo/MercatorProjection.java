@@ -16,6 +16,7 @@
 package com.google.flightmap.common.geo;
 
 import com.google.flightmap.common.data.LatLng;
+import com.google.flightmap.common.data.LatLngRect;
 
 /**
  * Converts between latitude,longitude and pixels in Mercator space. Mercator
@@ -40,19 +41,30 @@ public class MercatorProjection {
    * 
    * @param zoom zoom level.
    * @param location location to convert to a point.
-   * @param point an array with at least 2 elements. On return point[0] = x,
-   *        point[1] = y.
+   * @param point an array with at least 2 elements. On return point[offset] = x,
+   *        point[offset + 1] = y.
+   * @param offset starting index from which results will be written in {@code point}
    */
-  public static void toPoint(double zoom, LatLng location, int[] point) {
+  public static void toPoint(double zoom, LatLng location, int[] point, int offset) {
     double lng = location.lngDeg();
     double equatorPixels = ZOOM_0_PIXELS * Math.pow(2, zoom);
     double centerPixel = equatorPixels / 2;
     double x = centerPixel + (equatorPixels * (lng / 360));
     double sinLat = Math.sin(location.latRad());
     double y = centerPixel - Math.log((1 + sinLat) / (1 - sinLat)) / 4 / Math.PI * equatorPixels;
-    point[0] = (int) (x + 0.5);
-    point[1] = (int) (y + 0.5);
+    point[offset] = (int) (x + 0.5);
+    point[offset + 1] = (int) (y + 0.5);
   }
+
+  /**
+   * Converts {@code location} to a point in Mercator pixel space.
+   * <p>
+   * Same as calling {@link #toPoint(double, LatLng, int[], int)} with {@code offset} equal to 0.
+   */
+  public static void toPoint(double zoom, LatLng location, int[] point) {
+    toPoint(zoom, location, point, 0);
+  }
+
 
   /**
    * Returns a LatLng corresponding to {@code point} (in Mercator pixel space).
@@ -67,6 +79,18 @@ public class MercatorProjection {
     double lat = Math.toDegrees(2 * Math.atan( //
         Math.exp(2 * Math.PI * (centerPixel - point[1]) / equatorPixels)) - (Math.PI / 2));
     return LatLng.fromDouble(lat, lng);
+  }
+
+  /**
+   * Converts {@code rect} to a rectangle in Mercator pixel space.
+   * @param zoom zoom level.
+   * @param rect area to convert to a rectangle.
+   * @param points an array with at least 4 elements. On return points[offset] = west,
+   *        points[offset + 1] = south, points[offset + 2] = east, points[offset + 3] = north.
+   */
+  public static void toRect(double zoom, LatLngRect rect, int[] points) {
+    toPoint(zoom, rect.getSwCorner(), points, 0);
+    toPoint(zoom, rect.getNeCorner(), points, 2);
   }
 
   /**
