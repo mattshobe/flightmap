@@ -17,16 +17,18 @@
 package com.google.flightmap.android.geo;
 
 import android.graphics.Point;
+import android.graphics.RectF;
 
-import com.google.flightmap.common.geo.MercatorProjection;
 import com.google.flightmap.common.data.LatLng;
+import com.google.flightmap.common.data.LatLngRect;
+import com.google.flightmap.common.geo.MercatorProjection;
 
 /**
  * Adapter for {@link MercatorProjection}.
  */
 public class AndroidMercatorProjection {
   /** Reuse point storage for better performance. */
-  private static int[] pointArray = new int[2];
+  private static int[] pointArray = new int[4];
 
   private AndroidMercatorProjection() {
     // Utility class.
@@ -36,7 +38,7 @@ public class AndroidMercatorProjection {
    * Returns point (in Mercator pixel space) corresponding to {@code location}.
    * 
    * @param zoom zoom level.
-   * @param location location to conver to Mercator pixel.
+   * @param location location to convert to Mercator pixel.
    * @see {@link MercatorProjection#toPoint}.
    */
   public static synchronized Point toPoint(double zoom, LatLng location) {
@@ -55,6 +57,22 @@ public class AndroidMercatorProjection {
     pointArray[0] = point.x;
     pointArray[1] = point.y;
     return MercatorProjection.fromPoint(zoom, pointArray);
+  }
+
+  /**
+   * Returns rectangle (in Mercator pixel space) corresponding to {@code rect}.
+   * 
+   * @param zoom zoom level.
+   * @param rect area to convert to Mercator rectangle.
+   * @see {@link MercatorProjection#toRect}.
+   */
+  public static synchronized RectF toRectF(double zoom, LatLngRect rect) {
+    MercatorProjection.toRect(zoom, rect, pointArray);
+    final float west = pointArray[0];
+    final float south = pointArray[1];
+    final float east = pointArray[2];
+    final float north  = pointArray[3];
+    return new RectF(west, north, east, south);
   }
 
   /**
