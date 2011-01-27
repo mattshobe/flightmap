@@ -775,7 +775,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     final int minAirportRank = getMinimumAirportRank(zoomCopy);
     updateAirportsOnScreen(screenArea, minAirportRank);
     updateAirspacesOnScreen(screenArea);
-    drawAirspacesOnMap(c, zoomCopy);
+    drawAirspacesOnMap(c, zoomCopy, location);
     drawAirportsOnMap(c, minAirportRank, zoomCopy, isTrackUp);
 
     //
@@ -943,7 +943,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
     c.drawText(navigationText, 0, PAN_INFO_MARGIN * density, PAN_INFO_PAINT);
   }
 
-  private synchronized void drawAirspacesOnMap(final Canvas c, final float zoom) {
+  private synchronized void drawAirspacesOnMap(final Canvas c, final float zoom, final Location l) {
     // Draw airspaces
     if (airspacesOnScreen == null) {
       return;
@@ -979,7 +979,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
       }
       path.close();
 
-      final Paint airspacePaint = airspacePalette.getPaint(airspace);
+      final Paint airspacePaint = airspacePalette.getPaint(airspace, l);
       c.drawPath(path, airspacePaint);
     }
   }
