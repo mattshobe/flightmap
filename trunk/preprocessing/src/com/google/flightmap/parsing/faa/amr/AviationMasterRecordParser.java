@@ -347,8 +347,14 @@ public class AviationMasterRecordParser {
 
 
         // Common traffic advisory frequency. (CTAF)
-        final String ctaf = fields.tryGet(AIRPORT_CTAF_HEADER);
-        if (ctaf != null) {
+        String ctaf = fields.tryGet(AIRPORT_CTAF_HEADER);
+        if (ctaf != null && !ctaf.isEmpty()) {
+          try { // Parse frequency and convert it back to String to eliminate leading/trailing 0s.
+            Double freq = Double.valueOf(ctaf);
+            ctaf = freq.toString();
+          } catch (NumberFormatException nfe) {
+            // Safe to ignore exception here: frequency MAY be not parseable.
+          }
           dbWriter.insertAirportComm(id, "CTAF", ctaf, null);
         }
 
