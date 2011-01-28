@@ -945,11 +945,12 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
 
   private synchronized void drawAirspacesOnMap(final Canvas c, final float zoom, final Location l) {
     // Draw airspaces
-    if (airspacesOnScreen == null) {
+    if (airportsOnScreen == null || airspacesOnScreen == null) {
       return;
     }
     for (Airspace airspace : airspacesOnScreen) {
       final Path path = new Path();
+      boolean first = true;
 
       final Iterator<Map.Entry<Integer, LatLng>> pointIter = airspace.points.entrySet().iterator();
       final Iterator<Map.Entry<Integer, AirspaceArc>> arcIter = airspace.arcs.entrySet().iterator();
@@ -963,7 +964,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
         if (pointSeqNr < arcSeqNr) {
           final LatLng latLng = pointEntry.getValue();
           final Point point = AndroidMercatorProjection.toPoint(zoom, latLng);
-          if (path.isEmpty()) {
+          if (first) {
             path.moveTo(point.x, point.y);
           } else {
             path.lineTo(point.x, point.y);
@@ -976,6 +977,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
           path.arcTo(boundingRect, arc.startAngle, arc.sweepAngle);
           arcEntry = arcIter.hasNext() ? arcIter.next() : null;
         }
+        first = false;
       }
       path.close();
 
