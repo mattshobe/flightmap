@@ -29,6 +29,7 @@ limitations under the License.
       debug="on"
       target="1.5"
       extdirs=""
+      includeantruntime="false"
     >
       <compilerarg value="-Xlint:all"/>
     </javac>
@@ -41,6 +42,7 @@ limitations under the License.
     <javac srcdir="${test.dir}"
       destdir="${build.dir}/test"
       debug="on"
+      includeantruntime="false"
     >
       <compilerarg value="-Xlint:all"/>
       <classpath>
