@@ -237,8 +237,6 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
                          "lng INTEGER NOT NULL);");
       stat.executeUpdate("CREATE INDEX IF NOT EXISTS airspace_points_airspace_id_index ON " +
                          "airspace_points (airspace_id)");
-      stat.executeUpdate("CREATE INDEX IF NOT EXISTS airspace_points_num_index ON " +
-                         "airspace_points (num)");
       stat.executeUpdate("CREATE TABLE IF NOT EXISTS airspace_arcs (" +
                          "airspace_id INTEGER NOT NULL, " +
                          "num INTEGER NOT NULL, " +
@@ -250,8 +248,6 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
                          "sweep_angle INTEGER NOT NULL);");
       stat.executeUpdate("CREATE INDEX IF NOT EXISTS airspace_arcs_airspace_id_index ON " +
                          "airspace_arcs (airspace_id)");
-      stat.executeUpdate("CREATE INDEX IF NOT EXISTS airspace_arcs_num_index ON " +
-                         "airspace_arcs (num)");
     } finally {
       if (stat != null) {
         stat.close();
