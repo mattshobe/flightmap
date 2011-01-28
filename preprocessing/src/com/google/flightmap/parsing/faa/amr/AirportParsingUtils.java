@@ -26,7 +26,7 @@ import java.util.Map;
  * All {@code parse...} methods:
  * <ul>
  * <li>handle {@code null} input by returning {@code null}.</li>
- * <li>throw {@link * RuntimeException} if the input doesn't correspond to any valid input</li>
+ * <li>throw {@link RuntimeException} if the input doesn't correspond to any valid input</li>
  * </ul>
  */
 class AirportParsingUtils {

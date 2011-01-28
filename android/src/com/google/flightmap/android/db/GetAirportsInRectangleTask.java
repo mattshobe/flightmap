@@ -27,7 +27,7 @@ import com.google.flightmap.common.db.AirportDirectory;
 
 /**
  * Background task to get airports in a rectangle (which is a fairly slow
- * query). Clients should call {@link #execute(QueryParams...)} to start the
+ * query). Clients should call {@link #execute} to start the
  * background task.
  */
 public class GetAirportsInRectangleTask extends

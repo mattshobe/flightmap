@@ -66,7 +66,7 @@ public class NfdAnalyzer {
 
 
   /**
-   * @param nfdFile Source database in ARINC 424-18 format (eg NFD)
+   * @param nfd Source database in ARINC 424-18 format (eg NFD)
    */
   public NfdAnalyzer(final File nfd) {
     this.nfd = nfd;
@@ -388,7 +388,7 @@ public class NfdAnalyzer {
      *
      * @param sec Section code, MUST NOT be {@code null}.
      * @param sub Subsection code, MAY be {@code null}.
-     * @return If {@code sub} is {@code null}, the label corresponding to section {@sec}.
+     * @return If {@code sub} is {@code null}, the label corresponding to section {@code sec}.
      * Otherwise, the label of subsection {@code sub} in section {@code sec}.
      */
     static String getLabel(final String sec, final Character sub) {
@@ -403,7 +403,7 @@ public class NfdAnalyzer {
      * @param sec Section code
      * @param sub Subsection code
      * @return If {@code sub} is {@code null}: {@code true} if section {@code sec} is valid. If
-     * {@code sub} is not {@null}: {@code true} is the corresponding section and subsection are
+     * {@code sub} is not {@code null}: {@code true} is the corresponding section and subsection are
      * valid. Otherwise, {@code false}.
      */
     static boolean isValidCategory(final String sec, final Character sub) {

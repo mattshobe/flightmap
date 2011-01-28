@@ -47,7 +47,7 @@ public interface AviationDbWriter {
 
   /**
    * Begin a transaction on the database.  All future operations will not be auto committed.  The
-   * {@link #commit} or {@link rollback} methods must be called later.
+   * {@link #commit} or {@link #rollback} methods must be called later.
    */
   public void beginTransaction() throws SQLException;
 

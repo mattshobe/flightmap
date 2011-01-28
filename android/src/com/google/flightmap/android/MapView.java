@@ -1343,7 +1343,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback,
 
   private class AirportsQueryListener implements ProgressListener {
     /**
-     * {@inheritDoc} Called when {@link GetAirportsInRectangask} completes.
+     * {@inheritDoc} Called when {@link GetAirportsInRectangleTask} completes.
      */
     @Override
     public void hasCompleted(boolean success) {

@@ -413,7 +413,7 @@ public class AndroidAviationDbAdapter implements AviationDbAdapter {
   }
 
   /**
-   * Returns a Map of {@link AirportId} and Rank to put in search results. An
+   * Returns a Map of airport ids and Rank to put in search results. An
    * exact match will return a single-element Map. The rank is incremented each
    * time the query matches search criteria, if the airport Rank is high
    * according to the db and if the airport is in close proximity. If no match

@@ -145,8 +145,8 @@ public class NfdAirspaceParser {
   private ControlledAirspaceRecord buf;
 
   /**
-   * @param nfdFile
-   *          Source database in ARINC 424-18 format (eg NFD)
+   * @param nfd Source database in ARINC 424-18 format (eg NFD)
+   * @param db Aviation database
    */
   public NfdAirspaceParser(final File nfd, final File db) throws ClassNotFoundException,
          IOException, SQLException {

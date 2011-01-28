@@ -157,22 +157,31 @@ limitations under the License.
       basedir="${build.dir}/dist"/>
   </target>
 
+  <path id="classpath">
+      <fileset id="libJars" dir="${lib.dir}">
+        <include name="**/*.jar"/>
+       </fileset>
+    </path>
+
   <target name="javadoc"
       description="Generate Javadocs.">
     <delete dir="${build.dir}/javadoc"/>
     <mkdir dir="${build.dir}/javadoc"/>
     <javadoc
-      packagenames="com.google.flightmap.*"
-         destdir="${build.dir}/javadoc"
-         use="true"
-         author="false"
-         access="private"
-         windowtitle="Flight Map preprocessing">
+        packagenames="com.google.flightmap.*"
+        destdir="${build.dir}/javadoc"
+        use="true"
+        author="false"
+        access="private"
+        windowtitle="Flight Map preprocessing"
+        classpathref="classpath">
       <sourcepath>
         <pathelement location="${src.dir}"/>
         <pathelement location="${env.JAVA_HOME}/src"/>
+        <pathelement location="${flightmap.dir}/common/src"/>
       </sourcepath>
       <link href="http://java.sun.com/javase/6/docs/api"/>
+      <link href="http://commons.apache.org/cli/api-release/"/>
     </javadoc>
   </target>
 </project>

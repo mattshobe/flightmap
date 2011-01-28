@@ -77,8 +77,7 @@ public class AirspaceParser {
   private final String airspaceClass;
   private final AviationDbWriter dbWriter;
   /**
-   * @param twrFile NASR Terminal Communications Services database file.
-   * @param iataToIcaoFile IATA to ICAO codes file
+   * @param shapefile Airspace shape (.shp) file.
    * @param dbFile Aviation database file
    */
   public AirspaceParser(final String shapefile, final String dbFile) throws ClassNotFoundException,

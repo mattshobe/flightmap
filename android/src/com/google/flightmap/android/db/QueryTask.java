@@ -24,7 +24,7 @@ import com.google.flightmap.common.ProgressListener;
 
 /**
  * Background task to get airports in a rectangle (which is a fairly slow
- * query). Clients should call {@link #execute(QueryParams...)} to start the
+ * query). Clients should call {@link #execute} to start the
  * background task.
  */
 public abstract class QueryTask<A, B> extends AsyncTask<A, Void, B> {
@@ -32,9 +32,8 @@ public abstract class QueryTask<A, B> extends AsyncTask<A, Void, B> {
   private A queryParams;
 
   /**
-   * Initializes task to get airports in a {@link LatLngRect}.
+   * Initializes task.
    * 
-   * @param airportDirectory directory to call on background thread.
    * @param listener listener to notify of completion. May be null.
    */
   public QueryTask(final ProgressListener listener) {

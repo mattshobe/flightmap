@@ -585,7 +585,7 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
    * @param key Property key
    * @param value Property value.
    * @return {@code true} if {@code value} was converted to a constant, {@code false} otherwise.
-   * @see #addAirportProperty
+   * @see #insertAirportProperty
    */
   private  boolean insertProperty(final PreparedStatement statement,
       final String key, final String value) throws SQLException {
