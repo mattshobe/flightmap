@@ -42,8 +42,8 @@ public class AirportPalette implements Palette<Airport> {
   }
 
   /**
-   * @InheritDoc
-   *
+   * {@inheritDoc}
+   * <p>
    * Return the appropriate paint based on whether the airport is towered or
    * not.
    */

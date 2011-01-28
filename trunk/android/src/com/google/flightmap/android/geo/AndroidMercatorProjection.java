@@ -39,7 +39,7 @@ public class AndroidMercatorProjection {
    * 
    * @param zoom zoom level.
    * @param location location to convert to Mercator pixel.
-   * @see {@link MercatorProjection#toPoint}.
+   * @see MercatorProjection#toPoint
    */
   public static synchronized Point toPoint(double zoom, LatLng location) {
     MercatorProjection.toPoint(zoom, location, pointArray);
@@ -51,7 +51,7 @@ public class AndroidMercatorProjection {
    * 
    * @param zoom zoom level.
    * @param point point to convert to a LatLng.
-   * @see {@link MercatorProjection#fromPoint}
+   * @see MercatorProjection#fromPoint
    */
   public static synchronized LatLng fromPoint(double zoom, Point point) {
     pointArray[0] = point.x;
@@ -64,7 +64,7 @@ public class AndroidMercatorProjection {
    * 
    * @param zoom zoom level.
    * @param rect area to convert to Mercator rectangle.
-   * @see {@link MercatorProjection#toRect}.
+   * @see MercatorProjection#toRect
    */
   public static synchronized RectF toRectF(double zoom, LatLngRect rect) {
     MercatorProjection.toRect(zoom, rect, pointArray);

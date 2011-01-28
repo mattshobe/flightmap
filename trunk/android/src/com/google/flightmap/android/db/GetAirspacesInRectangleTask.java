@@ -27,7 +27,7 @@ import com.google.flightmap.common.db.AviationDbAdapter;
 
 /**
  * Background task to get airspaces in a rectangle (which is a fairly slow
- * query). Clients should call {@link #execute(QueryParams...)} to start the
+ * query). Clients should call {@link #execute} to start the
  * background task.
  */
 public class GetAirspacesInRectangleTask extends QueryTask<LatLngRect, Collection<Airspace>> {

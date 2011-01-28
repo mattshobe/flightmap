@@ -72,7 +72,7 @@ limitations under the License.
     <setup />
 
 
-  <target name="javadoc"
+  <target name="javadoc" depends="compile"
       description="Generate Javadocs.">
     <delete dir="javadoc"/>
     <mkdir dir="javadoc"/>
@@ -82,9 +82,10 @@ limitations under the License.
         use="true"
         author="false"
         access="private"
-        windowtitle="Flight Map ${version}">
+        windowtitle="Flight Map android">
       <sourcepath>
         <pathelement location="${source.dir}"/>
+        <pathelement location="${gen.dir}"/>
       </sourcepath>
       <classpath>
         <pathelement location="libs/flightmap-common.jar" />
@@ -93,6 +94,7 @@ limitations under the License.
         <pathelement location="${sdk.dir}/platforms/android-7/android.jar" />
       </classpath>
       <link href="http://java.sun.com/javase/6/docs/api"/>
+      <link href="${common.javadoc}"/>
     </javadoc>
   </target>
 </project>

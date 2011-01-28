@@ -68,8 +68,7 @@ public class NfdParser {
   private final File iataToIcao;
 
   /**
-   * @param nfdFile
-   *          Source database in ARINC 424-18 format (eg NFD)
+   * @param nfd Source database in ARINC 424-18 format (eg NFD)
    */
   public NfdParser(final File nfd, final File iataToIcao) {
     this.nfd = nfd;
