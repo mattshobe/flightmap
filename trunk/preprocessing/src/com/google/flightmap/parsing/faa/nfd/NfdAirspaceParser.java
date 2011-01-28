@@ -36,6 +36,7 @@ import java.io.PrintStream;
 import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -54,6 +55,17 @@ import org.apache.commons.cli.PosixParser;
  * Parses airspaces from ARINC 424-18 file and adds them to a SQLite database
  */
 public class NfdAirspaceParser {
+  private final static Logger LOG = Logger.getLogger(NfdAirspaceParser.class.getName());
+
+  /**
+   * Maximum allowable distance between points that should logically coincide, in meters.
+   * <p>
+   * For instance, the starting location of an airspace arc as encoded in NFD should coincide with
+   * the location determined by following a radial corresponding the arc's start angle, at a given
+   * distance, from the origin.  In reality however, those points differ slightly.
+   */
+  private final static int MAX_LOC_DIFF = 100;
+
   // Command line options
   private final static Options OPTIONS = new Options();
   private final static String HELP_OPTION = "help";
@@ -261,35 +273,51 @@ public class NfdAirspaceParser {
     final LatLngRect boundingBox = new LatLngRect();
     ControlledAirspaceRecord c;
     LatLng first = null;
+    LatLng lastArcEnd = null;
     while ((c = readNextRecord()) != null) {
       final char via = c.boundaryVia.charAt(0);
-      final boolean end = c.boundaryVia.charAt(1) == 'E';
-
-      LatLng start;
-      LatLng dest;
+      final boolean isEnd = c.boundaryVia.charAt(1) == 'E';
+      LatLng current;
+      LatLng next;
       if (via == 'C') {
-        assert end;
-        start = LatLngParsingUtils.parseLatLng(c.arcOriginLatitude, c.arcOriginLongitude);
-        dest = null;
+        // Circle should be first and only record of airspace.
+        assert first == null;
+        assert isEnd;
+        current = LatLngParsingUtils.parseLatLng(c.arcOriginLatitude, c.arcOriginLongitude);
+        next = null;
       } else {
-        start = LatLngParsingUtils.parseLatLng(c.latitude, c.longitude);
+        current = LatLngParsingUtils.parseLatLng(c.latitude, c.longitude);
         final ControlledAirspaceRecord n = peekNextRecord();
-        dest = end ? first : LatLngParsingUtils.parseLatLng(n.latitude, n.longitude);
+        next = isEnd ? first : LatLngParsingUtils.parseLatLng(n.latitude, n.longitude);
         if (first == null) {
-          first = start ;
+          first = current ;
         }
       }
-      boundingBox.add(start);
-
+      /* If last record was an arc, try replacing current point with its end point to avoid
+       * small, erratic shapes (due to rounding error and geodesic computations.) */
+      if (lastArcEnd != null && (via == 'H' || via == 'G')) {
+          final double diff = Math.abs(NavigationUtil.computeDistance(lastArcEnd, current));
+          if (diff < MAX_LOC_DIFF) {
+            current = lastArcEnd;
+          } else {
+            LOG.warning("Mismatch between last arc end point and current (in meters): " + diff);
+          }
+      }
+      boundingBox.add(current);
       if (via == 'H') {
-        points.put(seqNr++, start);
+        if (lastArcEnd != current) {
+          points.put(seqNr++, current);
+        }
       } else if (via == 'G') {
-        // Add all but last sample between current and next point.
-        final List<LatLng> samples = GreatCircleUtils.sampleGreatCircle(start, dest, 300);
+        final List<LatLng> samples =
+            GreatCircleUtils.sampleGreatCircle(current, next, MAX_LOC_DIFF);
         int count = 0;
         int size = samples.size();
         for (LatLng sample: samples) {
-          if (++count < size) {
+          if (count == 0 && lastArcEnd == current) {
+            continue;  // Skip first point if it is equal to end of previous arc segment.
+          }
+          if (++count < size) {  // Skips last point (will be handled by next record).
             points.put(seqNr++, sample);
           }
         }
@@ -305,13 +333,14 @@ public class NfdAirspaceParser {
           radius = Integer.parseInt(c.arcDistance) / 10.0;
         } else {
           final boolean clockwise = via == 'R';
-          startAngle = (float) ((NavigationUtil.getInitialCourse(o, start) + 270) % 360);
-          final float endAngle = (float) ((NavigationUtil.getInitialCourse(o, dest) + 270) % 360);
+          startAngle = (float) ((NavigationUtil.getInitialCourse(o, current) + 270) % 360);
+          final float endAngle = (float) ((NavigationUtil.getInitialCourse(o, next) + 270) % 360);
           final float diffAngle = endAngle - startAngle;
           sweepAngle = clockwise ?
                        NavigationUtil.euclideanMod(diffAngle, 360.0f) :
                        -NavigationUtil.euclideanMod(-diffAngle, 360.0f);
-          radius = NavigationUtil.computeDistance(o, start);
+          radius = NavigationUtil.computeDistance(o, current);
+          lastArcEnd = next;
         }
         final LatLng north = NavigationUtil.getPointAlongRadial(o, 0, radius);
         final LatLng east = NavigationUtil.getPointAlongRadial(o, 90, radius);
@@ -325,6 +354,8 @@ public class NfdAirspaceParser {
         final AirspaceArc arc = new AirspaceArc(box, startAngle, sweepAngle);
         arcs.put(seqNr++, arc);
 
+        /* Determine contribution of this arc to the airspace bounding box.
+         * Remember: for R or L arcs, the start and end points are added elsewhere. */
         if (via == 'C') {
           boundingBox.add(box);
         } else {
@@ -362,9 +393,13 @@ public class NfdAirspaceParser {
         throw new RuntimeException("Unknown boundary via type: " + via);
       }
 
-      if (end) {
+      if (isEnd) {
         addAirspaceToDb(center, name, airspaceClass, boundingBox, lowAlt, highAlt, points, arcs);
         return true;
+      }
+
+      if (via != 'R' && via != 'L') {
+        lastArcEnd = null;
       }
     }
     return false;
