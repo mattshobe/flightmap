@@ -18,8 +18,6 @@ package com.google.flightmap.android.db;
 
 import java.util.Collection;
 
-import android.os.AsyncTask;
-
 import com.google.flightmap.common.ProgressListener;
 import com.google.flightmap.common.data.Airspace;
 import com.google.flightmap.common.data.LatLngRect;

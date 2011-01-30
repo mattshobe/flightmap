@@ -42,9 +42,9 @@ import android.widget.FrameLayout;
 import com.google.flightmap.android.db.AndroidAviationDbAdapter;
 import com.google.flightmap.android.location.LocationHandler;
 import com.google.flightmap.android.location.SimulatorDialog;
+import com.google.flightmap.android.map.MapView;
 import com.google.flightmap.android.net.DbUpdaterTask;
 import com.google.flightmap.common.ProgressListener;
-import com.google.flightmap.common.db.AviationDbAdapter;
 import com.google.flightmap.common.db.CachedAirportDirectory;
 import com.google.flightmap.common.db.CachedAviationDbAdapter;
 import com.google.flightmap.common.db.CustomGridAirportDirectory;
@@ -78,10 +78,10 @@ public class MainActivity extends Activity {
   private boolean initializationDone;
   private boolean databaseDownloaded;
   private DbUpdaterTask dbUpdaterTask;
-  FlightMap flightMap;
-  CachedAviationDbAdapter aviationDbAdapter;
-  CachedAirportDirectory airportDirectory;
-  UserPrefs userPrefs;
+  private FlightMap flightMap;
+  private CachedAviationDbAdapter aviationDbAdapter;
+  private CachedAirportDirectory airportDirectory;
+  private UserPrefs userPrefs;
   private SimulatorDialog simulatorDialog;
 
   @Override
@@ -103,7 +103,6 @@ public class MainActivity extends Activity {
     setContentView(R.layout.mapview);
     mapFrame = (FrameLayout) findViewById(R.id.map_frame);
     mapView = new MapView(this);
-    userPrefs.registerOnSharedPreferenceChangeListener(mapView);
 
     // The MapView must be the first child.
     mapFrame.addView(mapView, 0);
@@ -122,7 +121,7 @@ public class MainActivity extends Activity {
   @Override
   protected void onPrepareDialog(int id, Dialog dialog) {
     if (id == SIMULATOR_DIALOG) {
-      simulatorDialog.setUnits(userPrefs.getDistanceUnits());
+      simulatorDialog.setUnits(getUserPrefs().getDistanceUnits());
       simulatorDialog.updateDialog();
     }
     super.onPrepareDialog(id, dialog);
@@ -222,7 +221,7 @@ public class MainActivity extends Activity {
       }
     };
 
-    final DbAdapter dbAdapter = new AndroidAviationDbAdapter(userPrefs);
+    final DbAdapter dbAdapter = new AndroidAviationDbAdapter(getUserPrefs());
     final DbUpdaterTask.Params params =
         new DbUpdaterTask.Params(localFile, url, workingDir, dbAdapter,
             AVIATION_DATABASE_REQUIRED_SCHEMA_VERSION);
@@ -239,9 +238,9 @@ public class MainActivity extends Activity {
   }
 
   private synchronized void initializeApplication() {
-    aviationDbAdapter = new CachedAviationDbAdapter(new AndroidAviationDbAdapter(userPrefs));
+    aviationDbAdapter = new CachedAviationDbAdapter(new AndroidAviationDbAdapter(getUserPrefs()));
     airportDirectory =
-        new CachedAirportDirectory(new CustomGridAirportDirectory(aviationDbAdapter));
+        new CachedAirportDirectory(new CustomGridAirportDirectory(getAviationDbAdapter()));
 
     // TODO: handle the case of this throwing when there's no database.
     airportDirectory.open();
@@ -257,7 +256,7 @@ public class MainActivity extends Activity {
   public boolean onPrepareOptionsMenu(Menu menu) {
     // Simulator menu item may be hidden by user prefs.
     MenuItem simulatorItem = menu.findItem(R.id.simulator);
-    boolean showSimulatorItem = userPrefs.enableSimulator();
+    boolean showSimulatorItem = getUserPrefs().enableSimulator();
     simulatorItem.setVisible(showSimulatorItem);
     simulatorItem.setEnabled(showSimulatorItem);
     return super.onPrepareOptionsMenu(menu);
@@ -304,7 +303,6 @@ public class MainActivity extends Activity {
   @Override
   protected void onDestroy() {
     super.onDestroy();
-    userPrefs.unregisterOnSharedPreferenceChangeListener(mapView);
     mapView.destroy();
     if (airportDirectory != null) {
       airportDirectory.close();
@@ -381,5 +379,21 @@ public class MainActivity extends Activity {
 
   private synchronized void setDatabaseDownloaded(final boolean databaseDownloaded) {
     this.databaseDownloaded = databaseDownloaded;
+  }
+
+  public UserPrefs getUserPrefs() {
+    return userPrefs;
+  }
+
+  public FlightMap getFlightMap() {
+    return flightMap;
+  }
+
+  public CachedAviationDbAdapter getAviationDbAdapter() {
+    return aviationDbAdapter;
+  }
+
+  public CachedAirportDirectory getAirportDirectory() {
+    return airportDirectory;
   }
 }

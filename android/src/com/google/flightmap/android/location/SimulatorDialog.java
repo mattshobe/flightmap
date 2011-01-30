@@ -27,7 +27,7 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.TextView;
 
-import com.google.flightmap.android.MapView;
+import com.google.flightmap.android.map.MapView;
 import com.google.flightmap.android.R;
 import com.google.flightmap.common.data.LatLng;
 import com.google.flightmap.common.geo.CachedMagneticVariation;

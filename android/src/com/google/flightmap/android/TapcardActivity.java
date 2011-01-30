@@ -46,6 +46,7 @@ import android.widget.TextView;
 
 import com.google.flightmap.android.db.AndroidAviationDbAdapter;
 import com.google.flightmap.android.location.LocationHandler;
+import com.google.flightmap.android.map.MapView;
 import com.google.flightmap.common.data.Airport;
 import com.google.flightmap.common.data.Comm;
 import com.google.flightmap.common.data.LatLng;
