@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+  android:id="@+id/tapcard_scroll_view" style="@style/FillParent"
+  android:fillViewport="true" android:keepScreenOn="true">
+  <LinearLayout android:id="@+id/tapcard_outer_layout"
+    style="@style/TapcardOuterLayout">
+    <!-- ICAO and airport name -->
+    <TableLayout android:id="@+id/tapcard_name_table" 
+    	style="@style/TapcardNameTable"
+    	android:shrinkColumns="1">
+      <TableRow android:id="@+id/tapcard_icao_and_name_row"
+        style="@style/TapcardIcaoAndNameRow">
+        <TextView android:id="@+id/tapcard_icao" style="@style/TapcardText.Icao" />
+        <TextView android:id="@+id/tapcard_airport_name" style="@style/TapcardText.Name" />
+      </TableRow>
+    </TableLayout>
+    <!-- Navigation row -->
+    <LinearLayout android:id="@+id/tapcard_navigation"
+      style="@style/TapcardNavigation">
+      <SurfaceView android:id="@+id/tapcard_minimap" style="@style/TapcardNavigationMap" />
+      <TextView android:id="@+id/tapcard_distance" style="@style/TapcardNavigationText" />
+      <TextView android:id="@+id/tapcard_bearing" style="@style/TapcardNavigationText" />
+      <TextView android:id="@+id/tapcard_ete" style="@style/TapcardNavigationText" />
+    </LinearLayout>
+    <!--  Communications Table -->
+    <TableLayout android:id="@+id/tapcard_comm_table" 
+    	style="@style/TapcardComms" 
+    	android:shrinkColumns="0" />
+    <!-- Runway List -->
+    <LinearLayout android:id="@+id/tapcard_runway_layout"
+      	style="@style/TapcardRunwayLayout" />
+    <!-- Elevation -->
+    <LinearLayout style="@style/FillWidth">
+      <TextView android:id="@+id/tapcard_elevation" style="@style/TapcardElevation" />
+    </LinearLayout>
+  </LinearLayout>
+</ScrollView>
