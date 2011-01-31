@@ -62,6 +62,12 @@ public interface AviationDbWriter {
   public void rollback() throws SQLException;
 
   /**
+   * Deletes CTAF frequency of airport with given id.  If no CTAF frequency exists in the database
+   * for this airport, this is a no-op.
+   */
+  public void deleteCtaf(int airportId) throws SQLException;
+
+  /**
    * Creates database tables that will hold airport data.  Deletes existing tables.
    */
   public void initAirportTables() throws SQLException;

@@ -55,4 +55,9 @@ public interface AviationDbReader {
    * Returns id of (base/reciprocal) runway end.
    */
   public int getRunwayEndId(int runwayId, String letters);
+
+  /**
+   * Returns CTAF frequency of airport with given id, or {@code null} if not applicable.
+   */
+  public String getCtaf(int airportId);
 }

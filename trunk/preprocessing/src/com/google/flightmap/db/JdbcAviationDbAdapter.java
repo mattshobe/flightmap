@@ -73,6 +73,7 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter, AviationDbReade
   private PreparedStatement getAirspacePointsStmt;
   private PreparedStatement getAirspaceStmt;
   private PreparedStatement getConstantStmt;
+  private PreparedStatement getCtafStmt;
   private PreparedStatement getRunwayEndIdStatement;
   private PreparedStatement getRunwayIdStatement;
   private PreparedStatement getRunwaysStmt;
@@ -343,6 +344,23 @@ public class JdbcAviationDbAdapter implements AviationDbAdapter, AviationDbReade
       final String constant = rs.next() ? rs.getString("constant") : null;
       rs.close();
       return constant;
+    } catch (SQLException sqlEx) {
+      throw new RuntimeException(sqlEx);
+    }
+  }
+
+  @Override
+  public String getCtaf(final int airportId) {
+    try {
+      if (getCtafStmt == null) {
+        getCtafStmt =
+          dbConn.prepareStatement("SELECT frequency FROM airport_comm WHERE airport_id = ?");
+      }
+      getCtafStmt.setInt(1, airportId);
+      final ResultSet rs = getCtafStmt.executeQuery();
+      final String frequency = rs.next() ? rs.getString("frequency") : null;
+      rs.close();
+      return frequency;
     } catch (SQLException sqlEx) {
       throw new RuntimeException(sqlEx);
     }

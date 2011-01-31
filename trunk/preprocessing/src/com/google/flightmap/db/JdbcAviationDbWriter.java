@@ -41,6 +41,7 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
   private Connection dbConn;
 
   // Frequent SQL Prepared Statements
+  private PreparedStatement deleteCtafStatement;
   private PreparedStatement getConstantIdStatement;
   private PreparedStatement insertAirportCommStatement;
   private PreparedStatement insertAirportPropertyStatement;
@@ -75,6 +76,8 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
    * Resets (cached) prepared SQL statements.
    */
   private synchronized void resetPreparedStatements() {
+    tryClose(getConstantIdStatement);
+    getConstantIdStatement = null;
     tryClose(getConstantIdStatement);
     getConstantIdStatement = null;
     tryClose(insertAirportCommStatement);
@@ -147,6 +150,17 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
   @Override
   public synchronized void rollback() throws SQLException {
     dbConn.rollback();
+  }
+
+  @Override
+  public void deleteCtaf(final int airportId) throws SQLException {
+    if (deleteCtafStatement == null) {
+      deleteCtafStatement = dbConn.prepareStatement(
+          "DELETE FROM airport_comm WHERE identifier = 'CTAF' AND airport_id = ?");
+    }
+    int fieldCount = 0;
+    deleteCtafStatement.setInt(++fieldCount, airportId);
+    deleteCtafStatement.executeUpdate();
   }
 
   @Override

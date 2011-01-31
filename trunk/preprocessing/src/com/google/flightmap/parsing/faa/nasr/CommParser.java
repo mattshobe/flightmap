@@ -215,6 +215,18 @@ public class CommParser {
       }
       // Normalize frequency use ("APP/P DEP/P" -> "APP/DEP")
       comm = getNormalizedAirportComm(comm);
+      // Merge identical CTAF, TWR records
+      final int id = comm.airportId;
+      if ("TWR".equals(comm.identifier) && comm.frequency.equals(dbReader.getCtaf(id))) {
+        final StringBuilder sb = new StringBuilder();
+        if (comm.remarks != null && !comm.remarks.isEmpty()) {
+          sb.append(comm.remarks);
+          sb.append(" ");
+        }
+        sb.append("(also CTAF)");
+        comm = new AirportComm(id, comm.identifier, comm.frequency, sb.toString());
+        dbWriter.deleteCtaf(id);
+      }
       dbWriter.insertAirportComm(comm.airportId, comm.identifier, comm.frequency, comm.remarks);
     } catch (NumberFormatException nfe) {
       System.err.println("Could not parse frequency: " + comm.frequency);
