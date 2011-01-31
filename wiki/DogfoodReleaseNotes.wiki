@@ -15,7 +15,7 @@ Flight Map offers these features:
 
 We plan to add the following features in future releases:
   *  Record and save in-flight GPS tracks using the Android MyTracks application, if installed
-  *  Terrain, airspace, road, and water detail layers in 2D mode
+  *  Terrain, road, and water detail layers in 2D mode
   *  Separate Airport/Facility database browse and search
 …and the big one: a Sky Map-like augmented reality view through the device camera that can help reveal airports. Here is a [https://sites.google.com/a/google.com/blackbox/home/user-experience conceptual screenshot]. 
 
@@ -25,16 +25,27 @@ Please file a bug using our official [http://code.google.com/p/flightmap/issues/
 Also, you should consider joining the Flight Map [http://g/flightmap mailing list]. The development team will monitor this list for discussion and provide updates on development plans and launch timetables through it.
 
 =Coming Soon=
-  * Airspace, State Boundaries.
-  * Better organization of airport communication data.
+  * Navaids
+  * AWOS/ASOS frequencies
+  * State Boundaries.
 
-=Release: v0.11.1 "Mooney" - 1/14/11=
+=Release: v0.13.0 "[http://en.wikipedia.org/wiki/Dufaux_4 Dufaux 4]" - 1/30/11=
+  * New features:
+    * Controlled airspace contours are now displayed.  Issue 80.
+  * Improvements:
+    * Airport communication frequencies are better organized:
+      * Merged tower and CTAF frequencies when possible.  Issue 135.
+      * Removed trailing zeroes from CTAF frequencies.  Issue 134.
+  * Bug fixes:
+    * Fixed null pointer exception if the user selected an airport without communication frequencies.  Issue 146.
+
+=Release: v0.11.1 "[http://en.wikipedia.org/wiki/Mooney_Airplane_Company  Mooney]" - 1/14/11=
   * Improvements:
     * Better pinch-to-zoom behavior. If you pan your fingers while pinching, the map pans.
     * Preserve pan state and panned-to map location when app is restored (such as when changing orientation).
   * Bug fixes:
     * Fixed null pointer exception if the user panned the map when there was no current location.
-=Release: v0.11.0 "Mooney" - 12/20/10=
+=Release: v0.11.0 "[http://en.wikipedia.org/wiki/Mooney_Airplane_Company Mooney]" - 12/20/10=
   * New features:
     * Can install to SD card (requires Android 2.2).
     * Pan the map by dragging.
@@ -43,7 +54,7 @@ Also, you should consider joining the Flight Map [http://g/flightmap mailing lis
     * Better organization of search results.
     * Local search history.
 
-=Release: v0.9.0 "Citabria" - 10/15/10=
+=Release: v0.9.0 "[http://en.wikipedia.org/wiki/Citabria Citabria]" - 10/15/10=
   * New features:
     * Search by airport code, city name or airport name.
       * Known issues with search:
