@@ -329,8 +329,8 @@ public class NfdAirspaceParser {
 
         if (via == 'C') {
           startAngle = 0;
-          sweepAngle = 360;
-          radius = Integer.parseInt(c.arcDistance) / 10.0;
+          sweepAngle = 359;
+          radius = Integer.parseInt(c.arcDistance) / 10.0 / NavigationUtil.METERS_TO_NM;
         } else {
           final boolean clockwise = via == 'R';
           startAngle = (float) ((NavigationUtil.getInitialCourse(o, current) + 270) % 360);
