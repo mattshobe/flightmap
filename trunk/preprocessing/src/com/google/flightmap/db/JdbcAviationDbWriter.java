@@ -34,7 +34,7 @@ public class JdbcAviationDbWriter implements AviationDbWriter {
   private final static String SQL_LITE_DRIVER = "org.sqlite.JDBC";
 
   // Database metadata
-  private final static int DB_SCHEMA_VERSION = 3;
+  private final static int DB_SCHEMA_VERSION = 4;
   private final static long DB_EXPIRATION_TIMESTAMP = 1299747660000L; // 10 Mar 2011 09:01:00 GMT
 
   private final File file;
