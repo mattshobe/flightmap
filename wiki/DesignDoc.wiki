@@ -1,0 +1,17 @@
+#summary Overview of the application design.
+
+= Objective =
+Flight Map is a moving map Android application for pilots. It's meant to be a demonstration of what's possible with the Android SDK. Since we want it to work in the air, the application must work in airplane mode.
+
+We use public-domain data from the [http://www.faa.gov FAA].
+
+No user data is collected or sent from the phone to anywhere else.
+
+= Overview =
+There are 3 top-level packages to Flight Map: preprocessing, Android, and common.
+
+The preprocessing code takes data from the FAA and produces data that's been parsed and suitable to deliver to the phone. This code is currently manually run to produce the files in the `data` directory. In future, we may be able to support other sources of data (e.g. from other countries).
+
+The Android code is what actually runs on the phone. The main component is a moving map that shows the airports, airspace and other aviation data near the current location. This is very similar to Google Maps, except it's just for aviation data. It's also possible to get details on an airport and search the data on the phone.
+
+The common code is shared by both the preprocessing and Android components.
