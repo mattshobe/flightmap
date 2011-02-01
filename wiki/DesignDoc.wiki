@@ -1,6 +1,6 @@
 #summary Overview of the application design.
 
-<wiki:toc max_depth="2" />
+<wiki:toc max_depth="3" />
 
 = Objective =
 Flight Map is a moving map Android application for pilots. It's meant to be a demonstration of what's possible with the Android SDK. Since we want it to work in the air, the application must work in airplane mode.
@@ -28,20 +28,32 @@ Communications data comes from the [http://nfdc.faa.gov/ National Flight Data Ce
 
 Airspace data also comes from the NFDC and is parsed by the !NfdAirspaceParser class. Airspace is described in a vector format and is stored in the aviation.db in a way that makes it easy to query and display.
 
+The aviation database has an expiration date and schema version. When the Android application launches, it checks its local copy of the database and downloads a new one if it's expired. The schema version an integer that is incremented when the database is changed in a way that's incompatible with old versions of the application. The Android application has a constant specifying which database schema version it's expecting to use, and if that doesn't match what's stored locally, the database is downloaded via http.
+
 == Android Design ==
 === Android SDK Level ==
 For our first release, we've set the minimum Android SDK version to 7 (Android 2.1 / Eclair). The target SDK is set to version 8 (Android 2.2 / Froyo) solely to allow installation to the SD card for users running Android 2.2 and higher.
 
 We do not currently use any SDK version 8 functionality.
 
-=== Activities ===
-There are 4 activities in the application: !MainActivity, !SearchActivity, !TapcardActivity and !UserPrefsActivity. The !MainActivity (surprisingly) is the one that's launched when you start Flight Map. It does all the initial set up, the starts the main event loop to update the moving map.
+=== Activity Overview ===
+There are 4 activities in the application: !MainActivity, !SearchActivity, !TapcardActivity and !UserPrefsActivity. The !MainActivity (surprisingly) is the one that's launched when you start Flight Map. The main activity has 4 tasks:
+ # Show the legal disclaimer.
+ # Download a database update if needed (as described above in the Preprocessing Design section.
+ # Run the main event loop which updates the map.
+ # Handle Android lifecycle events such as pausing and resuming.
 
-!SearchActivity is launched when you press the "search" button on your phone. It lets you search for airports by name, identifier or city name.
+!SearchActivity is launched when you press the "search" button on your phone. It lets you search for airports by name, identifier or city name. It closely follows the examples on the Android developer page regarding [http://developer.android.com/guide/topics/search/index.html search].
 
 !TapcardActivity is what displays details about an airport when you tap on the airport symbol on the map. It's also launched when you search for an airport and tap on it. In addition to showing airport details, it displays a small strip of navigation data showing a pointer to the airport from your current position, your distance and estimated time enroute (if moving).
 
-The !UserPrefsActivity handles the UI for changing user preferences.
+The !UserPrefsActivity handles the UI for changing user preferences. The API to the user preferences is in the !UserPrefs class which has accessor methods.
 
+=== Moving Map ===
+The moving map classes are in the `map` subpackage. We use the Model-View-Presenter pattern.
+
+!MapView shows the moving map and handles simple UI actions. It communicates with the model and presenter as needed for anything that's not a simple UI action. The `drawMap()` method is called by the event loop that MainActivity runs.
+
+The !MapPresenter communicates with the !MapView and handles complex UI actions, such as panning or launching the !TapcardActivity when the user taps on the map. It also determines what the current screen area is and handles the database queries to fetch the airports and airspace in view. The !MapPresenter handles the somewhat tricky canvas transformations to get everything drawn in the right place. As needed, it tells the !MapView when to draw certain things, such as the top panel with navigation information.
 
 == Key Common Classes ==
