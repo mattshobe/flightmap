@@ -1,5 +1,7 @@
 #summary Overview of the application design.
 
+<wiki:toc max_depth="2" />
+
 = Objective =
 Flight Map is a moving map Android application for pilots. It's meant to be a demonstration of what's possible with the Android SDK. Since we want it to work in the air, the application must work in airplane mode.
 
@@ -15,3 +17,19 @@ The preprocessing code takes data from the FAA and produces data that's been par
 The Android code is what actually runs on the phone. The main component is a moving map that shows the airports, airspace and other aviation data near the current location. This is very similar to Google Maps, except it's just for aviation data. It's also possible to get details on an airport and search the data on the phone.
 
 The common code is shared by both the preprocessing and Android components.
+
+= Detailed Design =
+== Preprocessing Design ==
+The preprocessing code generates a [http://sqlite.org SQLite] database that's checked into subversion as `data/aviation.db`.
+
+The !AviationMasterRecordParser reads information about airports from the [http://www.faa.gov/airports/airport_safety/airportdata_5010/ FAA Aviation Master Record], normalizes it and stores it in the aviation.db.
+
+Communications data comes from the [http://nfdc.faa.gov/ National Flight Data Center] (NFDC) in the NASR (National Airspace System Resources) as a set of text files. That data is parsed by the !CommParser class and stored in aviation.db.
+
+Airspace data also comes from the NFDC and is parsed by the !NfdAirspaceParser class.
+
+
+== Android Design ==
+
+
+== Key Common Classes ==
