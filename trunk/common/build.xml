@@ -79,7 +79,7 @@ limitations under the License.
       <fileset dir="${build.dir}/classes"/>
     </jar>
   </target>
-  
+
   <target name="release" depends="jar" description="Create a released version">
       <mkdir dir="${release.dir}" />
       <copy
@@ -94,29 +94,28 @@ limitations under the License.
     </jar>
   </target>
 
-<!--
   <target name="dist" depends="jar, jarsrc, javadoc"
        description="Build entire distribution.">
-    <copy toDir="${build.dir}/dist/${common.dist.name}" file="COPYING"/>
+       <copy toDir="${build.dir}/dist/${common.dist.name}" file="../COPYING"/>
     <copy toDir="${build.dir}/dist/${common.dist.name}">
-      <fileset dir="${build.dir}" includes="javadoc/**/*"/>
+      <fileset dir="${build.dir}" includes="${javadoc.dir}/**/*"/>
     </copy>
 
     <zip destfile="${build.dir}/${common.dist.name}.zip"
       basedir="${build.dir}/dist"/>
   </target>
--->
+
   <target name="javadoc"
       description="Generate Javadocs.">
-    <delete dir="${build.dir}/javadoc"/>
-    <mkdir dir="${build.dir}/javadoc"/>
+    <delete dir="${javadoc.dir}"/>
+    <mkdir dir="${javadoc.dir}"/>
     <javadoc
-      packagenames="com.google.flightmap.*"
-         destdir="${build.dir}/javadoc"
-         use="true"
-         author="false"
-         access="private"
-         windowtitle="Flight Map common">
+        packagenames="com.google.flightmap.*"
+        destdir="${javadoc.dir}"
+        use="true"
+        author="false"
+        access="private"
+        windowtitle="Flight Map common">
       <sourcepath>
         <pathelement location="${src.dir}"/>
         <pathelement location="${env.JAVA_HOME}/src"/>

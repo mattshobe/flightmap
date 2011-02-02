@@ -151,14 +151,14 @@ limitations under the License.
   </target>
 
   <target name="dist" depends="jar, jarsrc, javadoc"
-       description="Build entire distribution.">
-    <copy toDir="${build.dir}/dist/${dist.name}-${version}" file="COPYING"/>
+      description="Build entire distribution.">
+    <copy toDir="${build.dir}/dist/${dist.name}-${version}" file="../COPYING"/>
     <copy toDir="${build.dir}/dist/${dist.name}-${version}">
-      <fileset dir="${build.dir}" includes="javadoc/**/*"/>
+      <fileset dir="${build.dir}" includes="${javadoc.dir}/**/*"/>
     </copy>
 
     <zip destfile="${build.dir}/${dist.name}-${version}.zip"
-      basedir="${build.dir}/dist"/>
+        basedir="${build.dir}/dist"/>
   </target>
 
   <path id="classpath">
@@ -169,11 +169,11 @@ limitations under the License.
 
   <target name="javadoc"
       description="Generate Javadocs.">
-    <delete dir="${build.dir}/javadoc"/>
-    <mkdir dir="${build.dir}/javadoc"/>
+    <delete dir="${javadoc.dir}"/>
+    <mkdir dir="${javadoc.dir}"/>
     <javadoc
         packagenames="com.google.flightmap.*"
-        destdir="${build.dir}/javadoc"
+        destdir="${javadoc.dir}"
         use="true"
         author="false"
         access="private"
@@ -182,10 +182,10 @@ limitations under the License.
       <sourcepath>
         <pathelement location="${src.dir}"/>
         <pathelement location="${env.JAVA_HOME}/src"/>
-        <pathelement location="${flightmap.dir}/common/src"/>
       </sourcepath>
       <link href="http://java.sun.com/javase/6/docs/api"/>
       <link href="http://commons.apache.org/cli/api-release/"/>
+      <link href="${common.javadoc}"/>
     </javadoc>
   </target>
 </project>
