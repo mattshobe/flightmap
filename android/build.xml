@@ -73,8 +73,10 @@ limitations under the License.
 
 
   <target name="javadoc" depends="compile" description="Generate Javadocs.">
-    <delete dir="${javadoc.dir}"/>
     <mkdir dir="${javadoc.dir}"/>
+    <delete>
+      <fileset dir="${javadoc.dir}" includes="**/*"/>
+    </delete>
     <javadoc
         packagenames="com.google.flightmap.*"
         destdir="${javadoc.dir}"
