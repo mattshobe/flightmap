@@ -27,8 +27,6 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Typeface;
-import android.graphics.Paint.Style;
-import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
@@ -95,14 +93,14 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
 
   // Items for the navigation display.
   private LatLng airportLatLng;
-  private Drawable airplaneImage;
+  private Path airplanePath = MapView.createAirplanePath();
   private Path pointerPath = new Path();
   private SurfaceView miniMap;
   private SurfaceHolder holder;
   private TextView distanceText;
   private TextView bearingText;
   private TextView eteText;
-  private Paint airplanePaint = new Paint();
+  private Paint navigationPaint = new Paint();
   private float[] distanceBearingResult = new float[2];
 
   @Override
@@ -188,11 +186,9 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
    */
   private void setNavigationInfo(Airport airport, Resources res) {
     airportLatLng = airport.location;
-    airplaneImage = MapView.centerImage(res.getDrawable(R.drawable.aircraft));
-    airplaneImage.setFilterBitmap(true); // Improves rendering quality.
-    airplanePaint.setColor(res.getColor(R.color.AircraftPaint));
-    airplanePaint.setStrokeWidth(1.5f);
-    airplanePaint.setAntiAlias(true);
+    navigationPaint.setColor(res.getColor(R.color.AircraftPaint));
+    navigationPaint.setStrokeWidth(1.5f);
+    navigationPaint.setAntiAlias(true);
 
     // Create path for the pointer.
     pointerPath.lineTo(POINTER_WIDTH / 2f, 0);
@@ -444,15 +440,17 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
           if (userPrefs.isNorthUp()) {
             c.rotate(lastBearing);
           }
-          airplaneImage.draw(c);
+          navigationPaint.setStyle(Paint.Style.FILL);
+          c.scale(density, density);
+          c.drawPath(airplanePath, navigationPaint);
 
           // Undo the downscaling and rotation for the airplane.
           c.restore();
 
           // Draw a circle around the airplane.
-          airplanePaint.setStyle(Style.STROKE);
+          navigationPaint.setStyle(Paint.Style.STROKE);
           float radius = (width / 2f) - POINTER_LENGTH;
-          c.drawCircle(0, 0, radius, airplanePaint);
+          c.drawCircle(0, 0, radius, navigationPaint);
 
           // Calculate pointer direction. If in north-up mode, the it's just
           // bearingTo, otherwise it's the relative bearing to.
@@ -464,8 +462,8 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
           // Rotate the pointer and draw it.
           c.rotate(bearingTo);
           c.translate(0, -radius);
-          airplanePaint.setStyle(Style.FILL);
-          c.drawPath(pointerPath, airplanePaint);
+          navigationPaint.setStyle(Paint.Style.FILL);
+          c.drawPath(pointerPath, navigationPaint);
         }
       }
     } finally {
