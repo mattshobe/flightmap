@@ -68,6 +68,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   private static final Paint PANEL_BACKGROUND_PAINT = new Paint();
   private static final Paint PANEL_DIGITS_PAINT = new Paint();
   private static final Paint PANEL_UNITS_PAINT = new Paint();
+  static final Paint AIRPLANE_SOLID_PAINT = new Paint();
+  static final Paint AIRPLANE_OUTLINE_PAINT = new Paint();
   static final Paint PAN_SOLID_PAINT = new Paint();
   static final Paint PAN_DASH_PAINT = new Paint();
   static final Paint PAN_INFO_PAINT = new Paint();
@@ -106,7 +108,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   private final Rect textBounds = new Rect();
 
   // Airplane image.
-  final Drawable airplaneImage;
+  final Path airplaneImage;
 
   // Layout holding the simulator message.
   private LinearLayout simulatorMessage;
@@ -170,6 +172,14 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     Resources res = mainActivity.getResources();
     airportPalette = new AirportPalette(res);
     // Set up paints from resource colors.
+    AIRPLANE_SOLID_PAINT.setColor(res.getColor(R.color.AircraftPaint));
+    AIRPLANE_SOLID_PAINT.setAntiAlias(true);
+    AIRPLANE_SOLID_PAINT.setStrokeWidth(1);
+    AIRPLANE_SOLID_PAINT.setStyle(Paint.Style.FILL_AND_STROKE);
+    AIRPLANE_OUTLINE_PAINT.setColor(res.getColor(R.color.AircraftPaint));
+    AIRPLANE_OUTLINE_PAINT.setAntiAlias(true);
+    AIRPLANE_OUTLINE_PAINT.setStrokeWidth(2);
+    AIRPLANE_OUTLINE_PAINT.setStyle(Paint.Style.STROKE);
     PAN_SOLID_PAINT.setColor(res.getColor(R.color.PanItems));
     PAN_SOLID_PAINT.setAntiAlias(true);
     PAN_SOLID_PAINT.setStrokeWidth(5);
@@ -181,9 +191,34 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     panResetButton = new PanResetButton();
 
     // Set up airplane image.
-    airplaneImage = centerImage(res.getDrawable(R.drawable.aircraft));
+    // TODO - remove R.drawable.aircraft.
+    airplaneImage = createAirplanePath();
     // Set up scale gesture detector.
     scaleDetector = new ScaleGestureDetector(mainActivity, new ScaleListener());
+  }
+
+  private Path createAirplanePath() {
+    Path result = new Path();
+    float points[][] =
+        { {22, 0}, {25, 0}, {27, 9}, {46, 11}, {46, 16}, {27, 19}, {26, 31}, {31, 33}, {31, 35},
+            {24, 37}, {23, 37}, {16, 35}, {16, 33}, {21, 31}, {20, 19}, {0, 16}, {0, 11}, {20, 9}};
+    // Above outline specified with an origin of (0, 0).
+    // Change coordinates so the center of the airplane is the origin.
+    float originX = 23.5f;
+    float originY = 13.5f;
+    boolean isFirstPoint = true;
+    for (float[] point : points) {
+      float x = point[0] - originX;
+      float y = point[1] - originY;
+      if (isFirstPoint) {
+        isFirstPoint = false;
+        result.moveTo(x, y);
+      } else {
+        result.lineTo(x, y);
+      }
+    }
+    result.close();
+    return result;
   }
 
   /**
@@ -196,7 +231,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     // TODO: Move this method to generic utility class.
     int imageWidth = image.getIntrinsicWidth();
     int imageHeight = image.getIntrinsicHeight();
-    // Set bounds so the airplane is centered when drawn.
+    // Set bounds so the image is centered when drawn.
     int left = -imageWidth / 2;
     int top = -imageHeight / 2;
     image.setBounds(left, top, left + imageWidth, top + imageHeight);
@@ -240,7 +275,8 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
         float x;
         float y;
         if (scaleDetector.isInProgress()) {
-          return presenter.actionMoveWhileScaling(scaleDetector.getFocusX(), scaleDetector.getFocusY());
+          return presenter.actionMoveWhileScaling(scaleDetector.getFocusX(), scaleDetector
+              .getFocusY());
 
         } else {
           int pointerIndex = event.findPointerIndex(activePointerId);
@@ -395,6 +431,10 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
 
     // Polygon for top params display.
     drawTopPanel(c, location);
+  }
+
+  void drawAirplaneImage(Canvas c, Paint paint) {
+    c.drawPath(airplaneImage, paint);
   }
 
   /**

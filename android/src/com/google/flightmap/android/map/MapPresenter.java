@@ -651,8 +651,8 @@ public class MapPresenter implements OnSharedPreferenceChangeListener {
         c.rotate(location.getBearing());
       }
     }
-    view.airplaneImage.draw(c);
-
+    c.scale(view.density, view.density);
+    view.drawAirplaneImage(c, MapView.AIRPLANE_SOLID_PAINT);
     // Draw items that are in fixed locations. Restore canvas transform to the
     // original canvas (no rotations, orgin at top-left corner).
     c.restoreToCount(restoreToCanvasOrigin);
