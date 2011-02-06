@@ -240,14 +240,13 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
         float x;
         float y;
         if (scaleDetector.isInProgress()) {
-          return presenter.actionMoveWhileScaling((int) (scaleDetector.getFocusX() + 0.5),
-              (int) (scaleDetector.getFocusY() + 0.5));
+          return presenter.actionMoveWhileScaling(scaleDetector.getFocusX(), scaleDetector.getFocusY());
 
         } else {
           int pointerIndex = event.findPointerIndex(activePointerId);
           x = event.getX(pointerIndex);
           y = event.getY(pointerIndex);
-          return presenter.actionMove((int) (x + 0.5), (int) (y + 0.5));
+          return presenter.actionMove(x, y);
         }
       }
 

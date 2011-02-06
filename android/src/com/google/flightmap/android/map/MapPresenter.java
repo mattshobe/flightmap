@@ -57,7 +57,7 @@ import android.util.Log;
  * Presenter part of Model-View-Presenter for the map display.
  * <p>
  * All the non-trivial UI work is done here.
- *
+ * 
  * @see MapModel
  * @see MapView
  */
@@ -67,7 +67,7 @@ public class MapPresenter implements OnSharedPreferenceChangeListener {
   private static final double LOG_OF_2 = Math.log(2);
   /** Position is considered "old" after this many milliseconds. */
   private static final long MAX_LOCATION_AGE = 300000; // 5 minutes.
-  
+
   // Fields relating to touch events and panning.
   private static final int PAN_CROSSHAIR_SIZE = 12;
   private static final int PAN_INFO_MARGIN = 30;
@@ -84,6 +84,8 @@ public class MapPresenter implements OnSharedPreferenceChangeListener {
   private final MapModel model;
   /** True if the last touch event was a move. */
   private volatile boolean previousTouchWasMove;
+  /** True if the last touch event was a scale gesture. */
+  private volatile boolean previousTouchWasScale;
   /** Reused Point object in Screen pixel space. */
   private final Point tempPoint = new Point();
 
@@ -158,6 +160,7 @@ public class MapPresenter implements OnSharedPreferenceChangeListener {
     }
     model.setPanning(false);
     previousTouchWasMove = false;
+    previousTouchWasScale = false;
     model.setMapAnchorLatLng(null);
     model.setRedrawNeeded(true);
     model.resetMapOrigin(mainActivity.getUserPrefs().isNorthUp());
@@ -182,6 +185,7 @@ public class MapPresenter implements OnSharedPreferenceChangeListener {
    */
   synchronized boolean actionCancel() {
     previousTouchWasMove = false;
+    previousTouchWasScale = false;
     return true;
   }
 
@@ -194,6 +198,7 @@ public class MapPresenter implements OnSharedPreferenceChangeListener {
     this.touchX = touchX;
     this.touchY = touchY;
     previousTouchWasMove = false;
+    previousTouchWasScale = false;
     return true;
   }
 
@@ -206,6 +211,7 @@ public class MapPresenter implements OnSharedPreferenceChangeListener {
     this.touchX = touchX;
     this.touchY = touchY;
     previousTouchWasMove = false;
+    previousTouchWasScale = false;
     return true;
   }
 
@@ -219,6 +225,7 @@ public class MapPresenter implements OnSharedPreferenceChangeListener {
     if (previousTouchWasMove) {
       // Don't do tapcard action right after a move.
       previousTouchWasMove = false;
+      previousTouchWasScale = false;
       return true;
     }
     // See if the Pan Reset button was hit.
@@ -250,7 +257,7 @@ public class MapPresenter implements OnSharedPreferenceChangeListener {
    * 
    * @returns true if the event was handled, false otherwise.
    */
-  synchronized boolean actionMove(int x, int y) {
+  synchronized boolean actionMove(float x, float y) {
     return actionMoveCommon(x, y);
   }
 
@@ -260,13 +267,19 @@ public class MapPresenter implements OnSharedPreferenceChangeListener {
    * 
    * @returns true if the event was handled, false otherwise.
    */
-  synchronized boolean actionMoveWhileScaling(int x, int y) {
-    tempPoint.x = x;
-    tempPoint.y = y;
-    // Move the map anchor to the center of the pan gesture.
-    model.setMapAnchorLatLng(getLocationForPoint(tempPoint));
-    // Change the map pixel origin to the touch point.
-    model.setMapOrigin(tempPoint.x, tempPoint.y);
+  synchronized boolean actionMoveWhileScaling(float x, float y) {
+    if (!previousTouchWasScale) {
+      previousTouchWasScale = true;
+      touchX = x;
+      touchY = y;
+    } else {
+      tempPoint.x = (int) (x + 0.5);
+      tempPoint.y = (int) (y + 0.5);
+      // Move the map anchor to the center of the pan gesture.
+      model.setMapAnchorLatLng(getLocationForPoint(tempPoint));
+      // Change the map pixel origin to the touch point.
+      model.setMapOrigin(tempPoint.x, tempPoint.y);
+    }
     return actionMoveCommon(x, y);
   }
 
@@ -275,26 +288,23 @@ public class MapPresenter implements OnSharedPreferenceChangeListener {
    * 
    * @returns true if the event was handled, false otherwise.
    */
-  private synchronized boolean actionMoveCommon(int x, int y) {
-    synchronized (view) {
-      int deltaX = Math.round(touchX - x);
-      int deltaY = Math.round(touchY - y);
-      if (!previousTouchWasMove
-          && Math.max(Math.abs(deltaX), Math.abs(deltaY)) < PAN_TOUCH_THRESHOLD
-              * view.density) {
-        // Ignore very small moves, since they may actually be taps.
-        // Round to int to match what Point uses.
-        return true;
-      }
-
-      model.setRedrawNeeded(true);
-      previousTouchWasMove = true;
-      model.setPanning(true);
-      touchX = x;
-      touchY = y;
-      panByPixelAmount(deltaX, deltaY);
+  private synchronized boolean actionMoveCommon(float x, float y) {
+    float deltaX = touchX - x;
+    float deltaY = touchY - y;
+    if (!previousTouchWasMove
+        && Math.max(Math.abs(deltaX), Math.abs(deltaY)) < PAN_TOUCH_THRESHOLD * view.density) {
+      // Ignore very small moves, since they may actually be taps.
+      // Round to int to match what Point uses.
       return true;
     }
+
+    model.setRedrawNeeded(true);
+    previousTouchWasMove = true;
+    model.setPanning(true);
+    touchX = x;
+    touchY = y;
+    panByPixelAmount(deltaX, deltaY);
+    return true;
   }
 
   /**
@@ -409,7 +419,7 @@ public class MapPresenter implements OnSharedPreferenceChangeListener {
    * @param deltaX x change in screen pixels.
    * @param deltaY y change in screen pixels.
    */
-  private void panByPixelAmount(final int deltaX, final int deltaY) {
+  private void panByPixelAmount(final float deltaX, final float deltaY) {
     // Move the map anchor location by the given delta values. First get
     // mapAnchorLatLng in screen pixel space, then apply the deltas, then
     // pan to the resulting screen location.
@@ -649,7 +659,7 @@ public class MapPresenter implements OnSharedPreferenceChangeListener {
 
     view.drawFixedLocationItems(c, location, zoom);
   }
-  
+
   private void drawMapItems(Canvas c, Location location, LatLngRect screenArea, float zoom,
       boolean isTrackUp) {
     final int minAirportRank = getMinimumAirportRank(zoom);
@@ -826,8 +836,7 @@ public class MapPresenter implements OnSharedPreferenceChangeListener {
       getAirportsListener = new AirportsQueryListener();
     }
     // Have to make a new task here. Can't call execute again on an active task.
-    getAirportsTask =
-        new GetAirportsInRectangleTask(airportDirectory, getAirportsListener);
+    getAirportsTask = new GetAirportsInRectangleTask(airportDirectory, getAirportsListener);
     getAirportsTask.execute(new GetAirportsInRectangleTask.QueryParams(screenArea,
         minimumAirportRank));
   }
@@ -847,8 +856,7 @@ public class MapPresenter implements OnSharedPreferenceChangeListener {
       getAirspacesListener = new AirspacesQueryListener();
     }
     // Have to make a new task here. Can't call execute again on an active task.
-    getAirspacesTask =
-        new GetAirspacesInRectangleTask(aviationDbAdapter, getAirspacesListener);
+    getAirspacesTask = new GetAirspacesInRectangleTask(aviationDbAdapter, getAirspacesListener);
     getAirspacesTask.execute(screenArea);
   }
 
