@@ -32,6 +32,7 @@ Also, you should consider joining the Flight Map [http://g/flightmap mailing lis
 =Release: v0.13.0 "[http://en.wikipedia.org/wiki/Dufaux_4 Dufaux 4]" - 1/30/11=
   * New features:
     * Controlled airspace contours are now displayed.  Issue 80.
+      * Airspace more than 500 feet from your current altitude is dimmed.
   * Improvements:
     * Airport communication frequencies are better organized:
       * Merged tower and CTAF frequencies when possible.  Issue 135.
