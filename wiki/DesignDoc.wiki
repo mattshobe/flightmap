@@ -56,4 +56,16 @@ The moving map classes are in the `map` subpackage. We use the Model-View-Presen
 
 The !MapPresenter communicates with the !MapView and handles complex UI actions, such as panning or launching the !TapcardActivity when the user taps on the map. It also determines what the current screen area is and handles the database queries to fetch the airports and airspace in view. The !MapPresenter handles the somewhat tricky canvas transformations to get everything drawn in the right place. As needed, it tells the !MapView when to draw certain things, such as the top panel with navigation information.
 
-== Key Common Classes ==
+== Overview of Common classes ==
+The `common` project has code that's shared by the Android code and the preprocessing code. The latter does not run on the phone, so the common code cannot use any Android APIs.
+
+The `common/data` directory has classes such as Airport, Airspace, and Runway that hold details about those entities. The !LatLng and !LatLngRect classes perform operations on either a single latitude/longitude point or a rectangle defined by the southwest and northeast corners.
+
+In `common/db` are classes that provide the interface to the database of airport and aviation information. Database entries are stored using a spatial index and the [http://flightmap.googlecode.com/svn/trunk/common/javadoc/com/google/flightmap/common/db/CustomGridUtil.html documentation for CustomGridUtil] goes into detail on how that works. This spatial indexing makes it possible to quickly find entities within a geographic area.
+
+Classes that provide geographic utilities such as navigation computation, magnetic variation calculation and Mercator projection are in `common/geo`.
+
+Finally, the common code includes classes that retrieve database updates via http. Those can be found in `common/io` and `common/net`.
+
+= Privacy =
+No user data is sent from the application to anywhere.
