@@ -56,6 +56,15 @@ The moving map classes are in the `map` subpackage. We use the Model-View-Presen
 
 The !MapPresenter communicates with the !MapView and handles complex UI actions, such as panning or launching the !TapcardActivity when the user taps on the map. It also determines what the current screen area is and handles the database queries to fetch the airports and airspace in view. The !MapPresenter handles the somewhat tricky canvas transformations to get everything drawn in the right place. As needed, it tells the !MapView when to draw certain things, such as the top panel with navigation information.
 
+=== Tapcard ===
+This is the activity that is launched when you tap on an airport in the map or search results. It shows information about the airport such as runways and communications frequencies. As small navigation display is also shown that gives a graphical pointer, magnetic bearing, distance and estimated time enroute to that airport from your current location. The estimated time enroute is omitted when you are not moving.
+
+=== Location Handling ===
+During initial development, we found that the speed reported by the Android GPS was sometimes inaccurate (e.g. you'd see a speed of 250 knots when walking). Also the speed was always wrong when climbing or descending. The !LocationHandler class ignores the speed reported by the Android GPS and just calculates it using successive positions. This class also smooths out the bearing reported by the GPS.
+
+=== Location Simulator ===
+To help with testing, we developed an in-application location simulator. This lets you set the speed, track and altitude of the simulated position and see how the application operates. When the simulator mode is active, the moving map shows a prominent message that the position is simulated.
+
 == Overview of Common classes ==
 The `common` project has code that's shared by the Android code and the preprocessing code. The latter does not run on the phone, so the common code cannot use any Android APIs.
 
