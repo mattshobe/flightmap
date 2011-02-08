@@ -68,6 +68,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   private static final Paint PANEL_BACKGROUND_PAINT = new Paint();
   private static final Paint PANEL_DIGITS_PAINT = new Paint();
   private static final Paint PANEL_UNITS_PAINT = new Paint();
+  private static final Paint LAST_POSITION_PAINT = new Paint();
   public static final Paint LOST_GPS_PAINT = new Paint();
   public static final Paint AIRPLANE_SOLID_PAINT = new Paint();
   public static final Paint AIRPLANE_OUTLINE_STROKE_PAINT = new Paint();
@@ -112,6 +113,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
 
   // Airplane image.
   final Path airplanePath;
+  final private RectF airplanePathBounds;
 
   // Layout holding the simulator message.
   private LinearLayout simulatorMessage;
@@ -139,6 +141,10 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     AIRPORT_TEXT_PAINT.setARGB(0xff, 0xff, 0xff, 0xff);
     AIRPORT_TEXT_PAINT.setTypeface(Typeface.DEFAULT_BOLD);
     AIRPORT_TEXT_PAINT.setTextAlign(Paint.Align.CENTER);
+    LAST_POSITION_PAINT.setAntiAlias(true);
+    LAST_POSITION_PAINT.setColor(Color.GREEN);
+    LAST_POSITION_PAINT.setTypeface(Typeface.SANS_SERIF);
+    LAST_POSITION_PAINT.setTextAlign(Paint.Align.CENTER);
     LOST_GPS_PAINT.setAntiAlias(true);
     LOST_GPS_PAINT.setColor(Color.GREEN);
     LOST_GPS_PAINT.setTypeface(Typeface.SANS_SERIF);
@@ -185,7 +191,6 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     // Set up paints from resource colors.
     AIRPLANE_SOLID_PAINT.setColor(res.getColor(R.color.AircraftPaint));
     AIRPLANE_SOLID_PAINT.setAntiAlias(true);
-    AIRPLANE_SOLID_PAINT.setStrokeWidth(1);
     AIRPLANE_SOLID_PAINT.setStyle(Paint.Style.FILL);
     AIRPLANE_OUTLINE_FILL_PAINT.setColor(res.getColor(R.color.MapBackground));
     AIRPLANE_OUTLINE_FILL_PAINT.setAntiAlias(true);
@@ -206,6 +211,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
 
     // Set up airplane image.
     airplanePath = createAirplanePath();
+    airplanePathBounds = new RectF();
+    airplanePath.computeBounds(airplanePathBounds, false);
+
     // Set up scale gesture detector.
     scaleDetector = new ScaleGestureDetector(mainActivity, new ScaleListener());
   }
@@ -245,6 +253,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     textSizesSet = true;
     AIRPORT_TEXT_PAINT.setTextSize(19 * density);
     ERROR_TEXT_PAINT.setTextSize(15 * density);
+    LAST_POSITION_PAINT.setTextSize(16 * density);
     LOST_GPS_PAINT.setTextSize(26 * density);
     PANEL_DIGITS_PAINT.setTextSize(26 * density);
     PANEL_UNITS_PAINT.setTextSize(18 * density);
@@ -434,6 +443,30 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     c.drawPath(airplanePath, paint);
   }
 
+  void drawLastKnownPosition(Canvas c) {
+    float slashLength = Math.min(airplanePathBounds.width(), airplanePathBounds.height()) * 0.7f;
+    c.drawLine(-slashLength, -slashLength, slashLength, slashLength, MapView.RED_SLASH_PAINT);
+    int offset = drawLastKnowTextLabel(c, "LAST KNOWN", 0);
+    drawLastKnowTextLabel(c, "POSITION", offset);
+  }
+
+  private int drawLastKnowTextLabel(Canvas c, String text, int offset) {
+    synchronized (textBounds) {
+      LAST_POSITION_PAINT.getTextBounds(text, 0, text.length(), textBounds);
+      // Add a bit of padding to the bounds.
+      int padding = 5;
+      textBounds.set(textBounds.left - padding, textBounds.top - padding, textBounds.right
+          + padding, textBounds.bottom + padding);
+      // Offset textBounds down to the baseline and left to center the text.
+      textBounds.offset(-textBounds.width() / 2,
+          (int) (airplanePathBounds.height() + padding + 15 + offset));
+      // Erase background of text.
+      c.drawRect(textBounds, AIRPLANE_OUTLINE_FILL_PAINT);
+      c.drawText(text, 0, textBounds.bottom - padding, LAST_POSITION_PAINT);
+      return textBounds.height() + offset;
+    }
+  }
+
   /**
    * Returns true if location is different than {@link #previousLocation}
    * (ignoring fields that don't affect the rendering).
@@ -544,7 +577,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       drawNoGpsMessage(c, location);
       return;
     }
-    
+
     String speed = "-";
     String track = "-" + DEGREES_SYMBOL;
     String altitude = "-";
@@ -587,7 +620,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     c.drawText(altitude, width - textWidth - PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE,
         PANEL_DIGITS_PAINT);
   }
-  
+
   private void drawNoGpsMessage(Canvas c, Location location) {
     long locationAgeSeconds = (System.currentTimeMillis() - location.getTime()) / 1000;
     String age = NavigationUtil.getHoursMinutesSeconds(locationAgeSeconds);
