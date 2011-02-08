@@ -458,7 +458,7 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
           // If the location isn't current, the draw a red slash
           if (!isCurrentLocation) {
             float slashLength = POINTER_LENGTH * density;
-            c.drawLine(-slashLength, slashLength, slashLength, -slashLength, RED_SLASH_PAINT);
+            c.drawLine(-slashLength, -slashLength, slashLength, slashLength, RED_SLASH_PAINT);
             return;
           }
 
