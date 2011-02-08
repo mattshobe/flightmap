@@ -652,16 +652,20 @@ public class MapPresenter implements OnSharedPreferenceChangeListener {
         c.rotate(location.getBearing());
       }
     }
+    c.save();
     c.scale(view.density, view.density);
     if (locationHandler.isLocationCurrent()) {
       view.drawAirplaneImage(c, MapView.AIRPLANE_SOLID_PAINT);
+      c.restore();
     } else {
       view.drawAirplaneImage(c, MapView.AIRPLANE_OUTLINE_FILL_PAINT);
       view.drawAirplaneImage(c, MapView.AIRPLANE_OUTLINE_STROKE_PAINT);
       if (!isTrackUp) {
         c.restoreToCount(restoreToBeforeAirplaneRotation);
+      } else {
+        c.restore();
       }
-      c.drawLine(-30, -30, 30, 30, MapView.RED_SLASH_PAINT);
+      view.drawLastKnownPosition(c);
     }
     // Draw items that are in fixed locations. Restore canvas transform to the
     // original canvas (no rotations, orgin at top-left corner).
