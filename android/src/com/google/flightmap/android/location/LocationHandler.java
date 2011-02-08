@@ -45,7 +45,7 @@ public class LocationHandler implements LocationListener {
   private static final float MINIMUM_SPEED = (float) (3 / NavigationUtil.METERS_PER_SEC_TO_KNOTS);
 
   // Ignore location updates with accuracy less than this.
-  private static final float MINIMUM_ACCURACY = 100; // meters.
+  private static final float MINIMUM_ACCURACY = 25; // meters.
 
   // Ignore the previous location if it's this many milliseconds old.
   private static final long MAX_TIME_DELTA = 3000;
@@ -86,6 +86,34 @@ public class LocationHandler implements LocationListener {
           locationManager.getLastKnownLocation(locationManager.getBestProvider(criteria, true));
     }
     return location;
+  }
+
+  /**
+   * Returns true if the location is current and accurate enough to use.
+   */
+  public synchronized boolean isLocationCurrent() {
+    if (location == null) {
+      return false;
+    }
+    long locationAge = System.currentTimeMillis() - location.getTime();
+    if (locationAge > MAX_TIME_DELTA) {
+      Log.i(TAG, "Location is old - age = " + locationAge);
+      return false;
+    }
+    if (location.hasAccuracy()) {
+      if (location.getAccuracy() > MINIMUM_ACCURACY) {
+        Log.i(TAG, "Location current, but accuracy too low " + location.getAccuracy());
+        // Remove the bearing if it's present in a low-accuracy location.
+        if (location.hasBearing()) {
+          location.removeBearing();
+        }
+        return false;
+      }
+    } else {
+      // Location has no accuracy, so assume it's no good.
+      return false;
+    }
+    return true;
   }
 
   /**

@@ -282,10 +282,14 @@ public class NavigationUtil {
   /**
    * Returns the trigonometric haversine of an angle.
    * <p>
+   * 
    * @param x Angle, in radians
-   * @return <pre>haversin(x) = (1-cos(x))/2 = sin^2(x/2)</pre>
-   *
-   * @see <a href="http://en.wikipedia.org/wiki/Versine" target="_parent">Versine function</a>
+   * @return <pre>
+   * haversin(x) = (1-cos(x))/2 = sin^2(x/2)
+   * </pre>
+   * 
+   * @see <a href="http://en.wikipedia.org/wiki/Versine"
+   *      target="_parent">Versine function</a>
    */
   private static double haversin(final double x) {
     return Math.pow(Math.sin(x / 2), 2);
@@ -293,10 +297,10 @@ public class NavigationUtil {
 
   /**
    * Returns initial course from {@code start} to {@code end} on a great circle.
-   *
+   * 
    * @param start Starting point
-   * @param end   End point
-   * @return      Initial course, in clockwise degrees from North.
+   * @param end End point
+   * @return Initial course, in clockwise degrees from North.
    */
   public static double getInitialCourse(final LatLng start, final LatLng end) {
     final double lat1 = start.latRad();
@@ -319,9 +323,10 @@ public class NavigationUtil {
 
   /**
    * Returns Euclidean modulo of {@code x}, {@code y}.
-   *
-   * @see <a href="http://portal.acm.org/citation.cfm?id=128862" target="_parent">
-   * The Euclidean definition of the functions div and mod</a>
+   * 
+   * @see <a href="http://portal.acm.org/citation.cfm?id=128862"
+   *      target="_parent"> The Euclidean definition of the functions div and
+   *      mod</a>
    */
   public static double euclideanMod(final double x, final double y) {
     final double mod = x % y;
@@ -330,7 +335,7 @@ public class NavigationUtil {
 
   /**
    * Returns Euclidean modulo of {@code x}, {@code y}.
-   *
+   * 
    * @see #euclideanMod(double, double)
    */
   public static float euclideanMod(final float x, final float y) {
@@ -340,12 +345,13 @@ public class NavigationUtil {
 
   /**
    * Returns point along given radial and distance from {@code o}.
-   *
-   * @param o      Starting point
+   * 
+   * @param o Starting point
    * @param course Inital course, in degrees clockwise from True North.
-   * @param d      Distance along radial, in meters.
-   * @return       Point on radial {@code course} and distance {@code d} from {@code o}.
-   *
+   * @param d Distance along radial, in meters.
+   * @return Point on radial {@code course} and distance {@code d} from {@code
+   *         o}.
+   * 
    * */
   public static LatLng getPointAlongRadial(final LatLng o, final double course, final double d) {
     final double crsRad = Math.toRadians(course);
@@ -369,5 +375,21 @@ public class NavigationUtil {
     final double lng = euclideanMod(lng1 + dLng + Math.PI, 2 * Math.PI) - Math.PI;
     final LatLng destination = LatLng.fromRadians(lat, lng);
     return destination;
+  }
+
+  /**
+   * Returns a string in the form hours:minutes:seconds for {@code
+   * timeInSeconds}. If hours is 0, it will be omitted.
+   */
+  public static String getHoursMinutesSeconds(float timeInSeconds) {
+    int hours = (int) (timeInSeconds / 60 / 60);
+    int minutes = (int) (timeInSeconds / 60) - (hours * 60);
+    int seconds = (int) (timeInSeconds - (hours * 60 * 60) - (minutes * 60));
+
+    if (hours == 0) {
+      return String.format("%d:%02d", minutes, seconds);
+    } else {
+      return String.format("%d:%02d:%02d", hours, minutes, seconds);
+    }
   }
 }
