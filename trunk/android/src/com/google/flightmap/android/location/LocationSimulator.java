@@ -114,6 +114,10 @@ class LocationSimulator {
    * Updates location and posts to {@link LocationHandler#onLocationChanged}.
    */
   private synchronized void updateLocation() {
+    // Temporary ... don't update location when speed = 100. This tests the no location handling.
+    if (Math.abs(desiredSpeed - (float) (100.0 / NavigationUtil.METERS_PER_SEC_TO_KNOTS)) < 5) {
+      return;
+    }
     initializeLocation();
 
     location.setProvider(TAG);
@@ -129,7 +133,7 @@ class LocationSimulator {
     location.setBearing(updateBearingValue(location.getBearing(), desiredTrack, TURN_RATE));
     location.setAltitude(updateValue((float) location.getAltitude(), desiredAltitude, CLIMB_RATE));
     changeLatLng();
-
+    
     locationHandler.onLocationChanged(location);
     return;
   }

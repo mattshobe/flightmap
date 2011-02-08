@@ -77,8 +77,6 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
   private static final float POINTER_LENGTH = 17;
   private static final float POINTER_WIDTH = 12;
 
-  private static final Paint RED_SLASH_PAINT = new Paint();
-
   private FlightMap flightMap;
   private AviationDbAdapter aviationDbAdapter;
   private LocationHandler locationHandler;
@@ -105,12 +103,6 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
   private Paint navigationPaint = new Paint();
   private float[] distanceBearingResult = new float[2]; 
   
-  static {
-    RED_SLASH_PAINT.setColor(Color.RED);
-    RED_SLASH_PAINT.setStrokeWidth(3);
-    RED_SLASH_PAINT.setAntiAlias(true);
-  }
-
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -450,7 +442,11 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
           }
           navigationPaint.setStyle(Paint.Style.FILL);
           c.scale(density, density);
-          c.drawPath(airplanePath, navigationPaint);
+          if (isCurrentLocation) {
+            c.drawPath(airplanePath, MapView.AIRPLANE_SOLID_PAINT);
+          } else {
+            c.drawPath(airplanePath, MapView.AIRPLANE_OUTLINE_STROKE_PAINT);
+          }
 
           // Undo the downscaling and rotation for the airplane.
           c.restore();
@@ -458,7 +454,7 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
           // If the location isn't current, the draw a red slash
           if (!isCurrentLocation) {
             float slashLength = POINTER_LENGTH * density;
-            c.drawLine(-slashLength, -slashLength, slashLength, slashLength, RED_SLASH_PAINT);
+            c.drawLine(-slashLength, -slashLength, slashLength, slashLength, MapView.RED_SLASH_PAINT);
             return;
           }
 
