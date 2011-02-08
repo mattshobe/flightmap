@@ -27,6 +27,7 @@ import com.google.flightmap.android.UserPrefs;
 import com.google.flightmap.android.db.GetAirportsInRectangleTask;
 import com.google.flightmap.android.db.GetAirspacesInRectangleTask;
 import com.google.flightmap.android.geo.AndroidMercatorProjection;
+import com.google.flightmap.android.location.LocationHandler;
 import com.google.flightmap.common.ProgressListener;
 import com.google.flightmap.common.data.Airport;
 import com.google.flightmap.common.data.Airspace;
@@ -65,8 +66,6 @@ public class MapPresenter implements OnSharedPreferenceChangeListener {
   private static final String TAG = MapPresenter.class.getSimpleName();
 
   private static final double LOG_OF_2 = Math.log(2);
-  /** Position is considered "old" after this many milliseconds. */
-  private static final long MAX_LOCATION_AGE = 300000; // 5 minutes.
 
   // Fields relating to touch events and panning.
   private static final int PAN_CROSSHAIR_SIZE = 12;
@@ -562,7 +561,8 @@ public class MapPresenter implements OnSharedPreferenceChangeListener {
 
     // Show or hide the simulator warning. Blink off every 2 seconds.
     boolean blinkOff = ((location.getTime() / 1000) % 4) < 2;
-    if (mainActivity.getFlightMap().getLocationHandler().isLocationSimulated() && !blinkOff) {
+    LocationHandler locationHandler = mainActivity.getFlightMap().getLocationHandler();
+    if (locationHandler.isLocationSimulated() && !blinkOff) {
       view.showSimulatorWarning(true);
     } else {
       view.showSimulatorWarning(false);
@@ -643,6 +643,7 @@ public class MapPresenter implements OnSharedPreferenceChangeListener {
     //
     // Special case if track-up and panning. lastBearing is frozen in that case,
     // but we should draw the airplane rotated to the most recent bearing.
+    int restoreToBeforeAirplaneRotation = c.save();
     if (!model.isPanning() || !isTrackUp) {
       c.rotate(lastBearing);
     } else if (isTrackUp) {
@@ -652,7 +653,16 @@ public class MapPresenter implements OnSharedPreferenceChangeListener {
       }
     }
     c.scale(view.density, view.density);
-    view.drawAirplaneImage(c, MapView.AIRPLANE_SOLID_PAINT);
+    if (locationHandler.isLocationCurrent()) {
+      view.drawAirplaneImage(c, MapView.AIRPLANE_SOLID_PAINT);
+    } else {
+      view.drawAirplaneImage(c, MapView.AIRPLANE_OUTLINE_FILL_PAINT);
+      view.drawAirplaneImage(c, MapView.AIRPLANE_OUTLINE_STROKE_PAINT);
+      if (!isTrackUp) {
+        c.restoreToCount(restoreToBeforeAirplaneRotation);
+      }
+      c.drawLine(-30, -30, 30, 30, MapView.RED_SLASH_PAINT);
+    }
     // Draw items that are in fixed locations. Restore canvas transform to the
     // original canvas (no rotations, orgin at top-left corner).
     c.restoreToCount(restoreToCanvasOrigin);

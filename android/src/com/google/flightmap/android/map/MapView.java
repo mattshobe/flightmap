@@ -69,12 +69,14 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   private static final Paint PANEL_DIGITS_PAINT = new Paint();
   private static final Paint PANEL_UNITS_PAINT = new Paint();
   public static final Paint LOST_GPS_PAINT = new Paint();
-  static final Paint AIRPLANE_SOLID_PAINT = new Paint();
-  static final Paint AIRPLANE_OUTLINE_PAINT = new Paint();
+  public static final Paint AIRPLANE_SOLID_PAINT = new Paint();
+  public static final Paint AIRPLANE_OUTLINE_STROKE_PAINT = new Paint();
+  public static final Paint AIRPLANE_OUTLINE_FILL_PAINT = new Paint();
   static final Paint PAN_SOLID_PAINT = new Paint();
   static final Paint PAN_DASH_PAINT = new Paint();
   static final Paint PAN_INFO_PAINT = new Paint();
   private static final Paint PAN_RESET_PAINT = new Paint();
+  public static final Paint RED_SLASH_PAINT = new Paint();
   private static boolean textSizesSet;
   private final AirportPalette airportPalette;
   private final AirspacePalette airspacePalette = new AirspacePalette();
@@ -158,6 +160,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     PAN_INFO_PAINT.setColor(Color.GREEN);
     PAN_INFO_PAINT.setTypeface(Typeface.SANS_SERIF);
     PAN_INFO_PAINT.setTextAlign(Paint.Align.CENTER);
+    RED_SLASH_PAINT.setColor(Color.RED);
+    RED_SLASH_PAINT.setStrokeWidth(3);
+    RED_SLASH_PAINT.setAntiAlias(true);
   }
 
   public MapView(MainActivity mainActivity) {
@@ -182,10 +187,13 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     AIRPLANE_SOLID_PAINT.setAntiAlias(true);
     AIRPLANE_SOLID_PAINT.setStrokeWidth(1);
     AIRPLANE_SOLID_PAINT.setStyle(Paint.Style.FILL);
-    AIRPLANE_OUTLINE_PAINT.setColor(res.getColor(R.color.AircraftPaint));
-    AIRPLANE_OUTLINE_PAINT.setAntiAlias(true);
-    AIRPLANE_OUTLINE_PAINT.setStrokeWidth(1.5f);
-    AIRPLANE_OUTLINE_PAINT.setStyle(Paint.Style.STROKE);
+    AIRPLANE_OUTLINE_FILL_PAINT.setColor(res.getColor(R.color.MapBackground));
+    AIRPLANE_OUTLINE_FILL_PAINT.setAntiAlias(true);
+    AIRPLANE_OUTLINE_FILL_PAINT.setStyle(Paint.Style.FILL);
+    AIRPLANE_OUTLINE_STROKE_PAINT.setColor(res.getColor(R.color.AircraftPaint));
+    AIRPLANE_OUTLINE_STROKE_PAINT.setAntiAlias(true);
+    AIRPLANE_OUTLINE_STROKE_PAINT.setStrokeWidth(1.5f);
+    AIRPLANE_OUTLINE_STROKE_PAINT.setStyle(Paint.Style.STROKE);
     PAN_SOLID_PAINT.setColor(res.getColor(R.color.PanItems));
     PAN_SOLID_PAINT.setAntiAlias(true);
     PAN_SOLID_PAINT.setStrokeWidth(5);

@@ -97,7 +97,6 @@ public class LocationHandler implements LocationListener {
     }
     long locationAge = System.currentTimeMillis() - location.getTime();
     if (locationAge > MAX_TIME_DELTA) {
-      Log.i(TAG, "Location is old - age = " + locationAge);
       return false;
     }
     if (location.hasAccuracy()) {
