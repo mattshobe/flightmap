@@ -25,7 +25,6 @@ import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
-import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
@@ -69,6 +68,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   private static final Paint PANEL_BACKGROUND_PAINT = new Paint();
   private static final Paint PANEL_DIGITS_PAINT = new Paint();
   private static final Paint PANEL_UNITS_PAINT = new Paint();
+  public static final Paint LOST_GPS_PAINT = new Paint();
   static final Paint AIRPLANE_SOLID_PAINT = new Paint();
   static final Paint AIRPLANE_OUTLINE_PAINT = new Paint();
   static final Paint PAN_SOLID_PAINT = new Paint();
@@ -137,6 +137,11 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     AIRPORT_TEXT_PAINT.setARGB(0xff, 0xff, 0xff, 0xff);
     AIRPORT_TEXT_PAINT.setTypeface(Typeface.DEFAULT_BOLD);
     AIRPORT_TEXT_PAINT.setTextAlign(Paint.Align.CENTER);
+    LOST_GPS_PAINT.setAntiAlias(true);
+    LOST_GPS_PAINT.setColor(Color.GREEN);
+    LOST_GPS_PAINT.setTypeface(Typeface.SANS_SERIF);
+    LOST_GPS_PAINT.setTypeface(Typeface.DEFAULT_BOLD);
+    LOST_GPS_PAINT.setTextAlign(Paint.Align.CENTER);
     PANEL_BACKGROUND_PAINT.setARGB(0xee, 0x22, 0x22, 0x22);
     PANEL_DIGITS_PAINT.setAntiAlias(true);
     PANEL_DIGITS_PAINT.setColor(Color.WHITE);
@@ -222,23 +227,6 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   }
 
   /**
-   * Returns {@code image} with its bounds set so that when drawn the center of
-   * the image will be at the drawing coordinates.
-   * 
-   * @param image the image to center (will be modified by this call).
-   */
-  public static Drawable centerImage(Drawable image) {
-    // TODO: Move this method to generic utility class.
-    int imageWidth = image.getIntrinsicWidth();
-    int imageHeight = image.getIntrinsicHeight();
-    // Set bounds so the image is centered when drawn.
-    int left = -imageWidth / 2;
-    int top = -imageHeight / 2;
-    image.setBounds(left, top, left + imageWidth, top + imageHeight);
-    return image;
-  }
-
-  /**
    * Scales text sizes based on screen density. See
    * http://developer.android.com/guide/practices/screens_support.html#dips-pels
    */
@@ -247,8 +235,9 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       return;
     }
     textSizesSet = true;
-    ERROR_TEXT_PAINT.setTextSize(15 * density);
     AIRPORT_TEXT_PAINT.setTextSize(19 * density);
+    ERROR_TEXT_PAINT.setTextSize(15 * density);
+    LOST_GPS_PAINT.setTextSize(26 * density);
     PANEL_DIGITS_PAINT.setTextSize(26 * density);
     PANEL_UNITS_PAINT.setTextSize(18 * density);
     PAN_RESET_PAINT.setTextSize(18 * density);
@@ -537,52 +526,67 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
   }
 
   void drawTopPanel(Canvas c, Location location) {
-    if (null != topPanel) {
-      c.drawPath(topPanel, PANEL_BACKGROUND_PAINT);
-      String speed = "-";
-      String track = "-" + DEGREES_SYMBOL;
-      String altitude = "-";
-      DistanceUnits distanceUnits = mainActivity.getUserPrefs().getDistanceUnits();
-      String speedUnits = " " + distanceUnits.speedAbbreviation;
+    if (null == topPanel) {
+      return;
+    }
+    c.drawPath(topPanel, PANEL_BACKGROUND_PAINT);
+    // Show the lost GPS signal message if needed.
+    final LocationHandler locationHandler = mainActivity.getFlightMap().getLocationHandler();
+    if (!locationHandler.isLocationCurrent()) {
+      drawNoGpsMessage(c, location);
+      return;
+    }
+    
+    String speed = "-";
+    String track = "-" + DEGREES_SYMBOL;
+    String altitude = "-";
+    DistanceUnits distanceUnits = mainActivity.getUserPrefs().getDistanceUnits();
+    String speedUnits = " " + distanceUnits.speedAbbreviation;
 
-      if (location.hasSpeed()) {
-        speed = String.format("%.0f", distanceUnits.getSpeed(location.getSpeed()));
-      }
-      if (location.hasBearing()) {
-        // Show numeric display relative to magnetic north.
-        float magneticTrack = presenter.getMagneticTrack(location);
-        track = String.format(" %03.0f%s", magneticTrack, DEGREES_SYMBOL);
-      }
-      if (location.hasAltitude()) {
-        // Round altitude to nearest 10 foot increment to avoid jitter.
-        int altitudeNearestTen =
-            (int) (Math.round(location.getAltitude() * NavigationUtil.METERS_TO_FEET / 10.0) * 10);
-        altitude = String.format("%,5d", altitudeNearestTen);
-      }
-
-      // Draw speed.
-      PANEL_DIGITS_PAINT.setTextAlign(Paint.Align.LEFT);
-      c.drawText(speed, PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_DIGITS_PAINT);
-      int textWidth = getTextWidth(speed, PANEL_DIGITS_PAINT);
-      PANEL_UNITS_PAINT.setTextAlign(Paint.Align.LEFT);
-      c.drawText(speedUnits, textWidth + PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_UNITS_PAINT);
-
-      // Draw track.
-      final int width = c.getWidth();
-      final float center = width / 2.0f;
-      PANEL_DIGITS_PAINT.setTextAlign(Paint.Align.CENTER);
-      c.drawText(track, center, PANEL_TEXT_BASELINE, PANEL_DIGITS_PAINT);
-
-      // Draw altitude. Draw the units first, since it's right-aligned.
-      PANEL_UNITS_PAINT.setTextAlign(Paint.Align.RIGHT);
-      c.drawText(" ft", width - PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_UNITS_PAINT);
-      textWidth = getTextWidth(" ft", PANEL_UNITS_PAINT);
-      PANEL_DIGITS_PAINT.setTextAlign(Paint.Align.RIGHT);
-      c.drawText(altitude, width - textWidth - PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE,
-          PANEL_DIGITS_PAINT);
+    if (location.hasSpeed()) {
+      speed = String.format("%.0f", distanceUnits.getSpeed(location.getSpeed()));
+    }
+    if (location.hasBearing()) {
+      // Show numeric display relative to magnetic north.
+      float magneticTrack = presenter.getMagneticTrack(location);
+      track = String.format(" %03.0f%s", magneticTrack, DEGREES_SYMBOL);
+    }
+    if (location.hasAltitude()) {
+      // Round altitude to nearest 10 foot increment to avoid jitter.
+      int altitudeNearestTen =
+          (int) (Math.round(location.getAltitude() * NavigationUtil.METERS_TO_FEET / 10.0) * 10);
+      altitude = String.format("%,5d", altitudeNearestTen);
     }
 
+    // Draw speed.
+    PANEL_DIGITS_PAINT.setTextAlign(Paint.Align.LEFT);
+    c.drawText(speed, PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_DIGITS_PAINT);
+    int textWidth = getTextWidth(speed, PANEL_DIGITS_PAINT);
+    PANEL_UNITS_PAINT.setTextAlign(Paint.Align.LEFT);
+    c.drawText(speedUnits, textWidth + PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_UNITS_PAINT);
+
+    // Draw track.
+    final int width = c.getWidth();
+    final float center = width / 2.0f;
+    PANEL_DIGITS_PAINT.setTextAlign(Paint.Align.CENTER);
+    c.drawText(track, center, PANEL_TEXT_BASELINE, PANEL_DIGITS_PAINT);
+
+    // Draw altitude. Draw the units first, since it's right-aligned.
+    PANEL_UNITS_PAINT.setTextAlign(Paint.Align.RIGHT);
+    c.drawText(" ft", width - PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE, PANEL_UNITS_PAINT);
+    textWidth = getTextWidth(" ft", PANEL_UNITS_PAINT);
+    PANEL_DIGITS_PAINT.setTextAlign(Paint.Align.RIGHT);
+    c.drawText(altitude, width - textWidth - PANEL_TEXT_MARGIN, PANEL_TEXT_BASELINE,
+        PANEL_DIGITS_PAINT);
   }
+  
+  private void drawNoGpsMessage(Canvas c, Location location) {
+    long locationAgeSeconds = (System.currentTimeMillis() - location.getTime()) / 1000;
+    String age = NavigationUtil.getHoursMinutesSeconds(locationAgeSeconds);
+    final float center = c.getWidth() / 2.0f;
+    c.drawText("No GPS signal \u2022 " + age, center, PANEL_TEXT_BASELINE, LOST_GPS_PAINT);
+  }
+
 
   Paint getAirportPaint(Airport airport) {
     return airportPalette.getPaint(airport);

@@ -77,6 +77,8 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
   private static final float POINTER_LENGTH = 17;
   private static final float POINTER_WIDTH = 12;
 
+  private static final Paint RED_SLASH_PAINT = new Paint();
+
   private FlightMap flightMap;
   private AviationDbAdapter aviationDbAdapter;
   private LocationHandler locationHandler;
@@ -101,7 +103,13 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
   private TextView bearingText;
   private TextView eteText;
   private Paint navigationPaint = new Paint();
-  private float[] distanceBearingResult = new float[2];
+  private float[] distanceBearingResult = new float[2]; 
+  
+  static {
+    RED_SLASH_PAINT.setColor(Color.RED);
+    RED_SLASH_PAINT.setStrokeWidth(3);
+    RED_SLASH_PAINT.setAntiAlias(true);
+  }
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -386,7 +394,7 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
     }
 
     setDistanceBearingResult(location);
-    updateNavigationMiniMap(location);
+    updateNavigationMiniMap(location, locationHandler.isLocationCurrent());
     updateNavigationTextItems(location, magneticConversion);
   }
 
@@ -407,7 +415,7 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
   /**
    * Updates the mini map pointing to the airport.
    */
-  private synchronized void updateNavigationMiniMap(Location location) {
+  private synchronized void updateNavigationMiniMap(Location location, boolean isCurrentLocation) {
     Canvas c = null;
     try {
       if (null == holder) {
@@ -446,6 +454,13 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
 
           // Undo the downscaling and rotation for the airplane.
           c.restore();
+          
+          // If the location isn't current, the draw a red slash
+          if (!isCurrentLocation) {
+            float slashLength = POINTER_LENGTH * density;
+            c.drawLine(-slashLength, slashLength, slashLength, -slashLength, RED_SLASH_PAINT);
+            return;
+          }
 
           // Draw a circle around the airplane.
           navigationPaint.setStyle(Paint.Style.STROKE);

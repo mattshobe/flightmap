@@ -555,7 +555,7 @@ public class MapPresenter implements OnSharedPreferenceChangeListener {
     c.drawColor(Color.BLACK);
 
     // Display message about no current location and return.
-    if (null == location || System.currentTimeMillis() - location.getTime() > MAX_LOCATION_AGE) {
+    if (null == location) {
       view.showNoGpsLocationMessage(c);
       return;
     }
