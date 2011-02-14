@@ -75,7 +75,7 @@ public class LocationHandler implements LocationListener {
   }
 
   /**
-   * Returns current location or null if not available.
+   * Returns copy of current location or null if not available.
    */
   public synchronized Location getLocation() {
     if (location == null && !isLocationSimulated()) {
@@ -85,7 +85,7 @@ public class LocationHandler implements LocationListener {
       location =
           locationManager.getLastKnownLocation(locationManager.getBestProvider(criteria, true));
     }
-    return location;
+    return new Location(location); // copy for thread safety.
   }
 
   /**
