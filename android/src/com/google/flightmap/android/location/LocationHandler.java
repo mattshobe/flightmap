@@ -199,7 +199,7 @@ public class LocationHandler implements LocationListener {
   }
 
   /**
-   * {@inheritDoc}. Called whent he real or simulated location provider has a
+   * {@inheritDoc}. Called when the real or simulated location provider has a
    * new location. Smoothes out jitters or missing values in the raw data.
    */
   @Override
@@ -216,15 +216,17 @@ public class LocationHandler implements LocationListener {
    * when the raw data is jittery or has missing values.
    */
   private synchronized void updateLocation(Location location) {
+    location = new Location(location); // Copy for thread safety.
     // Ignore locations with poor accuracy.
     if (location.getAccuracy() > MINIMUM_ACCURACY) {
-      Log.i(TAG, "Accuracy too low: " + location.getAccuracy());
+      this.location = location;
       return;
     }
+
     final Location previousLocation = getLocation();
-    // If previous location is unusable because it's null or old, just update
-    // field and return.
-    if (previousLocation == null
+    // If previous location is unusable because it's null, old or low accuracy,
+    // just update field and return.
+    if (previousLocation == null || previousLocation.getAccuracy() > MINIMUM_ACCURACY
         || location.getTime() - previousLocation.getTime() > MAX_TIME_DELTA) {
       this.location = location;
       return;
@@ -252,7 +254,8 @@ public class LocationHandler implements LocationListener {
     }
     // If the bearing is missing, calculate it.
     if (!location.hasBearing()) {
-      if (location.getSpeed() > 0) { // Don't calculate bearing when stationary.
+      // Don't calculate bearing when stationary.
+      if (location.getSpeed() > 0) {
         float bearing =
             (float) NavigationUtil.normalizeBearing(previousLocation.bearingTo(location));
         Log.d(TAG, "Calculated bearing: " + bearing);
@@ -273,7 +276,7 @@ public class LocationHandler implements LocationListener {
         }
       } else {
         // We're stationary, re-use the last bearing.
-        if (previousLocation.hasBearing()) {
+        if (previousLocation.hasBearing() && previousLocation.getSpeed() > MINIMUM_SPEED) {
           location.setBearing(previousLocation.getBearing());
         }
       }

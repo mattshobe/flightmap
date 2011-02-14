@@ -386,7 +386,8 @@ public class TapcardActivity extends Activity implements SurfaceHolder.Callback 
     }
 
     setDistanceBearingResult(location);
-    updateNavigationMiniMap(location, locationHandler.isLocationCurrent());
+    updateNavigationMiniMap(location, locationHandler.isLocationCurrent()
+        && locationHandler.isLocationAccurate());
     updateNavigationTextItems(location, magneticConversion);
   }
 
