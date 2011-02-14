@@ -42,6 +42,8 @@ You can use the `adb install` command to install the apk to your phone or emulat
 If tests pass, go to step 6.  Else return to step 3.
 
 == 6: Tag the release ==
+*Make sure you are in the top-level directory (not in android), and still on the release branch.*
+
 Create a tag for this release. See BranchesAndTags for details.
 
 == 7: Release Notes ==
