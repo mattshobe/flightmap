@@ -571,10 +571,15 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       return;
     }
     c.drawPath(topPanel, PANEL_BACKGROUND_PAINT);
-    // Show the lost GPS signal message if needed.
+    // Show the lost or poor GPS signal messages if needed.
     final LocationHandler locationHandler = mainActivity.getFlightMap().getLocationHandler();
     if (!locationHandler.isLocationCurrent()) {
       drawNoGpsMessage(c, location);
+      return;
+    }
+    
+    if (!locationHandler.isLocationAccurate()) {
+      drawLowAccuracyGpsMessage(c, location);
       return;
     }
 
@@ -627,8 +632,21 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     final float center = c.getWidth() / 2.0f;
     c.drawText("No GPS signal \u2022 " + age, center, PANEL_TEXT_BASELINE, LOST_GPS_PAINT);
   }
-
-
+  
+  private void drawLowAccuracyGpsMessage(Canvas c, Location location) {
+    float accuracyMeters = location.getAccuracy();
+    DistanceUnits units = mainActivity.getUserPrefs().getDistanceUnits();
+    double accuracyUnits = units.getDistance(accuracyMeters);
+    String unitsAbbreviation = units.distanceAbbreviation;
+    if (accuracyUnits < 1) {
+      accuracyUnits = units.getShortDistance(accuracyMeters);
+      unitsAbbreviation = units.shortDistanceAbbreviation;
+    }
+    String accuracyMessage = String.format("Low GPS accuracy \u2022 %.0f %s", accuracyUnits, unitsAbbreviation);
+    final float center = c.getWidth() / 2.0f;
+    c.drawText(accuracyMessage, center, PANEL_TEXT_BASELINE, LOST_GPS_PAINT);
+  }
+  
   Paint getAirportPaint(Airport airport) {
     return airportPalette.getPaint(airport);
   }

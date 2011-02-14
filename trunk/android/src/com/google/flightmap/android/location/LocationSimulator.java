@@ -59,7 +59,7 @@ class LocationSimulator {
   private static final float MIN_SPEED = 0;
   private static final float MAX_SPEED = (float) (900 / NavigationUtil.METERS_PER_SEC_TO_KNOTS);
   private static final float NORMAL_ACCURACY = 10; // meters
-  private static final float LOW_ACCURACY = 300; // meters
+  private static final float LOW_ACCURACY = 50; // meters
 
   private final PositionUpdater updater = new PositionUpdater();
   private boolean isRunning;
@@ -122,7 +122,7 @@ class LocationSimulator {
       return;
     }
     initializeLocation();
-
+    
     location.setProvider(TAG);
     location.setTime(System.currentTimeMillis());
     location.setAccuracy(isLowAccuracy() ? LOW_ACCURACY : NORMAL_ACCURACY);
