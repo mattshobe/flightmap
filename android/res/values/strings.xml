@@ -23,6 +23,10 @@
   <string name="search_activity">Search results</string>
   <string name="search_hint">ICAO or Airport</string>
   <string name="simulator">Simulator</string>
+  <string name="simulator_accuracy_low">Low Accuracy</string>
+  <string name="simulator_accuracy_normal">Normal Accuracy</string>
+  <string name="simulator_gps_disable">No GPS</string>
+  <string name="simulator_gps_normal">Restore GPS</string>
   <string name="simulator_short">Sim</string>
   <string name="simulator_stop">Stop</string>
   <string name="simulator_warning">SIMULATOR</string>

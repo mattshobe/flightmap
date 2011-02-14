@@ -89,28 +89,28 @@ public class LocationHandler implements LocationListener {
   }
 
   /**
-   * Returns true if the location is current and accurate enough to use.
+   * Returns true if the location is recent.
    */
   public synchronized boolean isLocationCurrent() {
-    if (location == null) {
-      return false;
-    }
-    long locationAge = System.currentTimeMillis() - location.getTime();
-    if (locationAge > MAX_TIME_DELTA) {
+    return (location != null && (System.currentTimeMillis() - location.getTime()) <= MAX_TIME_DELTA);
+  }
+
+  /**
+   * Returns true if the location is accurate enough to use for speed and
+   * bearing. When this method returns false, the bearing will be removed
+   * from the current location.
+   */
+  public synchronized boolean isLocationAccurate() {
+    if (location == null || !location.hasAccuracy()) {
       return false;
     }
     if (location.hasAccuracy()) {
       if (location.getAccuracy() > MINIMUM_ACCURACY) {
-        Log.i(TAG, "Location current, but accuracy too low " + location.getAccuracy());
-        // Remove the bearing if it's present in a low-accuracy location.
         if (location.hasBearing()) {
           location.removeBearing();
         }
         return false;
       }
-    } else {
-      // Location has no accuracy, so assume it's no good.
-      return false;
     }
     return true;
   }

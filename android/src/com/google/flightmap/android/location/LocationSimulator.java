@@ -58,9 +58,13 @@ class LocationSimulator {
 
   private static final float MIN_SPEED = 0;
   private static final float MAX_SPEED = (float) (900 / NavigationUtil.METERS_PER_SEC_TO_KNOTS);
+  private static final float NORMAL_ACCURACY = 10; // meters
+  private static final float LOW_ACCURACY = 300; // meters
 
   private final PositionUpdater updater = new PositionUpdater();
   private boolean isRunning;
+  private boolean isLowAccuracy;
+  private boolean isGpsStopped;
   private Location location;
   private LocationHandler locationHandler;
 
@@ -114,11 +118,14 @@ class LocationSimulator {
    * Updates location and posts to {@link LocationHandler#onLocationChanged}.
    */
   private synchronized void updateLocation() {
+    if (isGpsStopped()) {
+      return;
+    }
     initializeLocation();
 
     location.setProvider(TAG);
     location.setTime(System.currentTimeMillis());
-    location.setAccuracy(10);
+    location.setAccuracy(isLowAccuracy() ? LOW_ACCURACY : NORMAL_ACCURACY);
     location.setSpeed(updateValue(location.getSpeed(), desiredSpeed, SPEED_RATE));
 
     // Just in case desiredTrack is unset, set it here.
@@ -266,5 +273,21 @@ class LocationSimulator {
 
   synchronized void setDesiredAltitude(float desiredAltitude) {
     this.desiredAltitude = desiredAltitude;
+  }
+
+  synchronized void setLowAccuracy(boolean isLowAccuracy) {
+    this.isLowAccuracy = isLowAccuracy;
+  }
+
+  synchronized boolean isLowAccuracy() {
+    return isLowAccuracy;
+  }
+
+  synchronized void setGpsStopped(boolean isGpsStopped) {
+    this.isGpsStopped = isGpsStopped;
+  }
+
+  synchronized boolean isGpsStopped() {
+    return isGpsStopped;
   }
 }
