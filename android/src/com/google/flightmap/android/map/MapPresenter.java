@@ -69,7 +69,7 @@ public class MapPresenter implements OnSharedPreferenceChangeListener {
 
   // Fields relating to touch events and panning.
   private static final int PAN_CROSSHAIR_SIZE = 12;
-  private static final int PAN_INFO_MARGIN = 30;
+  private static final int PAN_INFO_MARGIN = 20;
   /** Minimum number of screen pixels to drag to indicate panning. */
   private static final int PAN_TOUCH_THRESHOLD = 15;
   /** Radius in screen pixels to search around touch location. */
@@ -743,7 +743,7 @@ public class MapPresenter implements OnSharedPreferenceChangeListener {
     String navigationText =
         String.format("%.1f%s - BRG %03.0f%s", distanceUnits.getDistance(distanceMeters),
             distanceUnits.distanceAbbreviation, bearingTo, MapView.DEGREES_SYMBOL);
-    c.drawText(navigationText, 0, PAN_INFO_MARGIN * density, MapView.PAN_INFO_PAINT);
+    c.drawText(navigationText, 0, -PAN_INFO_MARGIN * density, MapView.PAN_INFO_PAINT);
   }
 
   private synchronized void drawAirspacesOnMap(final Canvas c, final float zoom, final Location l) {
