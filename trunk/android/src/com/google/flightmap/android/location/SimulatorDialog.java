@@ -20,6 +20,7 @@ import java.util.LinkedList;
 import android.app.Dialog;
 import android.content.Context;
 import android.location.Location;
+import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -45,6 +46,8 @@ public class SimulatorDialog extends Dialog implements Button.OnClickListener {
   private final CachedMagneticVariation magneticVariation = new CachedMagneticVariation();
   private DistanceUnits distanceUnits;
   private CheckBox enabled;
+  private Button accuracy;
+  private Button gps;
   private TextView speedText;
   private TextView speedUnits;
   private TextView trackText;
@@ -72,6 +75,8 @@ public class SimulatorDialog extends Dialog implements Button.OnClickListener {
     initializeButtonList();
     initializeButtonListeners();
     enabled = (CheckBox) findViewById(R.id.enable_simulator);
+    accuracy = (Button) findViewById(R.id.sim_accuracy);
+    gps = (Button) findViewById(R.id.sim_gps);
     enabled.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
       @Override
       public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -85,7 +90,7 @@ public class SimulatorDialog extends Dialog implements Button.OnClickListener {
       }
     });
   };
-
+  
   /**
    * Updates the values shown on the dialog.
    */
@@ -129,6 +134,10 @@ public class SimulatorDialog extends Dialog implements Button.OnClickListener {
         (int) (Math.round(simulator.getDesiredAltitude() * NavigationUtil.METERS_TO_FEET / 10.0) * 10);
     altText.setText(String.format("%,5d", altitudeNearestTen));
     altUnits.setText(" ft");
+    
+    // Accuracy and GPS buttons.
+    accuracy.setText(simulator.isLowAccuracy() ? R.string.simulator_accuracy_normal : R.string.simulator_accuracy_low);
+    gps.setText(simulator.isGpsStopped() ? R.string.simulator_gps_normal : R.string.simulator_gps_disable);
   }
 
   private void initializeButtonListeners() {
@@ -157,6 +166,8 @@ public class SimulatorDialog extends Dialog implements Button.OnClickListener {
     buttons.add((Button) findViewById(R.id.sim_track_decrement));
     buttons.add((Button) findViewById(R.id.sim_altitude_decrement));
     buttons.add((Button) findViewById(R.id.sim_stop));
+    buttons.add((Button) findViewById(R.id.sim_accuracy));
+    buttons.add((Button) findViewById(R.id.sim_gps));
   }
 
   @Override
@@ -191,6 +202,12 @@ public class SimulatorDialog extends Dialog implements Button.OnClickListener {
         simulator
             .setDesiredAltitude((float) (simulator.getDesiredAltitude() - 100.0 / NavigationUtil.METERS_TO_FEET));
         break;
+      case R.id.sim_accuracy:
+        simulator.setLowAccuracy(!simulator.isLowAccuracy());
+        break;
+        
+      case R.id.sim_gps:
+        simulator.setGpsStopped(!simulator.isGpsStopped());
 
       default:
         Log.e(TAG, "Unknown id: " + v.getId());
