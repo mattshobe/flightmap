@@ -502,13 +502,14 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
    */
   private class PanResetButton {
     private static final String RESET_LABEL = "Reset";
-    private static final int BOTTOM_MARGIN = 10;
-    private static final float TEXT_MARGIN = 10;
+    private static final float VERTICAL_MARGIN = 15;
+    private static final float HORIZONTAL_MARGIN = 20;
     private int top;
     private int bottom;
     private int left;
     private int right;
     private int center;
+    private int textCenter;
     private Rect rect = new Rect();
 
     /**
@@ -519,7 +520,12 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
         return;
       }
       c.drawRect(rect, PAN_SOLID_PAINT);
-      c.drawText(RESET_LABEL, center, bottom - TEXT_MARGIN * density, PAN_RESET_PAINT);
+      c.drawText(RESET_LABEL, textCenter, bottom - VERTICAL_MARGIN, PAN_RESET_PAINT);
+      c.save();
+      c.translate(rect.left + (HORIZONTAL_MARGIN + airplanePathBounds.width()) / 2, rect.top
+          + (VERTICAL_MARGIN + airplanePathBounds.height()) / 2);
+      c.drawPath(airplanePath, AIRPLANE_OUTLINE_FILL_PAINT);
+      c.restore();
     }
 
     /**
@@ -534,11 +540,14 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     private synchronized void canvasSizeChanged(int width, int height) {
       Rect textBounds = new Rect();
       PAN_RESET_PAINT.getTextBounds(RESET_LABEL, 0, RESET_LABEL.length(), textBounds);
+      final float airplaneWidth = airplanePathBounds.width();
+      final float totalWidth = textBounds.width() + airplaneWidth;
 
-      bottom = (int) (height - (BOTTOM_MARGIN * density) + 0.5);
-      top = (int) (bottom - (textBounds.height() + TEXT_MARGIN) * density - 0.5);
+      bottom = (int) (height - (VERTICAL_MARGIN * density) + 0.5);
+      top = (int) (bottom - (textBounds.height() + VERTICAL_MARGIN) * density - 0.5);
       center = (int) ((width / 2.0f) + 0.5);
-      float halfWidth = textBounds.width() / 2.0f + TEXT_MARGIN * density;
+      textCenter = (int) ((textBounds.width() / 2.0f) + center + 0.5);
+      float halfWidth = totalWidth / 2.0f + HORIZONTAL_MARGIN * density;
       left = (int) ((center - halfWidth) - 0.5);
       right = (int) ((center + halfWidth) + 0.5);
       rect.set(left, top, right, bottom);
@@ -577,7 +586,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       drawNoGpsMessage(c, location);
       return;
     }
-    
+
     if (!locationHandler.isLocationAccurate()) {
       drawLowAccuracyGpsMessage(c, location);
       return;
@@ -632,7 +641,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
     final float center = c.getWidth() / 2.0f;
     c.drawText("No GPS signal \u2022 " + age, center, PANEL_TEXT_BASELINE, LOST_GPS_PAINT);
   }
-  
+
   private void drawLowAccuracyGpsMessage(Canvas c, Location location) {
     float accuracyMeters = location.getAccuracy();
     DistanceUnits units = mainActivity.getUserPrefs().getDistanceUnits();
@@ -642,11 +651,12 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       accuracyUnits = units.getShortDistance(accuracyMeters);
       unitsAbbreviation = units.shortDistanceAbbreviation;
     }
-    String accuracyMessage = String.format("Low GPS accuracy \u2022 %.0f %s", accuracyUnits, unitsAbbreviation);
+    String accuracyMessage =
+        String.format("Low GPS accuracy \u2022 %.0f %s", accuracyUnits, unitsAbbreviation);
     final float center = c.getWidth() / 2.0f;
     c.drawText(accuracyMessage, center, PANEL_TEXT_BASELINE, LOST_GPS_PAINT);
   }
-  
+
   Paint getAirportPaint(Airport airport) {
     return airportPalette.getPaint(airport);
   }
