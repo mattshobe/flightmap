@@ -97,8 +97,7 @@ public class LocationHandler implements LocationListener {
 
   /**
    * Returns true if the location is accurate enough to use for speed and
-   * bearing. When this method returns false, the bearing will be removed
-   * from the current location.
+   * bearing.
    */
   public synchronized boolean isLocationAccurate() {
     if (location == null || !location.hasAccuracy()) {
@@ -106,9 +105,6 @@ public class LocationHandler implements LocationListener {
     }
     if (location.hasAccuracy()) {
       if (location.getAccuracy() > MINIMUM_ACCURACY) {
-        if (location.hasBearing()) {
-          location.removeBearing();
-        }
         return false;
       }
     }
