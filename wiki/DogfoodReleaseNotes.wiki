@@ -29,6 +29,18 @@ Also, you should consider joining the Flight Map [http://g/flightmap mailing lis
   * AWOS/ASOS frequencies
   * State Boundaries.
 
+=Release: v0.15.0 "[http://en.wikipedia.org/wiki/Cessna_177 Cardinal]" - 2/14/11=
+  * New features:
+    * Alert user when GPS signal lost.
+      * Text at the top of the screen replaces track, altitude, speed. Show time since last GPS update.
+      * Airplane icon is shown hollowed out with a slash through it. Text indicates last known position.
+    * Alert user when GPS accuracy is low.
+      * Text at the top of the screen replaces track, altitude, speed. Show accuracy distance.
+      * Map does continue to update.
+  * Improvements
+    * Map does not immediately pan when you begin the two-finger scale gesture.
+    * Slightly larger pan reset button with airplane icon (to match original UI mocks).
+
 =Release: v0.13.0 "[http://en.wikipedia.org/wiki/Dufaux_4 Dufaux 4]" - 1/30/11=
   * New features:
     * Controlled airspace contours are now displayed.  Issue 80.
