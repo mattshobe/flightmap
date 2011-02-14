@@ -1,0 +1,21 @@
+TWR3
+4  0001 type
+0004 00005 facilityIdentifier
+0044 00009 frequency1
+0050 00053 sectorization1
+0044 00103 frequency2
+0050 00147 sectorization2
+0044 00197 frequency3
+0050 00241 sectorization3
+0044 00291 frequency4
+0050 00335 sectorization4
+0044 00385 frequency5
+0050 00429 sectorization5
+0044 00479 frequency6
+0050 00523 sectorization6
+0044 00573 frequency7
+0050 00617 sectorization7
+0044 00667 frequency8
+0050 00711 sectorization8
+0044 00761 frequency9
+0050 00805 sectorization9
