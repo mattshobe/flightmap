@@ -20,6 +20,8 @@ $ svn ls https://flightmap.googlecode.com/svn/tags
 
 The first part of the tag name are the already released version codes. This new release should have the next version code (8 for the example above).
 
+*Commit* the android/!AndroidManifest.xml file on the *release branch*
+
 == 3: Make any other branch-specific changes ==
 Make changes specific to this release (e.g. remove functionality that isn't ready yet). There may be nothing release-specific to do; this step is optional.
 
