@@ -8,6 +8,9 @@ Significant differences are changes that are not reflected in trunk, such as qui
 Notation:
   * *Release x (rY -> rZ)*: Revision Y was tagged as release x in revision Z.
 
+== Release 0.15.0 (trunk r555 -> branch r556 -> r560) ==
+  * No changes from trunk.
+
 == Release 0.13.0 (trunk r521 -> branch r522 -> r524) ==
   * No changes from trunk.
 
