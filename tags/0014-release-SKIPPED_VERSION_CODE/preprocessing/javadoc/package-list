@@ -1,0 +1,13 @@
+com.google.flightmap.db
+com.google.flightmap.parsing.data
+com.google.flightmap.parsing.db
+com.google.flightmap.parsing.esri
+com.google.flightmap.parsing.esri.data
+com.google.flightmap.parsing.faa.afd
+com.google.flightmap.parsing.faa.amr
+com.google.flightmap.parsing.faa.nasr
+com.google.flightmap.parsing.faa.nasr.tools
+com.google.flightmap.parsing.faa.nfd
+com.google.flightmap.parsing.faa.nfd.data
+com.google.flightmap.parsing.faa.nfd.tools
+com.google.flightmap.parsing.util
