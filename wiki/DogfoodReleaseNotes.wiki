@@ -29,7 +29,7 @@ Also, you should consider joining the Flight Map [http://g/flightmap mailing lis
   * AWOS/ASOS frequencies
   * State Boundaries.
 
-=Release: v0.15.0 "[http://en.wikipedia.org/wiki/Cessna_177 Cardinal]" - 2/14/11=
+=Release: v0.15.0 [http://en.wikipedia.org/wiki/Cessna_177 Cardinal] - 2/14/11=
   * New features:
     * Alert user when GPS signal lost.
       * Text at the top of the screen replaces track, altitude, speed. Show time since last GPS update.
@@ -43,7 +43,7 @@ Also, you should consider joining the Flight Map [http://g/flightmap mailing lis
     * Map does not immediately pan when you begin the two-finger scale gesture.
     * Slightly larger pan reset button with airplane icon (to match original UI mocks).
 
-=Release: v0.13.0 "[http://en.wikipedia.org/wiki/Dufaux_4 Dufaux 4]" - 1/30/11=
+=Release: v0.13.0 [http://en.wikipedia.org/wiki/Dufaux_4 Dufaux 4] - 1/30/11=
   * New features:
     * Controlled airspace contours are now displayed.  Issue 80.
       * Airspace more than 500 feet from your current altitude is dimmed.
@@ -54,13 +54,13 @@ Also, you should consider joining the Flight Map [http://g/flightmap mailing lis
   * Bug fixes:
     * Fixed null pointer exception if the user selected an airport without communication frequencies.  Issue 146.
 
-=Release: v0.11.1 "[http://en.wikipedia.org/wiki/Mooney_Airplane_Company  Mooney]" - 1/14/11=
+=Release: v0.11.1 [http://en.wikipedia.org/wiki/Mooney_Airplane_Company  Mooney] - 1/14/11=
   * Improvements:
     * Better pinch-to-zoom behavior. If you pan your fingers while pinching, the map pans.
     * Preserve pan state and panned-to map location when app is restored (such as when changing orientation).
   * Bug fixes:
     * Fixed null pointer exception if the user panned the map when there was no current location.
-=Release: v0.11.0 "[http://en.wikipedia.org/wiki/Mooney_Airplane_Company Mooney]" - 12/20/10=
+=Release: v0.11.0 [http://en.wikipedia.org/wiki/Mooney_Airplane_Company Mooney] - 12/20/10=
   * New features:
     * Can install to SD card (requires Android 2.2).
     * Pan the map by dragging.
@@ -69,7 +69,7 @@ Also, you should consider joining the Flight Map [http://g/flightmap mailing lis
     * Better organization of search results.
     * Local search history.
 
-=Release: v0.9.0 "[http://en.wikipedia.org/wiki/Citabria Citabria]" - 10/15/10=
+=Release: v0.9.0 [http://en.wikipedia.org/wiki/Citabria Citabria] - 10/15/10=
   * New features:
     * Search by airport code, city name or airport name.
       * Known issues with search:
