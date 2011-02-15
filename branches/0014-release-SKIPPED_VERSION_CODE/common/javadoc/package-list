@@ -1,0 +1,6 @@
+com.google.flightmap.common
+com.google.flightmap.common.data
+com.google.flightmap.common.db
+com.google.flightmap.common.geo
+com.google.flightmap.common.io
+com.google.flightmap.common.net

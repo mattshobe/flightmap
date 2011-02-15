@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+  <PreferenceCategory android:title="Display Settings">
+    <CheckBoxPreference android:title="North Up"
+      android:summary="Put North at the top instead of track"
+      android:key="North_Up" android:defaultValue="false" />
+    <ListPreference android:title="Distance Units"
+      android:summary="Nautical, statute or metric" android:key="Distance_Units"
+      android:defaultValue="3" android:entries="@array/units"
+      android:entryValues="@array/units_values" />
+    <CheckBoxPreference android:title="Enable simulator"
+      android:key="Enable_Simulator" android:defaultValue="false"
+      android:summary="Adds simulator menu item" />
+    <CheckBoxPreference android:title="Show Seaplane Bases"
+      android:key="Show_Seaplane" android:defaultValue="false" />
+    <CheckBoxPreference android:title="Show Military Bases"
+      android:key="Show_Military" android:defaultValue="true" />
+    <CheckBoxPreference android:title="Show Soft Fields"
+      android:key="Show_Soft" android:defaultValue="true" />
+    <CheckBoxPreference android:title="Show Private Airports"
+      android:key="Show_Private" android:defaultValue="false" />
+    <CheckBoxPreference android:title="Show Heliports"
+      android:key="Show_Heli" android:defaultValue="false" />
+    <ListPreference android:title="Minimum Runway Length"
+      android:summary="Minimum Runway Length to show on map"
+      android:key="Runway_Length" android:defaultValue="2"
+      android:entries="@array/lengths" android:entryValues="@array/lengths_values" />
+  </PreferenceCategory>
+</PreferenceScreen>
