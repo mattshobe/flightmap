@@ -37,6 +37,8 @@ Also, you should consider joining the Flight Map [http://g/flightmap mailing lis
     * Alert user when GPS accuracy is low.
       * Text at the top of the screen replaces track, altitude, speed. Show accuracy distance.
       * Map does continue to update.
+    * Simulator can emulate the above two conditions.
+      * There are two new buttons at the bottom of the simulator control dialog. The first toggles between "No GPS" and "Restore GPS". The second toggles between "Low Accuracy" and "Normal Accuracy".
   * Improvements
     * Map does not immediately pan when you begin the two-finger scale gesture.
     * Slightly larger pan reset button with airplane icon (to match original UI mocks).
