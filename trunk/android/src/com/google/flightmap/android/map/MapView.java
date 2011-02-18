@@ -652,7 +652,7 @@ public class MapView extends SurfaceView implements SurfaceHolder.Callback {
       unitsAbbreviation = units.shortDistanceAbbreviation;
     }
     String accuracyMessage =
-        String.format("Low GPS accuracy \u2022 %.0f %s", accuracyUnits, unitsAbbreviation);
+        String.format("Low GPS accuracy ~%.0f %s", accuracyUnits, unitsAbbreviation);
     final float center = c.getWidth() / 2.0f;
     c.drawText(accuracyMessage, center, PANEL_TEXT_BASELINE, LOST_GPS_PAINT);
   }
