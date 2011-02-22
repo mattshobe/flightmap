@@ -88,7 +88,7 @@ To resolve these dependencies, we just need to let Eclipse know that the !Flight
 == Confirm dependencies are resolved ==
 Now the little red X should be gone from the !FlightMap-Android and !FlightMap-Preprocessing projects.
 
-== Important Note on changing Common Code ==
+= Important Note on changing Common Code =
 
 You'll notice that the first two projects created depend on the code in `flightmap/common`.
 
