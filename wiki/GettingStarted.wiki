@@ -36,11 +36,9 @@ The code that is deployed to the phone is in the `android` directory. See Projec
 === Configure your local build ===
 Before you can build for the first time, you need to run this command *once* from the `flightmap` top-level directory.
 {{{
-android update project -p android
+ant
 }}}
 This will create a file called `android/local.properties` which points to your sdk install location. 
-
-*TODO* Take care of this automatically in a top-level build.xml.
 
 === Build and install to emulator (or real device) ===
 Execute these commands to build a debug version of the Android `.apk` file and install it to a running android emulator.
@@ -52,7 +50,13 @@ ant install
 Before running the application, see the [GettingStarted#Copy_Data Copy Data] section below.
 
 === Troublshooting android build problems ===
-If the build fails with this error: `taskdef class com.android.ant.SetupTask cannot be found` that means you didn't read the instructions above under *Configure your local build*
+If the build fails with this error: `taskdef class com.android.ant.SetupTask cannot be found` that means you didn't read the instructions above under *Configure your local build*. 
+
+If you did that already, and still are having problems then try this from the top-level flightmap directory (not inside the android directory):
+{{{
+ant clean
+ant
+}}}
 
 == Preprocessing Code ==
 This is code that parses the aviation data from public sources, such as the FAA and puts it into a format that Flight Map can use. This code is not deployed to the phone. The preprocessing code is in the `preprocessing` directory.
