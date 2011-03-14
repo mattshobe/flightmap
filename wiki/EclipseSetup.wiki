@@ -64,6 +64,8 @@ Now add the libraries that the preprocessing project needs.
   # Right-click on the newly-created !FlightMap-Preprocessing project in the Package Explorer window on the left side.
   # Build Path > Configure Build Path
   # Click on the "Libraries" tab
+    * Depending on your version of Eclipse, you'll either have a long list of .jar files, or just the JRE System Library.
+    * *Delete all .jar files listed* by clicking the first one, shift-clicking the last one, and hitting the "Remove" button.
   # Click *Add JARs...*
   # Expand !FlightMap-Preprocessing/lib
   # Choose all the .jar files *except flight-common.jar*.
