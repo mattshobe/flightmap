@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright (C) 2011 Google Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<project name="FlightMap" default="setup">
+    <target name="setup" depends="create-local-props" />
+
+    <target name="clean" description="Removes files created by create-local-props.">
+      <delete verbose="true" failonerror="false">
+        <filelist dir="android" files="local.properties,proguard.cfg" />
+      </delete>
+    </target>
+
+    <!-- Create the android/local.properties file if needed. --> 
+    <available file="android/local.properties" property="local.properties.present"/>
+    <target name="create-local-props" unless="local.properties.present">
+        <echo message="Running 'android' tool to make local settings." />
+        <echo message="The 'android' tool must be in your PATH." />
+        <exec executable="android">
+          <arg line="update project -p android" />
+        </exec>
+    </target>
+</project>
