@@ -68,7 +68,7 @@ Now add the libraries that the preprocessing project needs.
     * *Delete all .jar files listed* by clicking the first one, shift-clicking the last one, and hitting the "Remove" button.
   # Click *Add JARs...*
   # Expand !FlightMap-Preprocessing/lib
-  # Choose all the .jar files *except flight-common.jar*.
+  # Choose all the .jar files *EXCEPT flightmap-common.jar*.
 
 Just like with the !FlightMap-Android project, this one will have a little red X because you need to add the common project to the build path. Again, we'll take care of this soon in the "Add dependency on common code" section below.
 
